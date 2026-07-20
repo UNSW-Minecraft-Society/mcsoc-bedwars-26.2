@@ -1,0 +1,51 @@
+{
+	"schemaVersion": 1,
+	"id": "bedwars-plugin",
+	"version": "${version}",
+	"name": "bedwars plugin",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/bedwars-plugin/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			{
+				"value": "mcsoc.bedwars.BedwarsPlugin",
+				"adapter": "kotlin"
+			}
+		],
+		"client": [
+			{
+				"value": "mcsoc.bedwars.client.BedwarsPluginClient",
+				"adapter": "kotlin"
+			}
+		],
+		"fabric-datagen": [
+			{
+				"value": "mcsoc.bedwars.client.BedwarsPluginDataGenerator",
+				"adapter": "kotlin"
+			}
+		]
+	},
+	"mixins": [
+		"bedwars-plugin.mixins.json",
+		{
+			"config": "bedwars-plugin.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*",
+		"fabric-language-kotlin": "*"
+	}
+}
