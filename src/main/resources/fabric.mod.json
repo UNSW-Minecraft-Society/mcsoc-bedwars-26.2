@@ -21,12 +21,6 @@
 				"adapter": "kotlin"
 			}
 		],
-		"client": [
-			{
-				"value": "mcsoc.bedwars.client.BedwarsPluginClient",
-				"adapter": "kotlin"
-			}
-		],
 		"fabric-datagen": [
 			{
 				"value": "mcsoc.bedwars.client.BedwarsPluginDataGenerator",
@@ -35,11 +29,7 @@
 		]
 	},
 	"mixins": [
-		"bedwars-plugin.mixins.json",
-		{
-			"config": "bedwars-plugin.client.mixins.json",
-			"environment": "client"
-		}
+		"bedwars-plugin.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.19.3",
