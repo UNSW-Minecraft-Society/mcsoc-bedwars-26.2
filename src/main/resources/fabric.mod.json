@@ -2,13 +2,17 @@
 	"schemaVersion": 1,
 	"id": "bedwars-plugin",
 	"version": "${version}",
-	"name": "bedwars plugin",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "MCSoc's Bedwars",
+	"description": "Bedwars recreation for UNSW MCSoc's 2026 Games Galore component.",
 	"authors": [
-		"Me!"
+		"veveddo",
+        "Synkct",
+        "QuackQuackAlice",
+        "Titanplayz",
+        "Gabz"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
+		"homepage": "https://unswminecraft.com",
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
