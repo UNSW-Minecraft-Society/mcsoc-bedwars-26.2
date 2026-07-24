@@ -1,4 +1,4 @@
-package mcsoc.bedwars
+package mcsoc.bedwars.datatrackers
 
 import net.minecraft.core.BlockPos
 

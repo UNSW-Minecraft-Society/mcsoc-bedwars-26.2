@@ -1,4 +1,4 @@
-package mcsoc.bedwars
+package mcsoc.bedwars.datatrackers
 
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
