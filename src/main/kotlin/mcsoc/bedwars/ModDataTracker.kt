@@ -18,7 +18,6 @@ class PlayerDataRecord() : PlayerStateRecord {
     }
     
     private var life_state: LifeState = LifeState.ALIVE
-    
     private constructor(
         life_state: LifeState
     ) : this() {
@@ -31,18 +30,17 @@ class PlayerDataRecord() : PlayerStateRecord {
 }
 
 
-internal interface PlayerDataTracker {
-    fun getPlayerData(id: Uuid): PlayerDataRecord
-    fun getPlayerData(player: Player): PlayerDataRecord {
-        return getPlayerData(player.uuid.toKotlinUuid())
-    }
-}
+private interface ModDataHolder : PlayerStateTracker
 
 
-class ModDataStore() : PlayerDataTracker, PlayerStateTracker, SavedData() {
+private class ModDataStore() : ModDataHolder, SavedData() {
     companion object {
         val CODEC = RecordCodecBuilder.create{it.group(
-            Codec.unboundedMap(Codec.STRING.xmap(Uuid::parse, Uuid::toString), PlayerDataRecord.CODEC).fieldOf("player_data_map").forGetter(ModDataStore::getPlayerDataMap)
+            Codec.unboundedMap(
+                Codec.STRING.xmap(Uuid::parse, Uuid::toString), 
+                PlayerDataRecord.CODEC
+            ).fieldOf("player_data_map")
+            .forGetter(ModDataStore::getPlayerDataMap)
         ).apply(it, ::ModDataStore)}
     }    
     
@@ -55,8 +53,23 @@ class ModDataStore() : PlayerDataTracker, PlayerStateTracker, SavedData() {
     private fun getPlayerDataMap(): Map<Uuid, PlayerDataRecord> {
         return player_data_map
     }
-    
-    override fun getPlayerData(id: Uuid): PlayerDataRecord {
+    private fun getPlayerData(id: Uuid): PlayerDataRecord {
         return player_data_map.getOrPut(id){PlayerDataRecord()}
+    }
+    private fun getPlayerData(player: Player): PlayerDataRecord {
+        return getPlayerData(player.uuid.toKotlinUuid())
+    }
+    
+    override fun getPlayerState(player: Player): PlayerDataRecord {
+        return getPlayerData(player)
+    }
+}
+
+
+object ModDataTracker : ModDataHolder {
+    private val mod_data = ModDataStore()
+    
+    override fun getPlayerState(player: Player): PlayerStateRecord {
+        return mod_data.getPlayerState(player)
     }
 }

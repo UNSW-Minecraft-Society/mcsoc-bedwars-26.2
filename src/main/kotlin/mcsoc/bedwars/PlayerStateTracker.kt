@@ -27,24 +27,24 @@ sealed class LifeState(val id: Byte) {
 }
 
 
-internal interface PlayerStateRecord {
+interface PlayerStateRecord {
     fun getLifeState(): LifeState
 }
 
 
-internal interface PlayerStateTracker : PlayerDataTracker {
-    override fun getPlayerData(id: Uuid): PlayerDataRecord
+internal interface PlayerStateTracker {
+    fun getPlayerState(player: Player): PlayerStateRecord
     
     fun isPlayerAlive(player: Player): Boolean {
-        val player_data = getPlayerData(player)
-        return player_data.getLifeState() == LifeState.ALIVE
+        val player_state = getPlayerState(player)
+        return player_state.getLifeState() == LifeState.ALIVE
     }
     fun isPlayerRespawning(player: Player): Boolean {
-        val player_data = getPlayerData(player)
-        return player_data.getLifeState() == LifeState.RESPAWNING
+        val player_state = getPlayerState(player)
+        return player_state.getLifeState() == LifeState.RESPAWNING
     }
     fun isPlayerDead(player: Player): Boolean {
-        val player_data = getPlayerData(player)
-        return player_data.getLifeState() == LifeState.DEAD
+        val player_state = getPlayerState(player)
+        return player_state.getLifeState() == LifeState.DEAD
     }
 }

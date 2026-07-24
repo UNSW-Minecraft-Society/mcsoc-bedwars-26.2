@@ -15,7 +15,6 @@ object BedwarsPlugin : ModInitializer {
 		// Proceed with mild caution.
 
 		LOGGER.info("Hello Fabric world!")
-		val datastore = ModDataStore()
 	}
 
 	fun id(path: String): Identifier
