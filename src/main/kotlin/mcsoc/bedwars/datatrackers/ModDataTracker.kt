@@ -119,7 +119,7 @@ object ModDataTracker {
     
     @JvmStatic
     fun isBlockBreakAllowed(pos: BlockPos): Boolean {
-        return mod_data.getIfBlockWasPlaced(pos)
+        return !mod_data.getIfBlockIsProtected(pos) && mod_data.getIfBlockWasPlaced(pos)
     }
     @JvmStatic
     fun isBlockPlacementAllowed(pos: BlockPos): Boolean {
