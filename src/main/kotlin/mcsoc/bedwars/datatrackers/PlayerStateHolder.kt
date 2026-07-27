@@ -3,9 +3,8 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.world.entity.player.Player
-import kotlin.uuid.Uuid
 
-sealed class LifeState(val id: Byte) {
+internal sealed class LifeState(val id: Byte) {
     companion object {
         fun fromId(id: Byte): LifeState {
             return when (id.toInt()) {
@@ -27,23 +26,28 @@ sealed class LifeState(val id: Byte) {
 }
 
 
-interface PlayerStateRecord {
+internal interface PlayerStateRecord {
     fun getLifeState(): LifeState
 }
 
+internal interface PlayerStateExposer {
+    fun isPlayerAlive(player: Player): Boolean
+    fun isPlayerRespawning(player: Player): Boolean
+    fun isPlayerDead(player: Player): Boolean
+}
 
-internal interface PlayerStateTracker {
+internal interface PlayerStateHolder : PlayerStateExposer {
     fun getPlayerState(player: Player): PlayerStateRecord
     
-    fun isPlayerAlive(player: Player): Boolean {
+    override fun isPlayerAlive(player: Player): Boolean {
         val player_state = getPlayerState(player)
         return player_state.getLifeState() == LifeState.ALIVE
     }
-    fun isPlayerRespawning(player: Player): Boolean {
+    override fun isPlayerRespawning(player: Player): Boolean {
         val player_state = getPlayerState(player)
         return player_state.getLifeState() == LifeState.RESPAWNING
     }
-    fun isPlayerDead(player: Player): Boolean {
+    override fun isPlayerDead(player: Player): Boolean {
         val player_state = getPlayerState(player)
         return player_state.getLifeState() == LifeState.DEAD
     }

@@ -10,7 +10,7 @@ import kotlin.uuid.toKotlinUuid
 
 
 @Serializable
-class PlayerDataRecord() : PlayerStateRecord {
+private class PlayerDataRecord() : PlayerStateRecord {
     companion object {
         val CODEC = RecordCodecBuilder.create{it.group(
             LifeState.CODEC.fieldOf("life_state").forGetter(PlayerDataRecord::getLifeState)
@@ -30,10 +30,7 @@ class PlayerDataRecord() : PlayerStateRecord {
 }
 
 
-private interface ModDataHolder : PlayerStateTracker
-
-
-private class ModDataStore() : ModDataHolder, SavedData() {
+private class ModDataStore() : SavedData(), PlayerStateHolder {
     companion object {
         val CODEC = RecordCodecBuilder.create{it.group(
             Codec.unboundedMap(
@@ -66,16 +63,16 @@ private class ModDataStore() : ModDataHolder, SavedData() {
 }
 
 
-object ModDataTracker {
+object ModDataTracker : PlayerStateExposer {
     private val mod_data = ModDataStore()
     
-    fun isPlayerAlive(player: Player): Boolean {
+    override fun isPlayerAlive(player: Player): Boolean {
         return mod_data.isPlayerAlive(player)
     }
-    fun isPlayerRespawning(player: Player): Boolean {
+    override fun isPlayerRespawning(player: Player): Boolean {
         return mod_data.isPlayerRespawning(player)
     }
-    fun isPlayerDead(player: Player): Boolean {
+    override fun isPlayerDead(player: Player): Boolean {
         return mod_data.isPlayerDead(player)
     }
 }
