@@ -14,9 +14,9 @@ import kotlin.uuid.toKotlinUuid
 
 
 @Serializable
-class PlayerDataRecord() : PlayerStateRecord {
+private class PlayerDataRecord() : PlayerStateRecord {
     companion object {
-        val CODEC = RecordCodecBuilder.create{it.group(
+        val CODEC: Codec<PlayerDataRecord> = RecordCodecBuilder.create{it.group(
             LifeState.CODEC.fieldOf("life_state").forGetter(PlayerDataRecord::getLifeState)
         ).apply(it, ::PlayerDataRecord)}
     }
@@ -34,12 +34,9 @@ class PlayerDataRecord() : PlayerStateRecord {
 }
 
 
-private interface ModDataHolder : PlayerStateTracker, BlockPlacementData, BlockProtectionTracker
-
-
-private class ModDataStore() : ModDataHolder, SavedData() {
+private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHolder {
     companion object {
-        val CODEC = RecordCodecBuilder.create{it.group(
+        val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
             Codec.unboundedMap(
                 Codec.STRING.xmap(Uuid::parse, Uuid::toString), 
                 PlayerDataRecord.CODEC
@@ -104,33 +101,29 @@ private class ModDataStore() : ModDataHolder, SavedData() {
 }
 
 
-object ModDataTracker {
+object ModDataTracker : PlayerStateExposer, BlockProtectionExposer {
     private val mod_data = ModDataStore()
     
-    fun isPlayerAlive(player: Player): Boolean {
+    override fun isPlayerAlive(player: Player): Boolean {
         return mod_data.isPlayerAlive(player)
     }
-    fun isPlayerRespawning(player: Player): Boolean {
+    override fun isPlayerRespawning(player: Player): Boolean {
         return mod_data.isPlayerRespawning(player)
     }
-    fun isPlayerDead(player: Player): Boolean {
+    override fun isPlayerDead(player: Player): Boolean {
         return mod_data.isPlayerDead(player)
     }
     
-    @JvmStatic
-    fun isBlockBreakAllowed(pos: BlockPos): Boolean {
-        return !mod_data.getIfBlockIsProtected(pos) && mod_data.getIfBlockWasPlaced(pos)
+    override fun isBlockBreakAllowed(pos: BlockPos): Boolean {
+        return mod_data.isBlockBreakAllowed(pos)
     }
-    @JvmStatic
-    fun isBlockPlacementAllowed(pos: BlockPos): Boolean {
-        return mod_data.getIfBlockIsProtected(pos)
+    override fun isBlockPlacementAllowed(pos: BlockPos): Boolean {
+        return mod_data.isBlockPlacementAllowed(pos)
     }
-    
-    @JvmStatic
-    fun trackPlacedBlock(pos: BlockPos) {
+    override fun trackPlacedBlock(pos: BlockPos) {
         mod_data.trackPlacedBlock(pos)
     }
-    fun registerProtectionZone(corner1: BlockPos, corner2: BlockPos) {
+    override fun registerProtectionZone(corner1: BlockPos, corner2: BlockPos) {
         mod_data.registerProtectionZone(corner1, corner2)
     }
 }
