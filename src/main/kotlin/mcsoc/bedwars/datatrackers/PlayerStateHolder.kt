@@ -15,7 +15,7 @@ internal sealed class LifeState(val id: Byte) {
             }
         }
         
-        val CODEC = RecordCodecBuilder.create{it.group(
+        val CODEC: Codec<LifeState> = RecordCodecBuilder.create{it.group(
             Codec.BYTE.fieldOf("life_state").forGetter(LifeState::id)
         ).apply(it, ::fromId)}
     }

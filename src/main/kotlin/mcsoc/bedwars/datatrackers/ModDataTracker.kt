@@ -12,7 +12,7 @@ import kotlin.uuid.toKotlinUuid
 @Serializable
 private class PlayerDataRecord() : PlayerStateRecord {
     companion object {
-        val CODEC = RecordCodecBuilder.create{it.group(
+        val CODEC: Codec<PlayerDataRecord> = RecordCodecBuilder.create{it.group(
             LifeState.CODEC.fieldOf("life_state").forGetter(PlayerDataRecord::getLifeState)
         ).apply(it, ::PlayerDataRecord)}
     }
@@ -32,7 +32,7 @@ private class PlayerDataRecord() : PlayerStateRecord {
 
 private class ModDataStore() : SavedData(), PlayerStateHolder {
     companion object {
-        val CODEC = RecordCodecBuilder.create{it.group(
+        val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
             Codec.unboundedMap(
                 Codec.STRING.xmap(Uuid::parse, Uuid::toString), 
                 PlayerDataRecord.CODEC
