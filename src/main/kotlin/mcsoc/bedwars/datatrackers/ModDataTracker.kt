@@ -104,25 +104,33 @@ private class ModDataStore() : ModDataHolder, SavedData() {
 }
 
 
-object ModDataTracker : ModDataHolder {
+object ModDataTracker {
     private val mod_data = ModDataStore()
     
-    
-    override fun getPlayerState(player: Player): PlayerStateRecord {
-        return mod_data.getPlayerState(player)
+    fun isPlayerAlive(player: Player): Boolean {
+        return mod_data.isPlayerAlive(player)
+    }
+    fun isPlayerRespawning(player: Player): Boolean {
+        return mod_data.isPlayerRespawning(player)
+    }
+    fun isPlayerDead(player: Player): Boolean {
+        return mod_data.isPlayerDead(player)
     }
     
-    
-    override fun getIfBlockWasPlaced(pos: BlockPos): Boolean {
+    @JvmStatic
+    fun isBlockBreakAllowed(pos: BlockPos): Boolean {
         return mod_data.getIfBlockWasPlaced(pos)
     }
-    override fun getIfBlockIsProtected(pos: BlockPos): Boolean {
+    @JvmStatic
+    fun isBlockPlacementAllowed(pos: BlockPos): Boolean {
         return mod_data.getIfBlockIsProtected(pos)
     }
-    override fun trackPlacedBlock(pos: BlockPos) {
+    
+    @JvmStatic
+    fun trackPlacedBlock(pos: BlockPos) {
         mod_data.trackPlacedBlock(pos)
     }
-    override fun registerProtectionZone(corner1: BlockPos, corner2: BlockPos) {
+    fun registerProtectionZone(corner1: BlockPos, corner2: BlockPos) {
         mod_data.registerProtectionZone(corner1, corner2)
     }
 }
