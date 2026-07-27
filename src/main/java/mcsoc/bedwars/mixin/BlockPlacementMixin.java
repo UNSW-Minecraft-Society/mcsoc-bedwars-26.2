@@ -18,9 +18,9 @@ import mcsoc.bedwars.datatrackers.ModDataTracker;
 public class BlockPlacementMixin {
     @Inject(at = @At("HEAD"), method = "onPlace", cancellable = true)
     public void checkIfBlockPlacementIsValid(final BlockState state, final Level level, final BlockPos pos, final BlockState oldState, final boolean movedByPiston, CallbackInfo ci) {
-        if (!ModDataTracker.isBlockPlacementAllowed(pos)) {
+        if (!ModDataTracker.INSTANCE.isBlockPlacementAllowed(pos)) {
             ci.cancel();
         }
-        ModDataTracker.trackPlacedBlock(pos);
+        ModDataTracker.INSTANCE.trackPlacedBlock(pos);
     }
 }
