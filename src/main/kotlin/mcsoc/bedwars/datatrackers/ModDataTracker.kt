@@ -41,20 +41,29 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHo
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
             Codec.unboundedMap(
                 Codec.STRING
-                    .xmap(Uuid::parse, Uuid::toString), 
+                    .xmap(Uuid::parse, Uuid::toString),
                 PlayerDataRecord.CODEC
             )
                 .fieldOf("player_data_map")
-                .forGetter(ModDataStore::player_data_map)
+                .forGetter(ModDataStore::player_data_map),
+            Codec.list(BlockPos.CODEC)
+                .xmap(List<BlockPos>::toSet, Set<BlockPos>::toList)
+                .fieldOf("placed_blocks_set")
+                .forGetter(ModDataStore::placed_blocks_set)
         ).apply(it, ::ModDataStore)}
-    }    
+    }
     
     private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
     private val placed_blocks_set = HashSet<BlockPos>()
     private val block_protection_zone_list = HashMap<Long, MutableList<AABB>>()
     
-    private constructor(map: Map<Uuid, PlayerDataRecord>): this() {
-        this.player_data_map.putAll(map)
+    private constructor(
+        player_data: Map<Uuid, PlayerDataRecord>,
+        placed_blocks: Set<BlockPos>,
+    ): this() {
+        placed_blocks.toList().toSet()
+        this.player_data_map.putAll(player_data)
+        this.placed_blocks_set.addAll(placed_blocks)
     }
     
     private fun getPlayerData(id: Uuid): PlayerDataRecord {
@@ -96,7 +105,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHo
                 block_protection_zone_list.getOrPut(chunk_key){mutableListOf<AABB>()}.add(to_box)
             }
         }
-        
+
         setDirty()
     }
 }
