@@ -13,7 +13,9 @@ import kotlin.uuid.toKotlinUuid
 private class PlayerDataRecord() : PlayerStateRecord {
     companion object {
         val CODEC: Codec<PlayerDataRecord> = RecordCodecBuilder.create{it.group(
-            LifeState.CODEC.fieldOf("life_state").forGetter(PlayerDataRecord::getLifeState)
+            LifeState.CODEC
+                .fieldOf("life_state")
+                .forGetter(PlayerDataRecord::life_state)
         ).apply(it, ::PlayerDataRecord)}
     }
     
@@ -34,10 +36,12 @@ private class ModDataStore() : SavedData(), PlayerStateHolder {
     companion object {
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
             Codec.unboundedMap(
-                Codec.STRING.xmap(Uuid::parse, Uuid::toString), 
+                Codec.STRING
+                    .xmap(Uuid::parse, Uuid::toString), 
                 PlayerDataRecord.CODEC
-            ).fieldOf("player_data_map")
-            .forGetter(ModDataStore::getPlayerDataMap)
+            )
+                .fieldOf("player_data_map")
+                .forGetter(ModDataStore::player_data_map)
         ).apply(it, ::ModDataStore)}
     }    
     
@@ -47,9 +51,6 @@ private class ModDataStore() : SavedData(), PlayerStateHolder {
         this.player_data_map.putAll(map)
     }
     
-    private fun getPlayerDataMap(): Map<Uuid, PlayerDataRecord> {
-        return player_data_map
-    }
     private fun getPlayerData(id: Uuid): PlayerDataRecord {
         return player_data_map.getOrPut(id){PlayerDataRecord()}
     }
