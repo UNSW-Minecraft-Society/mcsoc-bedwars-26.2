@@ -7,9 +7,9 @@ import net.minecraft.commands.Commands.literal
 class CommandRegistrationHandler {
     companion object {
         fun registerCommands() {
-//            CommandRegistrationCallback.EVENT.register { dispatcher, registryAccess, environment ->
-//                dispatcher.register(literal("testSimpleGui").executes(ShopGui::testSimpleGui))
-//            }
+            CommandRegistrationCallback.EVENT.register { dispatcher, registryAccess, environment ->
+                dispatcher.register(literal("testSimpleGui").executes(ShopGui::testSimpleGui))
+            }
         }
     }
 }
