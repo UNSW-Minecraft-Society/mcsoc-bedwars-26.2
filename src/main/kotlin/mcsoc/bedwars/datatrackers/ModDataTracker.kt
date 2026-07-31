@@ -67,13 +67,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder {
 object ModDataTracker : PlayerStateExposer {
     private val mod_data = ModDataStore()
     
-    override fun isPlayerAlive(player: Player): Boolean {
-        return mod_data.isPlayerAlive(player)
-    }
-    override fun isPlayerRespawning(player: Player): Boolean {
-        return mod_data.isPlayerRespawning(player)
-    }
-    override fun isPlayerDead(player: Player): Boolean {
-        return mod_data.isPlayerDead(player)
-    }
+    override fun isPlayerAlive(player: Player) = mod_data.isPlayerAlive(player)
+    override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
+    override fun isPlayerDead(player: Player) = mod_data.isPlayerDead(player)
 }
