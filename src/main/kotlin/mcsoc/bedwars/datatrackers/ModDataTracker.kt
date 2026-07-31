@@ -5,7 +5,6 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 import kotlinx.serialization.Serializable
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
-import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.saveddata.SavedData
 import kotlin.uuid.Uuid
@@ -16,33 +15,43 @@ import kotlin.uuid.toKotlinUuid
 private class PlayerDataRecord() : PlayerStateRecord, PlayerUpgradesRecord {
     companion object {
         val CODEC: Codec<PlayerDataRecord> = RecordCodecBuilder.create{it.group(
-            LifeState.CODEC.fieldOf("life_state").forGetter(PlayerDataRecord::getLifeState)
+            LifeState.CODEC.fieldOf("life_state").forGetter(PlayerDataRecord::getLifeState),
+                // this codec not tested
+            Codec.unboundedMap(ToolCategory.CODEC, ToolTier.CODEC).fieldOf("tool_upgrades")
+                    .forGetter(PlayerDataRecord::getToolUpgrades)
         ).apply(it, ::PlayerDataRecord)}
     }
     
     private var life_state: LifeState = LifeState.ALIVE
-    private var personalUpgrades = HashMap<ToolType, Int>()
-    
+    private var toolUpgrades = HashMap<ToolCategory, ToolTier>()
+
     private constructor(
-        life_state: LifeState
+        life_state: LifeState,
+        toolUpgrades: Map<ToolCategory, ToolTier>
     ) : this() {
         this.life_state = life_state
+        this.toolUpgrades.putAll(toolUpgrades)
     }
     
     override fun getLifeState(): LifeState {
         return this.life_state
     }
     
-    override fun upgradeTool(tool: ToolType) {
-        personalUpgrades[tool] = personalUpgrades.getOrDefault(tool, 1)
+    fun getToolUpgrades(): Map<ToolCategory, ToolTier> {
+        return toolUpgrades
     }
-    
-    override fun ressetToolUpgrade(tool: ToolType) {
-        personalUpgrades.remove(tool)
+
+    override fun getTool(tool: ToolCategory): ToolTier? {
+        return toolUpgrades[tool]
     }
-    
-    // default (0) means tool doesnt exist
-    override fun getCurrentUpgrade(tool: ToolType) = personalUpgrades[tool] ?: 0
+
+    override fun setTool(tool: ToolCategory, tier: ToolTier?) {
+        if (tier == null) {
+            toolUpgrades.remove(tool)
+            return
+        }
+        toolUpgrades[tool] = tier
+    }
 }
 
 
@@ -95,8 +104,9 @@ object ModDataTracker : PlayerStateExposer, PlayerUpgradesExposer {
     override fun isPlayerDead(player: Player): Boolean {
         return mod_data.isPlayerDead(player)
     }
-
-    override fun getTool(player: ServerPlayer, tool: ToolType): ItemStack? {
-        return mod_data.getTool(player, tool)
-    }
+    
+    override fun getTool(player: ServerPlayer, tool: ToolCategory): ItemStack? = mod_data.getTool(player, tool)
+    override fun upgradeTool(player: ServerPlayer, tool: ToolCategory) = mod_data.upgradeTool(player, tool)
+    override fun downgradeTools(player: ServerPlayer) = mod_data.downgradeTools(player)
+    override fun clearTools(player: ServerPlayer) = mod_data.clearTools(player)
 }

@@ -1,5 +1,6 @@
 package mcsoc.bedwars
 
+import mcsoc.bedwars.commands.registerToolCommands
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
@@ -14,7 +15,10 @@ object BedwarsPlugin : ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-		LOGGER.info("Hello Fabric world!")
+		LOGGER.info("Bedwars plugin started")
+		
+		// command registration
+        registerToolCommands()
 	}
 
 	fun id(path: String): Identifier
