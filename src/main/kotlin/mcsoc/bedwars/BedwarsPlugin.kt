@@ -1,6 +1,7 @@
 package mcsoc.bedwars
 
 import mcsoc.bedwars.eventhandlers.registerBlockBreakEvents
+import mcsoc.bedwars.eventhandlers.registerCommands
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
@@ -17,7 +18,9 @@ object BedwarsPlugin : ModInitializer {
 
 		LOGGER.info("Hello Fabric world!")
 
+		// register eventhandlers
         registerBlockBreakEvents()
+        registerCommands()
 	}
 
 	fun id(path: String): Identifier
