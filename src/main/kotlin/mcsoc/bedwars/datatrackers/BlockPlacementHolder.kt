@@ -22,7 +22,7 @@ internal interface BlockProtectionHolder : BlockProtectionExposer, BlockPlacemen
         return !getIfBlockIsProtected(pos) && getIfBlockWasPlaced(pos)
     }
     override fun isBlockPlacementAllowed(pos: BlockPos): Boolean {
-        return getIfBlockIsProtected(pos)
+        return !getIfBlockIsProtected(pos)
     }
 }
 
