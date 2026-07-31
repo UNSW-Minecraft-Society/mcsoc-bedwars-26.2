@@ -108,6 +108,12 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHo
 
         setDirty()
     }
+    
+    override fun getProtectionZones(): Iterable<AABB> {
+        val toReturn = HashSet<AABB>()
+        this.block_protection_zone_list.values.forEach(toReturn::addAll)
+        return toReturn
+    }
 }
 
 
@@ -136,4 +142,6 @@ object ModDataTracker : PlayerStateExposer, BlockProtectionExposer {
     override fun registerProtectionZone(corner1: BlockPos, corner2: BlockPos) {
         mod_data.registerProtectionZone(corner1, corner2)
     }
+    
+    override fun getProtectionZones() = mod_data.getProtectionZones()
 }

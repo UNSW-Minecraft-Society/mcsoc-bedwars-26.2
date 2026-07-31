@@ -1,6 +1,7 @@
 package mcsoc.bedwars.datatrackers
 
 import net.minecraft.core.BlockPos
+import net.minecraft.world.phys.AABB
 
 
 internal interface BlockPlacementHolder {
@@ -15,6 +16,7 @@ internal interface BlockProtectionExposer {
     fun isBlockPlacementAllowed(pos: BlockPos): Boolean
     
     fun registerProtectionZone(corner1: BlockPos, corner2: BlockPos)
+    fun getProtectionZones(): Iterable<AABB>
     fun trackPlacedBlock(pos: BlockPos)
 }
 internal interface BlockProtectionHolder : BlockProtectionExposer, BlockPlacementHolder, BlockProtectionZoneHolder {
