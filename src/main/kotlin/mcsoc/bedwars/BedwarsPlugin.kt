@@ -1,6 +1,7 @@
 package mcsoc.bedwars
 
 import mcsoc.bedwars.commands.registerToolCommands
+import mcsoc.bedwars.eventhandlers.AfterRespawnEvent
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
@@ -19,6 +20,10 @@ object BedwarsPlugin : ModInitializer {
 		
 		// command registration
         registerToolCommands()
+        
+        
+        // event registration
+        AfterRespawnEvent.registerEvent()
 	}
 
 	fun id(path: String): Identifier
