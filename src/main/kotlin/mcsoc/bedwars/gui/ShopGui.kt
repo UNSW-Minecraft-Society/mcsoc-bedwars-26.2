@@ -8,6 +8,7 @@ import eu.pb4.sgui.api.elements.GuiElement
 import eu.pb4.sgui.api.elements.GuiElementBuilder
 import eu.pb4.sgui.api.elements.SimpleGuiElement
 import eu.pb4.sgui.api.gui.SimpleGui
+import mcsoc.bedwars.BedwarsPlugin
 import net.minecraft.ChatFormatting
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.network.chat.Component
@@ -17,12 +18,15 @@ import net.minecraft.world.inventory.MenuType
 import net.minecraft.world.inventory.Slot
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.enchantment.Enchantments
+import org.slf4j.LoggerFactory
 import java.util.UUID
 
 class ShopGui {
     companion object {
+        private val LOGGER = LoggerFactory.getLogger(BedwarsPlugin.MOD_ID)
         fun testSimpleGui(objectCommandContext: CommandContext<CommandSourceStack>): Int {
             try {
+                LOGGER.info("Testing simple gui")
                 val player = objectCommandContext.source.player
 
                 val gui = object : SimpleGui(MenuType.GENERIC_3x3, player, false) {
@@ -40,18 +44,14 @@ class ShopGui {
                     override fun onTick() {
                         this.setSlot(
                             0, GuiElementBuilder(Items.ARROW)
-                                .setCount((player?.level()?.gameTime?.rem(99999))?.toInt() ?: 0).setMaxCount(99999)
+                                .setCount((player?.level()?.gameTime?.rem(99))?.toInt() ?: 0).setMaxCount(99)
                         )
                         super.onTick()
-                    }
-
-                    override fun canPlayerClose(): Boolean {
-                        return false
                     }
                 }
 
                 gui.title = Component.literal("Nice")
-                gui.setSlot(0, GuiElementBuilder(Items.ARROW).setCount(2000).setMaxDamage(99999))
+                gui.setSlot(0, GuiElementBuilder(Items.ARROW).setCount(99).setMaxDamage(99))
                 gui.setSlot(
                     1, AnimatedGuiElement(
                         arrayOf(
@@ -119,7 +119,7 @@ class ShopGui {
                         .addLoreLine(Component.literal("More lore").withStyle(ChatFormatting.RED))
                         .setCount(1)
                         .setCallback { index, clickType, actionType, s ->
-                            player?.sendSystemMessage(Component.literal("derg "), false)
+                            player?.sendSystemMessage(Component.literal("me when the click"), false)
                             val item = gui.getGuiElement(index)?.itemStack
                             if (clickType == ClickType.MOUSE_LEFT) {
                                 item?.count = if (item.count == 1) item.count else item.count - 1
@@ -141,10 +141,44 @@ class ShopGui {
                             }
                         }
                 )
+                gui.setSlot(4, Slot(player!!.enderChestInventory, 0, 0, 0))
+
+                gui.open()
             } catch (e: Exception) {
+                LOGGER.error(e.stackTraceToString())
                 e.printStackTrace()
             }
-            return 0;
+            return 0
+        }
+        fun testSimpleGui4(objectCommandContext: CommandContext<CommandSourceStack>): Int {
+            try {
+                LOGGER.info("Testing simple gui 4")
+                val player = objectCommandContext.source.player
+
+                val gui = object: SimpleGui(MenuType.GENERIC_3x3, player, true) {
+                    override fun onManualClose() {
+                        super.onManualClose()
+
+                        val gui = SimpleGui(MenuType.GENERIC_9x1, player, true)
+                        gui.title = Component.literal("If you can take it, it's broken")
+                        gui.setSlot(0, GuiElementBuilder(Items.DIAMOND, 5))
+                        gui.open()
+                    }
+                }
+
+                gui.setSlot(0, GuiElementBuilder(Items.BARRIER, 8)
+                    .setCallback(Runnable { gui.close() }))
+                gui.setSlot(2, GuiElementBuilder(Items.IRON_AXE).hideDefaultTooltip())
+                gui.setSlot(6, GuiElementBuilder(Items.BARRIER, 9)
+                    .setCallback(Runnable { gui.onManualClose() }))
+
+                gui.title = Component.literal("Close gui to test switching")
+                gui.open()
+            } catch (e: Exception) {
+                LOGGER.error(e.stackTraceToString())
+                e.printStackTrace()
+            }
+            return 0
         }
     }
 }
