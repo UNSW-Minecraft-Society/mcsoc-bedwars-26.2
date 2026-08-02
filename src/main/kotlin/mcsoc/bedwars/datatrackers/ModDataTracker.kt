@@ -46,6 +46,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder {
     }    
     
     private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
+    private val generator_locs = ArrayList<Generator>()
     
     private constructor(map: Map<Uuid, PlayerDataRecord>): this() {
         this.player_data_map.putAll(map)
