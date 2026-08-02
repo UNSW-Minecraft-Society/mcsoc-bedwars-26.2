@@ -5,6 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 import kotlinx.serialization.Serializable
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.saveddata.SavedData
+import net.minecraft.world.phys.Vec3
 import kotlin.uuid.Uuid
 import kotlin.uuid.toKotlinUuid
 
@@ -32,7 +33,7 @@ private class PlayerDataRecord() : PlayerStateRecord {
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder {
+private class ModDataStore() : SavedData(), PlayerStateHolder, GeneratorsHolder {
     companion object {
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
             Codec.unboundedMap(
@@ -46,7 +47,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder {
     }    
     
     private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
-    private val generator_locs = ArrayList<Generator>()
+    private val generators = ArrayList<Generator>()
     
     private constructor(map: Map<Uuid, PlayerDataRecord>): this() {
         this.player_data_map.putAll(map)
@@ -62,13 +63,30 @@ private class ModDataStore() : SavedData(), PlayerStateHolder {
     override fun getPlayerState(player: Player): PlayerDataRecord {
         return getPlayerData(player)
     }
+
+    override fun addGenerator(gen: Generator) {
+        generators.add(gen)
+    }
+
+    override fun getGenerators(): List<Generator> = generators
+
+    override fun removeGenerator(gen: Generator) {
+        generators.remove(gen)
+    }
 }
 
 
-object ModDataTracker : PlayerStateExposer {
+object ModDataTracker : PlayerStateExposer, GeneratorsExposer {
     private val mod_data = ModDataStore()
     
     override fun isPlayerAlive(player: Player) = mod_data.isPlayerAlive(player)
     override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
     override fun isPlayerDead(player: Player) = mod_data.isPlayerDead(player)
+    override fun addGenerator(gen: Generator) = mod_data.addGenerator(gen)
+    override fun getGenerators(): List<Generator> = mod_data.getGenerators()
+    override fun removeGenerator(gen: Generator) = mod_data.removeGenerator(gen)
+    override fun removeGenerator(location: Vec3) = mod_data.removeGenerator(location)
+    override fun tickGenerators() = mod_data.tickGenerators()
+    override fun upgradeGeneratorTier() = mod_data.upgradeGeneratorTier()
+    override fun upgradeIslandGenerators(team: String) = mod_data.upgradeIslandGenerators(team)
 }

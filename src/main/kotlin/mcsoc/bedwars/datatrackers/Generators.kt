@@ -20,35 +20,34 @@ import net.minecraft.world.phys.Vec3
 
 // show time remaining until next gen (depending on generator type)
 
-enum class GeneratorType { IRON, GOLD, DIAMOND, EMERALD }
+
+// enum containing hypixels 
+enum class GeneratorType(val create: (Vec3, ServerLevel, String?) -> Generator) {
+    IRON({ loc, l, t -> IslandGenerator(loc, 0.5, Items.IRON_INGOT, l, 48, t!!) }),
+    GOLD({ loc, l, t -> IslandGenerator(loc, 4.0, Items.GOLD_INGOT, l, 16, t!!) }),
+    DIAMOND({ loc, l, _ -> TieredGenerator(loc, 30.0, Items.DIAMOND, l, 4) }),
+    EMERALD({ loc, l, _ -> TieredGenerator(loc, 65.0, Items.EMERALD, l, 2) });
+}
 
 internal object GeneratorFactory {
-    fun createGenerator(type: GeneratorType, location: Vec3, level: ServerLevel): Generator {
-        return when (type) {
-            GeneratorType.IRON -> Generator(location, 0.5, Items.IRON_INGOT, level, 48)
-            GeneratorType.GOLD -> Generator(location, 4.0, Items.GOLD_INGOT, level, 16)
-            GeneratorType.DIAMOND -> Generator(location, 30.0, Items.DIAMOND, level, 4)
-            GeneratorType.EMERALD -> Generator(location, 65.0, Items.EMERALD, level, 2)
-        }
+    fun createGenerator(type: GeneratorType, location: Vec3, level: ServerLevel, team: String? = null): Generator {
+        return type.create(location, level, team)
     }
 
     fun createGenerator(type: GeneratorType, player: ServerPlayer): Generator {
-        return createGenerator(type, player.position(), player.level())
-    }
-
-    fun createGenerator(location: Vec3, genTime: Double, item: Item, level: ServerLevel, maxItems: Int): Generator {
-        return Generator(location, genTime, item, level, maxItems)
+        return createGenerator(type, player.position(), player.level()) // add way to get players team
     }
 }
 
-// todo add serialise codec
-class Generator(
+open class Generator(
     val location: Vec3,
     val genTime: Double,
     val item: Item,
     val level: ServerLevel,
     val maxItemStack: Int
 ) {
+    // TODO add codec
+
     private var rateMultiplier: Double = 1.0
     private var timeSinceGen = 0
 
@@ -56,14 +55,20 @@ class Generator(
 
     fun tick() {
         timeSinceGen++
+        TODO("stop gen if reached max items")
 
         if (timeSinceGen < genTime) return
+        TODO("use rate mutliplier")
+        TODO("change to use delta_time instead of single increments")
+
 
         // generate
         val playersInRange = level.getPlayers { it.position().distanceTo(location) < PLAYER_RANGE }
         playersInRange.forEach { player ->
+            TODO("detect players nearby, label items to players for pickup priority, scale generation with players")
 
         }
+        TODO("ticking generator")
 
         timeSinceGen = 0
     }
@@ -74,23 +79,80 @@ class Generator(
 
     private fun generateItem() {
         val itemstack = ItemStack(item, 1)
+        // summon item
+        TODO("summon item")
 
+    }
+}
+
+// todo change team arg to whatever team system is used
+class IslandGenerator(
+    location: Vec3,
+    genTime: Double,
+    item: Item,
+    level: ServerLevel,
+    maxItemStack: Int,
+    val team: String
+) :
+    Generator(location, genTime, item, level, maxItemStack) {
+    private var currentUpgrade = 1
+
+    fun upgrade() {
+        TODO("implement island upgrades")
+    }
+}
+
+class TieredGenerator(location: Vec3, genTime: Double, item: Item, level: ServerLevel, maxItemStack: Int) :
+    Generator(location, genTime, item, level, maxItemStack) {
+    private var currentTier = 1
+
+    fun upgrade() {
+        TODO("implement geerator tiers")
     }
 }
 
 
 internal interface GeneratorsExposer {
-    fun getGenerators(): ArrayList<Generator>
+    fun getGenerators(): List<Generator>
     fun addGenerator(gen: Generator)
     fun removeGenerator(gen: Generator)
-    fun upgradeIslandGenerators() // upgrade a specific team generator
-    fun upgradeGeneratorTier() // upgrade diamond and emerald generators (can make more general)
+    fun removeGenerator(location: Vec3)
+
+    // todo change team arg to whatever team implementation uses
+    fun upgradeIslandGenerators(team: String) // upgrade a specific team generator
+    fun upgradeGeneratorTier() // upgrade diamond and emerald generators
 
     fun tickGenerators()
 }
 
 
 internal interface GeneratorsHolder : GeneratorsExposer {
+    override fun upgradeGeneratorTier() {
+        getGenerators()
+            .filterIsInstance<TieredGenerator>()
+            .forEach { gen ->
+                gen.upgrade()
+            }
+    }
 
+    override fun upgradeIslandGenerators(team: String) {
+        getGenerators()
+            .filterIsInstance<IslandGenerator>()
+            .filter { it.team == team }
+            .forEach { gen ->
+                gen.upgrade()
+            }
+    }
+
+    override fun tickGenerators() {
+        getGenerators()
+            .forEach { it.tick() }
+    }
+
+    override fun removeGenerator(location: Vec3) {
+        val generators = getGenerators()
+            .filter { it.location == location }
+            .forEach { removeGenerator(it) }
+    }
 }
 
