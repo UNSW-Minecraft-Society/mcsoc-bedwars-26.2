@@ -1,6 +1,7 @@
 package mcsoc.bedwars
 
 import mcsoc.bedwars.eventhandlers.registerCommands
+import mcsoc.bedwars.gui.ShopGui
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
