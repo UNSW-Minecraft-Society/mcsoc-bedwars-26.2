@@ -13,9 +13,11 @@ import net.minecraft.ChatFormatting
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.Style
+import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.inventory.ContainerInput
 import net.minecraft.world.inventory.MenuType
 import net.minecraft.world.inventory.Slot
+import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.enchantment.Enchantments
 import org.slf4j.LoggerFactory
@@ -24,6 +26,52 @@ import java.util.UUID
 class ShopGui {
     companion object {
         private val LOGGER = LoggerFactory.getLogger(BedwarsPlugin.MOD_ID)
+        private val ITEM_SLOT_INDEX = arrayOf(
+            1, 10, 19, 28, 
+            2, 11, 20, 29, 
+            3, 12, 21, 30, 
+            4, 13, 22, 31,
+            5, 14, 23, 32,
+            6, 15, 24, 33,
+            7, 16, 25, 34)
+
+        fun displayShop(objectCommandContext: CommandContext<CommandSourceStack>): Int {
+            try {
+                LOGGER.info("Displaying shop gui")
+                val player = objectCommandContext.source.player
+
+                val gui = object : SimpleGui(MenuType.GENERIC_9x5, player, false) {
+                    override fun onClick(
+                        index: Int,
+                        type: ClickType?,
+                        action: ContainerInput?,
+                        element: GuiElement?
+                    ): Boolean {
+                        this.player.sendSystemMessage(Component.literal(type.toString()), false)
+
+                        return super.onClick(index, type, action, element)
+                    }
+                }
+
+                for (slot_index in ITEM_SLOT_INDEX) {
+                    gui.setSlot(slot_index, GuiElementBuilder(Items.WOOL.white)
+                        .setCount(16)
+                        .setCallback { i, type, input, gui ->
+                            player?.playSound(SoundEvents.NOTE_BLOCK_BELL.value(), 1.0f, 1.0f)
+                            player?.sendSystemMessage(Component.literal("Bought wool yay"), false)
+                            player?.addItem(ItemStack(Items.WOOL.white, 16))
+                        })
+                }
+
+                gui.title = Component.literal("Shop")
+                gui.open()
+            } catch (e: Exception) {
+                LOGGER.error(e.stackTraceToString())
+                e.printStackTrace()
+            }
+            return 0
+        }
+
         fun testSimpleGui(objectCommandContext: CommandContext<CommandSourceStack>): Int {
             try {
                 LOGGER.info("Testing simple gui")
