@@ -61,7 +61,7 @@ object ShopGui {
             for (slot_index in PRODUCT_SLOT_INDEX) {
                 val product = PRODUCTS[slot_index]
                 gui.setSlot(slot_index, GuiElementBuilder(product.getItemStack())
-                    .addLoreLine(Component.literal("Cost: " + product.getItemCost().toString()))
+                    .addLoreLine(Component.literal("Cost: ${product.getItemCost()}"))
                     .setCallback(product.getClickCallback()))
             }
 

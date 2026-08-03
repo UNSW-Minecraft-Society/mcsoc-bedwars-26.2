@@ -53,7 +53,7 @@ class ShopItem : ShopProduct {
             inventory.clearOrCountMatchingItems({it.`is`(currency)},
                 price, inventory)
             player.playSound(SoundEvents.NOTE_BLOCK_BELL.value())
-            if (sendMsg) player.sendSystemMessage(Component.literal("Purchased " + getItemStack().toString()))
+            if (sendMsg) player.sendSystemMessage(Component.literal("Purchased ${getItemStack().toString()}"))
             return true
         } else {
             player.playSound(SoundEvents.NOTE_BLOCK_BIT.value())
@@ -72,8 +72,7 @@ class ShopItem : ShopProduct {
             } else if (clickType == ClickType.MOUSE_LEFT_SHIFT) {
                 var count = 0
                 while (purchaseUnit(player, false)) count++
-                player.sendSystemMessage(Component.literal("Purchased " + getItemStack().toString()
-                        + " x" + count))
+                player.sendSystemMessage(Component.literal("Purchased ${getItemStack()} x${count}"))
             }
         }
     }
