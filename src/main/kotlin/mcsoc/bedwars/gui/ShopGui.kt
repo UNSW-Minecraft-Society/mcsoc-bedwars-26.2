@@ -16,12 +16,11 @@ import net.minecraft.network.chat.Style
 import net.minecraft.world.inventory.ContainerInput
 import net.minecraft.world.inventory.MenuType
 import net.minecraft.world.inventory.Slot
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.ItemStackTemplate
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.enchantment.Enchantments
 import java.util.UUID
-
-
-const val SHOP_SIZE = 36
 
 object ShopGui {
     private val LOGGER = BedwarsPlugin.LOGGER
@@ -36,7 +35,45 @@ object ShopGui {
     private val PRODUCTS: Array<ShopItem> = getProducts()
 
     private fun getProducts(): Array<ShopItem> {
-        return Array(SHOP_SIZE) { ShopItem(Items.WOOL.white, 16, Items.IRON_INGOT, 4) }
+        return arrayOf(
+            // These should all be replaced with ShopUpgrades once I get around to it
+            ShopItem(Items.CHAINMAIL_CHESTPLATE, 1, Items.IRON_INGOT, 40),
+            ShopItem(Items.WOODEN_PICKAXE, 1, Items.IRON_INGOT, 10),
+            ShopItem(Items.SHEARS, 1, Items.IRON_INGOT, 30),
+            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 16, Items.BARRIER, 999),
+
+            // These are ShopItems
+            ShopItem(Items.STONE_SWORD, 1, Items.IRON_INGOT, 10),
+            ShopItem(Items.IRON_SWORD, 1, Items.GOLD_INGOT, 7),
+            ShopItem(Items.DIAMOND_SWORD, 1, Items.EMERALD, 4),
+            ShopItem(Items.STICK, 1, Items.GOLD_INGOT, 10),
+
+            ShopItem(Items.ARROW, 16, Items.GOLD_INGOT, 2),
+            ShopItem(Items.BOW, 1, Items.GOLD_INGOT, 12),
+            ShopItem(Items.BOW, 1, Items.GOLD_INGOT, 24),
+            ShopItem(Items.BOW, 1, Items.EMERALD, 6),
+
+            ShopItem(Items.WOOL.white, 16, Items.IRON_INGOT, 4),
+            ShopItem(Items.SANDSTONE, 16, Items.IRON_INGOT, 16),
+            ShopItem(Items.END_STONE, 12, Items.IRON_INGOT, 24),
+            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 16, Items.BARRIER, 999),
+
+            ShopItem(Items.OBSIDIAN, 4, Items.EMERALD, 4),
+            ShopItem(Items.LADDER, 16, Items.IRON_INGOT, 16),
+            ShopItem(Items.OAK_PLANKS, 16, Items.GOLD_INGOT, 6),
+            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 16, Items.BARRIER, 999),
+
+            ShopItem(Items.GOLDEN_APPLE, 1, Items.GOLD_INGOT, 3),
+            ShopItem(Items.IRON_GOLEM_SPAWN_EGG, 2, Items.IRON_INGOT, 150),
+            ShopItem(Items.ENDER_PEARL, 1, Items.EMERALD, 4),
+            ShopItem(Items.WATER_BUCKET, 1, Items.EMERALD, 2),
+
+            ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
+            ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
+            ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
+            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 16, Items.BARRIER, 999),
+        )
+        // return Array(SHOP_SIZE) { ShopItem(Items.WOOL.white, 16, Items.IRON_INGOT, 4) }
     }
 
     fun displayShop(objectCommandContext: CommandContext<CommandSourceStack>): Int {
@@ -58,8 +95,7 @@ object ShopGui {
                 }
             }
 
-            for (slot_index in PRODUCT_SLOT_INDEX) {
-                val product = PRODUCTS[slot_index]
+            for ((slot_index, product) in PRODUCT_SLOT_INDEX zip PRODUCTS) {
                 gui.setSlot(slot_index, GuiElementBuilder(product.getItemStack())
                     .addLoreLine(Component.literal("Cost: ${product.getItemCost()}"))
                     .setCallback(product.getClickCallback()))
