@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory
 import java.util.UUID
 
 
+const val SHOP_SIZE = 36
+
 object ShopGui {
     private val LOGGER = LoggerFactory.getLogger(BedwarsPlugin.MOD_ID)
     private val PRODUCT_SLOT_INDEX = arrayOf(
@@ -37,7 +39,7 @@ object ShopGui {
     private val PRODUCTS: Array<ShopItem> = getProducts()
 
     private fun getProducts(): Array<ShopItem> {
-        return Array(PRODUCT_SLOT_INDEX.size) { ShopItem(Items.WOOL.white, 16) }
+        return Array(SHOP_SIZE) { ShopItem(Items.WOOL.white, 16) }
     }
 
     fun displayShop(objectCommandContext: CommandContext<CommandSourceStack>): Int {
