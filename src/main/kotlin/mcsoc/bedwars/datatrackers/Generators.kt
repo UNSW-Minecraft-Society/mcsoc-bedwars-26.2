@@ -49,7 +49,7 @@ internal open class Generator(
     fun setRateMultiplier(rate: Double) {
         rateMultiplier = rate
     }
-    
+
     fun setPlayerRange(range: Int) {
         playerRange = range
     }
@@ -57,12 +57,8 @@ internal open class Generator(
     fun tick(deltaTime: Duration) {
         timeSinceGen += deltaTime
         if (timeSinceGen < (genTime / rateMultiplier) || !hasSpace()) return
-        
-        val playersInRange = level.getPlayers { it.position().distanceTo(location) < playerRange }
-        playersInRange.forEach { player ->
-            generateItem(player)
-        }
 
+        generateItem(level)
         timeSinceGen = 0.seconds
     }
 
@@ -74,19 +70,13 @@ internal open class Generator(
 
         return nearby.sumOf { it.item.count } < maxItems
     }
-    
-    private fun generateItem(player: ServerPlayer) {
+
+    private fun generateItem(level: ServerLevel) {
         val itemstack = ItemStack(item, 1)
-        val entity = ItemEntity(player.level(), location.x, location.y + 1, location.z, itemstack)
-        entity.setTarget(player.uuid)
+        val entity = ItemEntity(level, location.x, location.y + 1, location.z, itemstack)
+        entity.addTag("generator_item")
         entity.setDeltaMovement(0.0, 0.0, 0.0)
         level.addFreshEntity(entity)
-
-        Timer().schedule(500) {
-            if (entity.isAlive) {
-                entity.setTarget(null)
-            }
-        }
     }
 }
 
