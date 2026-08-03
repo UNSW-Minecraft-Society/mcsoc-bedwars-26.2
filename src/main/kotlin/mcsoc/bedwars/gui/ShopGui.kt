@@ -13,14 +13,11 @@ import net.minecraft.ChatFormatting
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.Style
-import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.inventory.ContainerInput
 import net.minecraft.world.inventory.MenuType
 import net.minecraft.world.inventory.Slot
-import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.enchantment.Enchantments
-import org.slf4j.LoggerFactory
 import java.util.UUID
 
 
@@ -39,7 +36,7 @@ object ShopGui {
     private val PRODUCTS: Array<ShopItem> = getProducts()
 
     private fun getProducts(): Array<ShopItem> {
-        return Array(SHOP_SIZE) { ShopItem(Items.WOOL.white, 16) }
+        return Array(SHOP_SIZE) { ShopItem(Items.WOOL.white, 16, Items.IRON_INGOT, 4) }
     }
 
     fun displayShop(objectCommandContext: CommandContext<CommandSourceStack>): Int {
@@ -62,8 +59,10 @@ object ShopGui {
             }
 
             for (slot_index in PRODUCT_SLOT_INDEX) {
-                gui.setSlot(slot_index, GuiElementBuilder(PRODUCTS[slot_index].getItemStack())
-                    .setCallback(PRODUCTS[slot_index].getClickCallback()))
+                val product = PRODUCTS[slot_index]
+                gui.setSlot(slot_index, GuiElementBuilder(product.getItemStack())
+                    .addLoreLine(Component.literal("Cost: " + product.getItemCost().toString()))
+                    .setCallback(product.getClickCallback()))
             }
 
             gui.title = Component.literal("Shop")
@@ -75,6 +74,7 @@ object ShopGui {
         return 0
     }
 
+    // Test Guis from Sgui translated to kotlin
     fun testSimpleGui(objectCommandContext: CommandContext<CommandSourceStack>): Int {
         try {
             LOGGER.info("Testing simple gui")
