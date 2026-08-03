@@ -3,9 +3,11 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import kotlinx.serialization.Serializable
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.saveddata.SavedData
 import net.minecraft.world.phys.Vec3
+import kotlin.time.Duration
 import kotlin.uuid.Uuid
 import kotlin.uuid.toKotlinUuid
 
@@ -67,7 +69,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, GeneratorsHolder 
     override fun addGenerator(gen: Generator) {
         generators.add(gen)
     }
-
+    
     override fun getGenerators(): List<Generator> = generators
 
     override fun removeGenerator(gen: Generator) {
@@ -82,11 +84,10 @@ object ModDataTracker : PlayerStateExposer, GeneratorsExposer {
     override fun isPlayerAlive(player: Player) = mod_data.isPlayerAlive(player)
     override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
     override fun isPlayerDead(player: Player) = mod_data.isPlayerDead(player)
-    override fun addGenerator(gen: Generator) = mod_data.addGenerator(gen)
-    override fun getGenerators(): List<Generator> = mod_data.getGenerators()
-    override fun removeGenerator(gen: Generator) = mod_data.removeGenerator(gen)
+    
+    override fun addGenerator(type: GeneratorType, location: Vec3, player: ServerPlayer) = mod_data.addGenerator(type, location, player)
     override fun removeGenerator(location: Vec3) = mod_data.removeGenerator(location)
-    override fun tickGenerators() = mod_data.tickGenerators()
+    override fun tickGenerators(deltaTime: Duration) = mod_data.tickGenerators(deltaTime)
     override fun upgradeGeneratorTier() = mod_data.upgradeGeneratorTier()
     override fun upgradeIslandGenerators(team: String) = mod_data.upgradeIslandGenerators(team)
 }

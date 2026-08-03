@@ -1,5 +1,6 @@
 package mcsoc.bedwars
 
+import mcsoc.bedwars.eventhandlers.ServerTickEvent
 import mcsoc.bedwars.eventhandlers.registerCommands
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
@@ -19,6 +20,7 @@ object BedwarsPlugin : ModInitializer {
 
 		// register eventhandlers
         registerCommands()
+        ServerTickEvent.registerHandler()
 	}
 
 	fun id(path: String): Identifier
