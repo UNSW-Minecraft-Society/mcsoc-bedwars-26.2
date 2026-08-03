@@ -2,6 +2,7 @@ package mcsoc.bedwars.gui
 
 import eu.pb4.sgui.api.ClickType
 import eu.pb4.sgui.api.elements.GuiElement
+import mcsoc.bedwars.BedwarsPlugin
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.item.Item
@@ -24,8 +25,11 @@ class ShopItem : ShopProduct {
     constructor(item: Item, count: Int) : this(ItemStackTemplate(item, count))
 
     private fun resolveItemStackTemplate(): ItemStack {
-        if (!::item.isInitialized) this.item = item_template.create()
-        return item
+        if (!this::item.isInitialized) {
+            BedwarsPlugin.LOGGER.info("creating")
+            this.item = item_template.create()
+        } 
+        return this.item.copy()
     }
     
     override fun getItemStack(): ItemStack {
@@ -36,8 +40,9 @@ class ShopItem : ShopProduct {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player
             val purchase = getItemStack()
+            BedwarsPlugin.LOGGER.info("item out: {}", purchase)
             if (clickType == ClickType.MOUSE_LEFT) {
-                player?.addItem(purchase)
+                player?.addItem(purchase.copy())
                 player?.playSound(SoundEvents.NOTE_BLOCK_BELL.value())
                 player?.sendSystemMessage(Component.literal("Bought $purchase"), false)
             }
