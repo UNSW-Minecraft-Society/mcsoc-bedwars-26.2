@@ -27,7 +27,7 @@ import java.util.UUID
 const val SHOP_SIZE = 36
 
 object ShopGui {
-    private val LOGGER = LoggerFactory.getLogger(BedwarsPlugin.MOD_ID)
+    private val LOGGER = BedwarsPlugin.LOGGER
     private val PRODUCT_SLOT_INDEX = arrayOf(
         1, 10, 19, 28,
         2, 11, 20, 29,
