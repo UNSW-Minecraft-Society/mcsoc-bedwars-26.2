@@ -23,6 +23,7 @@ import net.minecraft.world.item.enchantment.Enchantments
 import org.slf4j.LoggerFactory
 import java.util.UUID
 
+
 object ShopGui {
     private val LOGGER = LoggerFactory.getLogger(BedwarsPlugin.MOD_ID)
     private val PRODUCT_SLOT_INDEX = arrayOf(
@@ -33,16 +34,14 @@ object ShopGui {
         5, 14, 23, 32,
         6, 15, 24, 33,
         7, 16, 25, 34)
-    private lateinit var PRODUCTS : Array<ShopProduct>
+    private val PRODUCTS: Array<ShopItem> = getProducts()
 
-    fun registerProducts() {
-        PRODUCTS = Array(36) { ShopItem(Items.WOOL.white, 16) } // CHECK WHAT ITEM STACK TEMPLATES DO FOR THIS
+    private fun getProducts(): Array<ShopItem> {
+        return Array(PRODUCT_SLOT_INDEX.size) { ShopItem(Items.WOOL.white, 16) }
     }
 
     fun displayShop(objectCommandContext: CommandContext<CommandSourceStack>): Int {
         try {
-            // REMOVE THIS LATER (in the original sense of that word) (look at ServerLifecycleEvents.SERVER_STARTED)
-            registerProducts()
 
             LOGGER.info("Displaying shop gui")
             val player = objectCommandContext.source.player
