@@ -19,6 +19,7 @@ internal interface TeamStateRecord {
 }
 
 internal interface PlayerTeamState {
+    fun setTeam(team: Colour)
     fun getTeam(): Colour
 }
 
@@ -31,6 +32,8 @@ internal interface TeamStateExposer {
     fun addPlayer(player: ServerPlayer)
     fun addPlayerToTeam(player: ServerPlayer, team: Colour)
     fun createTeams(players: List<ServerPlayer>, numTeams: Int)
+    
+    fun getPlayersTeam(player: ServerPlayer): Colour
 }
 
 internal interface TeamStateHolder : TeamStateExposer {

@@ -40,8 +40,10 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState {
         return this.life_state
     }
 
-    override fun getTeam(): Colour {
-        return team
+    override fun getTeam(): Colour = team
+
+    override fun setTeam(team: Colour) {
+        this.team = team
     }
 }
 
@@ -131,6 +133,8 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder {
     }
 
     override fun createTeams(players: List<ServerPlayer>, numTeams: Int) {
+        assert(numTeams < Colour.entries.size) { "More teams specified than can be handled" }
+        
         val teams = Colour.entries.take(numTeams)
 
         teams.forEach {
@@ -140,6 +144,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder {
 
         players.forEachIndexed { i, player ->
             addPlayerToTeam(player, teams[i % numTeams])
+            getPlayerData(player).setTeam(teams[i % numTeams])
         }
     }
 
@@ -150,6 +155,8 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder {
 
         team.addPlayer(player)
     }
+    
+    override fun getPlayersTeam(player: ServerPlayer): Colour = getPlayerData(player).getTeam()
 }
 
 
@@ -167,4 +174,6 @@ object ModDataTracker : PlayerStateExposer, TeamStateExposer {
     override fun destroyBed(colour: Colour) = mod_data.destroyBed(colour)
     override fun createTeams(players: List<ServerPlayer>, numTeams: Int) = mod_data.createTeams(players, numTeams)
     override fun addPlayer(player: ServerPlayer) = mod_data.addPlayer(player)
+    
+    override fun getPlayersTeam(player: ServerPlayer): Colour = mod_data.getPlayersTeam(player)
 }
