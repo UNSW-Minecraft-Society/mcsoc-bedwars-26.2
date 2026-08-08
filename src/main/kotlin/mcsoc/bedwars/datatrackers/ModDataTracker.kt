@@ -100,18 +100,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, PlayerUpgradesHol
 object ModDataTracker : PlayerStateExposer, PlayerUpgradesExposer {
     private val mod_data = ModDataStore()
     
-    override fun isPlayerAlive(player: Player): Boolean {
-        return mod_data.isPlayerAlive(player)
-    }
-    override fun isPlayerRespawning(player: Player): Boolean {
-        return mod_data.isPlayerRespawning(player)
-    }
-    override fun isPlayerDead(player: Player): Boolean {
-        return mod_data.isPlayerDead(player)
-    }
-    
-    override fun getItem(player: ServerPlayer, item: UpgradeItemType): ItemStack = mod_data.getItem(player, item)
-    override fun upgradeItem(player: ServerPlayer, item: UpgradeItemType) = mod_data.upgradeItem(player, item)
-    override fun downgradeItems(player: ServerPlayer) = mod_data.downgradeItems(player)
-    override fun clearItems(player: ServerPlayer) = mod_data.clearItems(player)
+    override fun isPlayerAlive(player: Player) = mod_data.isPlayerAlive(player)
+    override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
+    override fun isPlayerDead(player: Player) = mod_data.isPlayerDead(player)
 }
