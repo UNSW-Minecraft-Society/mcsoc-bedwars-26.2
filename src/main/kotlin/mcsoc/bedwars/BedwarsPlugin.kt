@@ -1,6 +1,5 @@
 package mcsoc.bedwars
 
-import mcsoc.bedwars.commands.registerToolCommands
 import mcsoc.bedwars.eventhandlers.AfterRespawnEvent
 import mcsoc.bedwars.eventhandlers.registerCommands
 import net.fabricmc.api.ModInitializer
@@ -19,9 +18,6 @@ object BedwarsPlugin : ModInitializer {
 
 		LOGGER.info("Bedwars plugin started")
 		
-		// command registration
-        registerToolCommands()
-        
         // event registration
         AfterRespawnEvent.registerEvent()
 
