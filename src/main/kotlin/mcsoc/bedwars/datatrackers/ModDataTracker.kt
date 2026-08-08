@@ -3,6 +3,8 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import kotlinx.serialization.Serializable
+import mcsoc.bedwars.upgrades.UpgradableItem
+import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
@@ -14,22 +16,28 @@ import kotlin.uuid.toKotlinUuid
 @Serializable
 private class PlayerDataRecord() : PlayerStateRecord, PlayerUpgradesRecord {
     companion object {
+        val TOOL_UPGRADES_CODEC: Codec<HashMap<UpgradeItemType, UpgradableItem>> =
+            Codec.unboundedMap(UpgradeItemType.CODEC, Codec.STRING).xmap(
+                    { HashMap(it.mapValues { (type, tier) -> type.fromName(tier) }) },
+                    { it.mapValues { (_, item) -> (item as Enum<*>).name } }
+                )
+    
         val CODEC: Codec<PlayerDataRecord> = RecordCodecBuilder.create{it.group(
             LifeState.CODEC
                 .fieldOf("life_state")
                 .forGetter(PlayerDataRecord::life_state),
-                // this codec not tested
-            Codec.unboundedMap(ToolCategory.CODEC, ToolTier.CODEC).fieldOf("tool_upgrades")
-                    .forGetter(PlayerDataRecord::toolUpgrades)
+            TOOL_UPGRADES_CODEC
+                .fieldOf("player_upgrades")
+                .forGetter(PlayerDataRecord::toolUpgrades)
         ).apply(it, ::PlayerDataRecord)}
     }
     
     private var life_state: LifeState = LifeState.ALIVE
-    private var toolUpgrades = HashMap<ToolCategory, ToolTier>()
+    private var toolUpgrades = HashMap<UpgradeItemType, UpgradableItem>()
 
     private constructor(
         life_state: LifeState,
-        toolUpgrades: Map<ToolCategory, ToolTier>
+        toolUpgrades: Map<UpgradeItemType, UpgradableItem>
     ) : this() {
         this.life_state = life_state
         this.toolUpgrades.putAll(toolUpgrades)
@@ -38,17 +46,17 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerUpgradesRecord {
     override fun getLifeState(): LifeState {
         return this.life_state
     }
-    
-    override fun getTool(tool: ToolCategory): ToolTier? {
-        return toolUpgrades[tool]
+
+    override fun getItem(item: UpgradeItemType): UpgradableItem {
+        return toolUpgrades.getOrPut(item) { item.default }
     }
 
-    override fun setTool(tool: ToolCategory, tier: ToolTier?) {
-        if (tier == null) {
-            toolUpgrades.remove(tool)
-            return
-        }
-        toolUpgrades[tool] = tier
+    override fun setItem(item: UpgradableItem) {
+        toolUpgrades[item.type] = item
+    }
+
+    override fun removeItem(item: UpgradeItemType) {
+        toolUpgrades.remove(item)
     }
 }
 
@@ -83,7 +91,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, PlayerUpgradesHol
         return getPlayerData(player)
     }
 
-    override fun getToolUpgradeState(player: ServerPlayer): PlayerUpgradesRecord {
+    override fun getItemUpgradeState(player: ServerPlayer): PlayerUpgradesRecord {
         return getPlayerData(player)
     }
 }
@@ -102,8 +110,8 @@ object ModDataTracker : PlayerStateExposer, PlayerUpgradesExposer {
         return mod_data.isPlayerDead(player)
     }
     
-    override fun getTool(player: ServerPlayer, tool: ToolCategory): ItemStack? = mod_data.getTool(player, tool)
-    override fun upgradeTool(player: ServerPlayer, tool: ToolCategory) = mod_data.upgradeTool(player, tool)
-    override fun downgradeTools(player: ServerPlayer) = mod_data.downgradeTools(player)
-    override fun clearTools(player: ServerPlayer) = mod_data.clearTools(player)
+    override fun getItem(player: ServerPlayer, item: UpgradeItemType): ItemStack = mod_data.getItem(player, item)
+    override fun upgradeItem(player: ServerPlayer, item: UpgradeItemType) = mod_data.upgradeItem(player, item)
+    override fun downgradeItems(player: ServerPlayer) = mod_data.downgradeItems(player)
+    override fun clearItems(player: ServerPlayer) = mod_data.clearItems(player)
 }
