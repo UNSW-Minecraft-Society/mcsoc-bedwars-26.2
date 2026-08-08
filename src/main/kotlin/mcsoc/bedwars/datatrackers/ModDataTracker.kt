@@ -3,7 +3,7 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import kotlinx.serialization.Serializable
-import mcsoc.bedwars.utils.Colour
+import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
@@ -21,35 +21,34 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState {
     companion object {
         val CODEC: Codec<PlayerDataRecord> = RecordCodecBuilder.create{it.group(
             LifeState.CODEC.fieldOf("life_state").forGetter(PlayerDataRecord::life_state),
-            Colour.CODEC.fieldOf("team").forGetter(PlayerDataRecord::team)
+            Team.CODEC.fieldOf("team").forGetter(PlayerDataRecord::team)
         ).apply(it, ::PlayerDataRecord)}
     }
 
     private var life_state: LifeState = LifeState.ALIVE
-    private var team: Colour = Colour.NONE
+    private var team: Team = Team.NONE
 
     private constructor(
         life_state: LifeState,
-        team: Colour
+        team: Team
     ) : this() {
         this.life_state = life_state
-        this.team = Colour.NONE
+        this.team = Team.NONE
     }
 
     override fun getLifeState(): LifeState {
         return this.life_state
     }
 
-    override fun getTeam(): Colour = team
+    override fun getTeam(): Team = team
 
-    override fun setTeam(team: Colour) {
+    override fun setTeam(team: Team) {
         this.team = team
     }
 }
 
 
 private class TeamDataRecord(
-    private val colour: Colour,
     private val players: MutableList<UUID>,
     private var bedAlive: Boolean,
     private val spawn: Vec3,
@@ -59,7 +58,6 @@ private class TeamDataRecord(
         val UUID_LIST_CODEC: Codec<MutableList<UUID>> = UUIDUtil.CODEC.listOf().xmap( { it.toMutableList() }, { it } )
         
         val CODEC: Codec<TeamDataRecord> = RecordCodecBuilder.create { it.group(
-            Colour.CODEC.fieldOf("team_colour").forGetter(TeamDataRecord::colour),
             UUID_LIST_CODEC.fieldOf("players").forGetter(TeamDataRecord::players),
             Codec.BOOL.fieldOf("bed_alive").forGetter(TeamDataRecord::bedAlive),
             Vec3.CODEC.fieldOf("spawn").forGetter(TeamDataRecord::spawn),
@@ -68,7 +66,6 @@ private class TeamDataRecord(
     }
 
     override fun getBedAlive(): Boolean = bedAlive
-    override fun getColour(): Colour = colour
     override fun getMaxPlayers(): Int = maxPlayers
     override fun getSpawn(): Vec3 = spawn
     override fun getPlayerCount() = players.size
@@ -99,18 +96,18 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder {
                 .fieldOf("player_data_map")
                 .forGetter(ModDataStore::player_data_map),
                     
-            Codec.unboundedMap(Colour.CODEC, TeamDataRecord.CODEC)
+            Codec.unboundedMap(Team.CODEC, TeamDataRecord.CODEC)
                 .fieldOf("teams_map")
                 .forGetter(ModDataStore::teams_map)
         ).apply(it, ::ModDataStore)}
     }    
     
     private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
-    private val teams_map = HashMap<Colour, TeamDataRecord>() // TODO add team_map to codec
+    private val teams_map = HashMap<Team, TeamDataRecord>() // TODO add team_map to codec
 
     private constructor(
         playerMap: Map<Uuid, PlayerDataRecord>,
-        teamMap: Map<Colour, TeamDataRecord>
+        teamMap: Map<Team, TeamDataRecord>
     ) : this() {
         this.player_data_map.putAll(playerMap)
         this.teams_map.putAll(teamMap)
@@ -128,18 +125,18 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder {
         return getPlayerData(player)
     }
 
-    override fun getTeam(colour: Colour): TeamDataRecord {
-        return teams_map[colour] ?: throw Exception("Invalid team colour")
+    override fun getTeam(team: Team): TeamDataRecord {
+        return teams_map[team] ?: throw Exception("Invalid team")
     }
 
     override fun createTeams(players: List<ServerPlayer>, numTeams: Int) {
-        assert(numTeams < Colour.entries.size) { "More teams specified than can be handled" }
+        assert(numTeams < Team.entries.size) { "More teams specified than can be handled" }
         
-        val teams = Colour.entries.take(numTeams)
+        val teams = Team.entries.take(numTeams)
 
         teams.forEach {
             // todo replace location and max people per team with config of some sorts
-            teams_map[it] = TeamDataRecord(it, mutableListOf(), true, Vec3(0.0, 0.0, 0.0), 4)
+            teams_map[it] = TeamDataRecord(mutableListOf(), true, Vec3(0.0, 0.0, 0.0), 4)
         }
 
         players.forEachIndexed { i, player ->
@@ -156,7 +153,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder {
         team.addPlayer(player)
     }
     
-    override fun getPlayersTeam(player: ServerPlayer): Colour = getPlayerData(player).getTeam()
+    override fun getPlayersTeam(player: ServerPlayer): Team = getPlayerData(player).getTeam()
 }
 
 
@@ -167,13 +164,13 @@ object ModDataTracker : PlayerStateExposer, TeamStateExposer {
     override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
     override fun isPlayerDead(player: Player) = mod_data.isPlayerDead(player)
 
-    override fun getBedDestroyed(colour: Colour): Boolean = mod_data.getBedDestroyed(colour)
-    override fun getPlayersInTeam(colour: Colour, level: ServerLevel): List<ServerPlayer> = mod_data.getPlayersInTeam(colour, level)
-    override fun getTeamSpawn(colour: Colour): Vec3 = mod_data.getTeamSpawn(colour)
-    override fun addPlayerToTeam(player: ServerPlayer, team: Colour) = mod_data.addPlayerToTeam(player, team)
-    override fun destroyBed(colour: Colour) = mod_data.destroyBed(colour)
+    override fun getBedDestroyed(team: Team): Boolean = mod_data.getBedDestroyed(team)
+    override fun getPlayersInTeam(team: Team, level: ServerLevel): List<ServerPlayer> = mod_data.getPlayersInTeam(team, level)
+    override fun getTeamSpawn(team: Team): Vec3 = mod_data.getTeamSpawn(team)
+    override fun addPlayerToTeam(player: ServerPlayer, team: Team) = mod_data.addPlayerToTeam(player, team)
+    override fun destroyBed(team: Team) = mod_data.destroyBed(team)
     override fun createTeams(players: List<ServerPlayer>, numTeams: Int) = mod_data.createTeams(players, numTeams)
     override fun addPlayer(player: ServerPlayer) = mod_data.addPlayer(player)
     
-    override fun getPlayersTeam(player: ServerPlayer): Colour = mod_data.getPlayersTeam(player)
+    override fun getPlayersTeam(player: ServerPlayer): Team = mod_data.getPlayersTeam(player)
 }

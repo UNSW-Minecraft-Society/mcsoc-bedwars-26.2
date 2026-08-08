@@ -1,13 +1,12 @@
 package mcsoc.bedwars.datatrackers
 
-import mcsoc.bedwars.utils.Colour
+import mcsoc.bedwars.utils.Team
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.phys.Vec3
 
 internal interface TeamStateRecord {
-    fun getColour(): Colour
     fun getPlayers(server: MinecraftServer): MutableList<ServerPlayer>
     fun getBedAlive(): Boolean
     fun getSpawn(): Vec3
@@ -19,37 +18,37 @@ internal interface TeamStateRecord {
 }
 
 internal interface PlayerTeamState {
-    fun setTeam(team: Colour)
-    fun getTeam(): Colour
+    fun setTeam(team: Team)
+    fun getTeam(): Team
 }
 
 internal interface TeamStateExposer {
-    fun getPlayersInTeam(colour: Colour, level: ServerLevel): List<ServerPlayer>
-    fun getBedDestroyed(colour: Colour): Boolean
-    fun getTeamSpawn(colour: Colour): Vec3
+    fun getPlayersInTeam(team: Team, level: ServerLevel): List<ServerPlayer>
+    fun getBedDestroyed(team: Team): Boolean
+    fun getTeamSpawn(team: Team): Vec3
 
-    fun destroyBed(colour: Colour)
+    fun destroyBed(team: Team)
     fun addPlayer(player: ServerPlayer)
-    fun addPlayerToTeam(player: ServerPlayer, team: Colour)
+    fun addPlayerToTeam(player: ServerPlayer, team: Team)
     fun createTeams(players: List<ServerPlayer>, numTeams: Int)
     
-    fun getPlayersTeam(player: ServerPlayer): Colour
+    fun getPlayersTeam(player: ServerPlayer): Team
 }
 
 internal interface TeamStateHolder : TeamStateExposer {
-    fun getTeam(colour: Colour): TeamStateRecord
+    fun getTeam(team: Team): TeamStateRecord
 
-    override fun getBedDestroyed(colour: Colour): Boolean = getTeam(colour).getBedAlive()
-    override fun getTeamSpawn(colour: Colour): Vec3 = getTeam(colour).getSpawn()
-    override fun getPlayersInTeam(colour: Colour, level: ServerLevel): List<ServerPlayer> =
-        getTeam(colour).getPlayers(level.server)
+    override fun getBedDestroyed(team: Team): Boolean = getTeam(team).getBedAlive()
+    override fun getTeamSpawn(team: Team): Vec3 = getTeam(team).getSpawn()
+    override fun getPlayersInTeam(team: Team, level: ServerLevel): List<ServerPlayer> =
+        getTeam(team).getPlayers(level.server)
 
-    override fun destroyBed(colour: Colour) {
-        getTeam(colour).setBedAlive(false)
+    override fun destroyBed(team: Team) {
+        getTeam(team).setBedAlive(false)
         // other things related to bed destruction like title and sound
     }
 
-    override fun addPlayerToTeam(player: ServerPlayer, team: Colour) {
+    override fun addPlayerToTeam(player: ServerPlayer, team: Team) {
         getTeam(team).addPlayer(player)
     }
 }

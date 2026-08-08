@@ -6,7 +6,7 @@ import net.minecraft.resources.ResourceKey
 import net.minecraft.world.item.equipment.trim.TrimMaterial
 import net.minecraft.world.item.equipment.trim.TrimMaterials
 
-enum class Colour(val chatColour: ChatFormatting, val trimMaterial: ResourceKey<TrimMaterial>) {
+enum class Team(val chatColour: ChatFormatting, val trimMaterial: ResourceKey<TrimMaterial>) {
     RED(ChatFormatting.RED, TrimMaterials.REDSTONE),
     GREEN(ChatFormatting.GREEN, TrimMaterials.EMERALD),
     BLUE(ChatFormatting.BLUE, TrimMaterials.LAPIS),
@@ -29,8 +29,8 @@ enum class Colour(val chatColour: ChatFormatting, val trimMaterial: ResourceKey<
     NONE(ChatFormatting.GRAY, TrimMaterials.IRON);
     
     companion object {
-        val CODEC: Codec<Colour> = Codec.STRING.xmap(
-            { Colour.valueOf(it.uppercase()) },
+        val CODEC: Codec<Team> = Codec.STRING.xmap(
+            { Team.valueOf(it.uppercase()) },
             { it.name.lowercase() }
         )
     }
