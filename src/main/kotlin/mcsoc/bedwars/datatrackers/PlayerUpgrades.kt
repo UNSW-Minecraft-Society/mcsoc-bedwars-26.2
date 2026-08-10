@@ -6,6 +6,7 @@ import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.core.component.DataComponents
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
 
 
@@ -16,16 +17,16 @@ internal interface PlayerUpgradesRecord {
 }
 
 internal interface PlayerUpgradesExposer {
-    fun getItem(player: ServerPlayer, item: UpgradeItemType): ItemStack
+    fun getItem(player: Player, item: UpgradeItemType): ItemStack
     fun upgradeItem(player: ServerPlayer, item: UpgradeItemType)
     fun downgradeItems(player: ServerPlayer)
     fun clearItems(player: ServerPlayer)
 }
 
 internal interface PlayerUpgradesHolder : PlayerUpgradesExposer {
-    fun getItemUpgradeState(player: ServerPlayer): PlayerUpgradesRecord
+    fun getItemUpgradeState(player: Player): PlayerUpgradesRecord
 
-    override fun getItem(player: ServerPlayer, item: UpgradeItemType): ItemStack {
+    override fun getItem(player: Player, item: UpgradeItemType): ItemStack {
         return getItemUpgradeState(player).getItem(item).createItem(player.level())
     }
 
@@ -45,12 +46,12 @@ internal interface PlayerUpgradesHolder : PlayerUpgradesExposer {
                 changeItem(player, type, item.base())
                 return@forEach
             } else if (item is Downgradable) {
-                val prev = item.prev() ?: return@forEach
+                val prev = item.prev()
                 record.setItem(prev)
                 changeItem(player, type, prev)
                 return@forEach
             }
-            
+
             changeItem(player, type, item)
         }
     }
@@ -62,12 +63,11 @@ internal interface PlayerUpgradesHolder : PlayerUpgradesExposer {
             removeItem(player, it)
         }
     }
-    
+
     private fun changeItem(p: ServerPlayer, type: UpgradeItemType, item: UpgradableItem) {
-        val slot = removeItem(p, type)
-        if (slot != null) {
-            p.inventory.add(slot, item.createItem(p.level()))
-        } else {
+        removeItem(p, type)?.let {
+            p.inventory.add(it, item.createItem(p.level()))
+        } ?: run {
             p.inventory.add(item.createItem(p.level()))
         }
     }

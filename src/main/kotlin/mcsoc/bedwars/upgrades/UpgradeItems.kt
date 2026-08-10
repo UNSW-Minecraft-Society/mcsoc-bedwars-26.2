@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.component.CustomData
 import net.minecraft.world.item.enchantment.Enchantments
+import net.minecraft.world.level.Level
 
 
 enum class UpgradeItemType(val defaultStr: String, val fromName: (String) -> UpgradableItem) {
@@ -34,7 +35,7 @@ sealed interface UpgradableItem {
 
     fun next(): UpgradableItem?
 
-    fun createItem(level: ServerLevel): ItemStack {
+    fun createItem(level: Level): ItemStack {
         val stack = ItemStack(material)
         val tag = CompoundTag()
         tag.putString("bedwars_item", type.name)
@@ -48,13 +49,13 @@ sealed interface Resettable {
 }
 
 sealed interface Downgradable {
-    fun prev(): UpgradableItem?
+    fun prev(): UpgradableItem
 }
 
 sealed interface EnchantableItem : UpgradableItem {
     val efficiency: Int
 
-    override fun createItem(level: ServerLevel): ItemStack {
+    override fun createItem(level: Level): ItemStack {
         val item = super.createItem(level)
         if (efficiency > 0) {
             val ench = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.EFFICIENCY)
@@ -67,11 +68,11 @@ sealed interface EnchantableItem : UpgradableItem {
 enum class Pickaxe(override val material: Item, override val efficiency: Int) : EnchantableItem, Downgradable {
     NONE(Items.AIR, 0) {
         override fun next() = WOODEN
-        override fun prev() = null
+        override fun prev() = NONE
     },
     WOODEN(Items.WOODEN_PICKAXE, 1) {
         override fun next() = IRON
-        override fun prev() = null
+        override fun prev() = WOODEN
     },
     IRON(Items.IRON_PICKAXE, 2) {
         override fun next() = GOLDEN
@@ -92,11 +93,11 @@ enum class Pickaxe(override val material: Item, override val efficiency: Int) : 
 enum class Axe(override val material: Item, override val efficiency: Int) : EnchantableItem, Downgradable {
     NONE(Items.AIR, 0) {
         override fun next() = WOODEN
-        override fun prev() = null
+        override fun prev() = NONE
     },
     WOODEN(Items.WOODEN_AXE, 1) {
         override fun next() = STONE
-        override fun prev() = null
+        override fun prev() = WOODEN
     },
     STONE(Items.STONE_AXE, 1) {
         override fun next() = IRON

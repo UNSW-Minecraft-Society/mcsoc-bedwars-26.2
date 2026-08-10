@@ -23,26 +23,21 @@ fun registerCommands() {
                 .then(
                     Commands.literal("upgradetool").then(
                         Commands.argument("tool", StringArgumentType.word())
-                            .suggests { _, builder ->
-                                UpgradeItemType.entries.forEach { type ->
-                                    builder.suggest(type.name.lowercase())
-                                }
-                                builder.buildFuture()
-                            }
+                            .suggests(UpgradeItemsSuggestionProvider)
                             .executes {
                                 val player = it.source.playerOrException
                                 val toolArg = StringArgumentType.getString(it, "tool")
 
-                                try {
-                                    ModDataTracker.upgradeItem(
-                                        player,
-                                        enumValueOf<UpgradeItemType>(toolArg.uppercase())
-                                    )
-                                } catch (e: Exception) {
+                                val type = UpgradeItemType.entries.firstOrNull { entry ->
+                                    entry.name.equals(toolArg, ignoreCase = true)
+                                }
+
+                                if (type == null) {
                                     player.sendSystemMessage(Component.literal("$toolArg is not a valid tool"))
-                                    e.printStackTrace()
                                     return@executes 1
                                 }
+
+                                ModDataTracker.upgradeItem(player, type)
                                 0
                             }
                     )

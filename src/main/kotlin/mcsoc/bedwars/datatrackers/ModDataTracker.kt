@@ -91,7 +91,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, PlayerUpgradesHol
         return getPlayerData(player)
     }
 
-    override fun getItemUpgradeState(player: ServerPlayer): PlayerUpgradesRecord {
+    override fun getItemUpgradeState(player: Player): PlayerUpgradesRecord {
         return getPlayerData(player)
     }
 }
@@ -104,7 +104,7 @@ object ModDataTracker : PlayerStateExposer, PlayerUpgradesExposer {
     override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
     override fun isPlayerDead(player: Player) = mod_data.isPlayerDead(player)
 
-    override fun getItem(player: ServerPlayer, item: UpgradeItemType): ItemStack = mod_data.getItem(player, item)
+    override fun getItem(player: Player, item: UpgradeItemType): ItemStack = mod_data.getItem(player, item)
     override fun upgradeItem(player: ServerPlayer, item: UpgradeItemType) = mod_data.upgradeItem(player, item)
     override fun downgradeItems(player: ServerPlayer) = mod_data.downgradeItems(player)
     override fun clearItems(player: ServerPlayer) = mod_data.clearItems(player)        
