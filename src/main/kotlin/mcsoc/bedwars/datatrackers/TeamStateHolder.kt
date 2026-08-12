@@ -10,7 +10,6 @@ internal interface TeamStateRecord {
     fun getPlayers(server: MinecraftServer): MutableList<ServerPlayer>
     fun getBedAlive(): Boolean
     fun getSpawn(): Vec3
-    fun getMaxPlayers(): Int
     fun getPlayerCount(): Int
 
     fun setBedAlive(bedAlive: Boolean)
@@ -18,8 +17,8 @@ internal interface TeamStateRecord {
 }
 
 internal interface PlayerTeamState {
-    fun setTeam(team: Team)
-    fun getTeam(): Team
+    fun setTeamName(team: Team)
+    fun getTeamName(): Team
 }
 
 internal interface TeamStateExposer {
@@ -27,10 +26,9 @@ internal interface TeamStateExposer {
     fun getBedDestroyed(team: Team): Boolean
     fun getTeamSpawn(team: Team): Vec3
 
-    fun destroyBed(team: Team)
+    fun setBedAlive(team: Team, state: Boolean)
     fun addPlayer(player: ServerPlayer)
-    fun addPlayerToTeam(player: ServerPlayer, team: Team)
-    fun createTeams(players: List<ServerPlayer>, numTeams: Int)
+    fun initialiseNumTeams(numTeams: Int)
     
     fun getPlayersTeam(player: ServerPlayer): Team
 }
@@ -40,16 +38,7 @@ internal interface TeamStateHolder : TeamStateExposer {
 
     override fun getBedDestroyed(team: Team): Boolean = getTeam(team).getBedAlive()
     override fun getTeamSpawn(team: Team): Vec3 = getTeam(team).getSpawn()
-    override fun getPlayersInTeam(team: Team, level: ServerLevel): List<ServerPlayer> =
-        getTeam(team).getPlayers(level.server)
-
-    override fun destroyBed(team: Team) {
-        getTeam(team).setBedAlive(false)
-        // other things related to bed destruction like title and sound
-    }
-
-    override fun addPlayerToTeam(player: ServerPlayer, team: Team) {
-        getTeam(team).addPlayer(player)
-    }
+    override fun getPlayersInTeam(team: Team, level: ServerLevel): List<ServerPlayer> = getTeam(team).getPlayers(level.server)
+    override fun setBedAlive(team: Team, state: Boolean) = getTeam(team).setBedAlive(state)
 }
 

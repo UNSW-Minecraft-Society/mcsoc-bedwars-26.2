@@ -3,6 +3,7 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import kotlinx.serialization.Serializable
+import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.MinecraftServer
@@ -40,9 +41,9 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState {
         return this.life_state
     }
 
-    override fun getTeam(): Team = team
+    override fun getTeamName(): Team = team
 
-    override fun setTeam(team: Team) {
+    override fun setTeamName(team: Team) {
         this.team = team
     }
 }
@@ -52,7 +53,6 @@ private class TeamDataRecord(
     private val players: MutableList<UUID>,
     private var bedAlive: Boolean,
     private val spawn: Vec3,
-    private val maxPlayers: Int
 ) : TeamStateRecord {
     companion object {
         val UUID_LIST_CODEC: Codec<MutableList<UUID>> = UUIDUtil.CODEC.listOf().xmap( { it.toMutableList() }, { it } )
@@ -61,12 +61,10 @@ private class TeamDataRecord(
             UUID_LIST_CODEC.fieldOf("players").forGetter(TeamDataRecord::players),
             Codec.BOOL.fieldOf("bed_alive").forGetter(TeamDataRecord::bedAlive),
             Vec3.CODEC.fieldOf("spawn").forGetter(TeamDataRecord::spawn),
-            Codec.INT.fieldOf("max_players").forGetter(TeamDataRecord::maxPlayers)
         ).apply(it, ::TeamDataRecord)}
     }
 
     override fun getBedAlive(): Boolean = bedAlive
-    override fun getMaxPlayers(): Int = maxPlayers
     override fun getSpawn(): Vec3 = spawn
     override fun getPlayerCount() = players.size
 
@@ -129,31 +127,29 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder {
         return teams_map[team] ?: throw Exception("Invalid team")
     }
 
-    override fun createTeams(players: List<ServerPlayer>, numTeams: Int) {
+    // this will reset team data
+    override fun initialiseNumTeams(numTeams: Int) {
         assert(numTeams < Team.entries.size) { "More teams specified than can be handled" }
+        teams_map.clear()
         
         val teams = Team.entries.take(numTeams)
-
         teams.forEach {
-            // todo replace location and max people per team with config of some sorts
-            teams_map[it] = TeamDataRecord(mutableListOf(), true, Vec3(0.0, 0.0, 0.0), 4)
-        }
-
-        players.forEachIndexed { i, player ->
-            addPlayerToTeam(player, teams[i % numTeams])
-            getPlayerData(player).setTeam(teams[i % numTeams])
+            // todo replace location with config of some sorts
+            teams_map[it] = TeamDataRecord(mutableListOf(), true, Vec3(0.0, 0.0, 0.0))
         }
     }
 
+    // adds player to team with smallest number of people (randomised)
     override fun addPlayer(player: ServerPlayer) {
-        val team = teams_map.values
-            .filter { it.getPlayerCount() < it.getMaxPlayers() }
-            .minByOrNull { it.getPlayerCount() } ?: return
+        val team = teams_map.entries.shuffled()
+            .filter { it.value.getPlayerCount() < TeamEffects.MAX_TEAM_PLAYERS }
+            .minByOrNull { it.value.getPlayerCount() } ?: return
 
-        team.addPlayer(player)
+        team.value.addPlayer(player)
+        getPlayerData(player).setTeamName(team.key)
     }
     
-    override fun getPlayersTeam(player: ServerPlayer): Team = getPlayerData(player).getTeam()
+    override fun getPlayersTeam(player: ServerPlayer): Team = getPlayerData(player).getTeamName()
 }
 
 
@@ -167,9 +163,8 @@ object ModDataTracker : PlayerStateExposer, TeamStateExposer {
     override fun getBedDestroyed(team: Team): Boolean = mod_data.getBedDestroyed(team)
     override fun getPlayersInTeam(team: Team, level: ServerLevel): List<ServerPlayer> = mod_data.getPlayersInTeam(team, level)
     override fun getTeamSpawn(team: Team): Vec3 = mod_data.getTeamSpawn(team)
-    override fun addPlayerToTeam(player: ServerPlayer, team: Team) = mod_data.addPlayerToTeam(player, team)
-    override fun destroyBed(team: Team) = mod_data.destroyBed(team)
-    override fun createTeams(players: List<ServerPlayer>, numTeams: Int) = mod_data.createTeams(players, numTeams)
+    override fun setBedAlive(team: Team, state: Boolean) = mod_data.setBedAlive(team, state)
+    override fun initialiseNumTeams(numTeams: Int) = mod_data.initialiseNumTeams(numTeams)
     override fun addPlayer(player: ServerPlayer) = mod_data.addPlayer(player)
     
     override fun getPlayersTeam(player: ServerPlayer): Team = mod_data.getPlayersTeam(player)
