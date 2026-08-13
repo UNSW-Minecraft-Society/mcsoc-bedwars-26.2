@@ -1,10 +1,17 @@
 package mcsoc.bedwars
 
+import org.slf4j.LoggerFactory
+
+import net.fabricmc.api.ModInitializer
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
+import net.fabricmc.loader.api.FabricLoader
+import net.minecraft.resources.Identifier
+
+import mcsoc.bedwars.dataloaders.maploader.MapLoader
+import mcsoc.bedwars.dataloaders.maploader.SchematicMapLoader
 import mcsoc.bedwars.eventhandlers.registerBlockBreakEvents
 import mcsoc.bedwars.eventhandlers.registerCommands
-import net.fabricmc.api.ModInitializer
-import net.minecraft.resources.Identifier
-import org.slf4j.LoggerFactory
+
 
 object BedwarsPlugin : ModInitializer {
 	const val MOD_ID: String = "bedwars-plugin"
@@ -21,6 +28,10 @@ object BedwarsPlugin : ModInitializer {
 		// register eventhandlers
         registerBlockBreakEvents()
         registerCommands()
+
+        ServerLifecycleEvents.SERVER_STARTED.register {server -> 
+            MapLoader.getMapLoader().init(FabricLoader.getInstance().configDir)
+        }
 	}
 
 	fun id(path: String): Identifier
