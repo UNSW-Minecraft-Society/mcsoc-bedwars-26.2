@@ -1,8 +1,10 @@
 package mcsoc.bedwars.eventhandlers
 
+
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
+import com.mojang.brigadier.arguments.StringArgumentType
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.MutableComponent
@@ -10,11 +12,16 @@ import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
 
 import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.dataloaders.maploader.MapLoader
 import mcsoc.bedwars.utils.format
 
 const val ROOT_NODE = "bedwars"
+
+const val POSITION_ARGUMENT = "pos"
 const val FIRST_POSITION_ARGUMENT = "pos1"
 const val SECOND_POSITION_ARGUMENT = "pos2"
+
+const val MAP_NAME_ARGUMENT = "name"
 
 fun setProtectionZoneMsg(p1: BlockPos, p2: BlockPos) = 
     Component.literal("Created new protection zone between ${p1.format} and ${p2.format}")
@@ -50,6 +57,26 @@ fun registerCommands() {
             
             1
         })
+        .then(Commands.literal("place_map")
+            .then(Commands.argument(MAP_NAME_ARGUMENT, StringArgumentType.string())
+            // .suggests(TODO)
+                .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
+                .executes{
+                    val map_name = StringArgumentType.getString(it, MAP_NAME_ARGUMENT)
+                    val pos = BlockPosArgument.getLoadedBlockPos(it, POSITION_ARGUMENT)
+                    
+                    val source = it.source
+                    
+                    val map_loader = MapLoader.getMapLoader()
+                    val level = source.level
+                    map_loader.loadMap(map_name)
+                    map_loader.placeMap(level, pos)
+
+                    source.sendSystemMessage(Component.literal("Placed"))            
+                    1
+                })
+            )
+        )
         )
     }
 }
