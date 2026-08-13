@@ -120,28 +120,14 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHo
 object ModDataTracker : PlayerStateExposer, BlockProtectionExposer {
     private val mod_data = ModDataStore()
     
-    override fun isPlayerAlive(player: Player): Boolean {
-        return mod_data.isPlayerAlive(player)
-    }
-    override fun isPlayerRespawning(player: Player): Boolean {
-        return mod_data.isPlayerRespawning(player)
-    }
-    override fun isPlayerDead(player: Player): Boolean {
-        return mod_data.isPlayerDead(player)
-    }
-    
-    override fun isBlockBreakAllowed(pos: BlockPos): Boolean {
-        return mod_data.isBlockBreakAllowed(pos)
-    }
-    override fun isBlockPlacementAllowed(pos: BlockPos): Boolean {
-        return mod_data.isBlockPlacementAllowed(pos)
-    }
-    override fun trackPlacedBlock(pos: BlockPos) {
-        mod_data.trackPlacedBlock(pos)
-    }
-    override fun registerProtectionZone(corner1: BlockPos, corner2: BlockPos) {
-        mod_data.registerProtectionZone(corner1, corner2)
-    }
+    override fun isPlayerAlive(player: Player) =  mod_data.isPlayerAlive(player)
+    override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
+    override fun isPlayerDead(player: Player) = mod_data.isPlayerDead(player)
+
+    override fun isBlockBreakAllowed(pos: BlockPos) = mod_data.isBlockBreakAllowed(pos)
+    override fun isBlockPlacementAllowed(pos: BlockPos) = mod_data.isBlockPlacementAllowed(pos)
+    override fun trackPlacedBlock(pos: BlockPos) = mod_data.trackPlacedBlock(pos)
+    override fun registerProtectionZone(corner1: BlockPos, corner2: BlockPos) = mod_data.registerProtectionZone(corner1, corner2)
     
     override fun getProtectionZones() = mod_data.getProtectionZones()
 }
