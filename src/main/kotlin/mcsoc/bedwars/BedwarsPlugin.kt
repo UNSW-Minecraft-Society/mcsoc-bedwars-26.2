@@ -18,10 +18,9 @@ object BedwarsPlugin : ModInitializer {
 
 		LOGGER.info("Bedwars plugin started")
 		
-        // event registration
-        AfterRespawnEvent.registerEvent()
-
 		// register eventhandlers
+        AfterRespawnEvent.registerEvent()
+        
         registerCommands()
 	}
 

@@ -1,6 +1,5 @@
 package mcsoc.bedwars.datatrackers
 
-import mcsoc.bedwars.upgrades.Downgradable
 import mcsoc.bedwars.upgrades.Resettable
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
@@ -17,7 +16,6 @@ internal interface PlayerUpgradesRecord {
 }
 
 internal interface PlayerUpgradesExposer {
-    fun getItem(player: Player, item: UpgradeItemType): ItemStack
     fun upgradeItem(player: ServerPlayer, item: UpgradeItemType)
     fun downgradeItems(player: ServerPlayer)
     fun clearItems(player: ServerPlayer)
@@ -26,33 +24,18 @@ internal interface PlayerUpgradesExposer {
 internal interface PlayerUpgradesHolder : PlayerUpgradesExposer {
     fun getItemUpgradeState(player: Player): PlayerUpgradesRecord
 
-    override fun getItem(player: Player, item: UpgradeItemType): ItemStack {
-        return getItemUpgradeState(player).getItem(item).createItem(player.level())
-    }
-
     override fun upgradeItem(player: ServerPlayer, item: UpgradeItemType) {
         val upgrade = getItemUpgradeState(player).getItem(item).next() ?: return
         getItemUpgradeState(player).setItem(upgrade)
-
-        changeItem(player, item, upgrade)
+        upgrade.applyTo(player)
     }
 
     override fun downgradeItems(player: ServerPlayer) {
         val record = getItemUpgradeState(player)
         UpgradeItemType.entries.forEach { type ->
-            val item = record.getItem(type)
-            if (item is Resettable) {
-                record.setItem(item.base())
-                changeItem(player, type, item.base())
-                return@forEach
-            } else if (item is Downgradable) {
-                val prev = item.prev()
-                record.setItem(prev)
-                changeItem(player, type, prev)
-                return@forEach
-            }
-
-            changeItem(player, type, item)
+            val prev = record.getItem(type).prev()
+            record.setItem(prev)
+            prev.applyTo(player)
         }
     }
 
@@ -60,28 +43,6 @@ internal interface PlayerUpgradesHolder : PlayerUpgradesExposer {
         val record = getItemUpgradeState(player)
         UpgradeItemType.entries.forEach {
             record.removeItem(it)
-            removeItem(player, it)
         }
-    }
-
-    private fun changeItem(p: ServerPlayer, type: UpgradeItemType, item: UpgradableItem) {
-        removeItem(p, type)?.let {
-            p.inventory.add(it, item.createItem(p.level()))
-        } ?: run {
-            p.inventory.add(item.createItem(p.level()))
-        }
-    }
-
-    private fun removeItem(player: ServerPlayer, type: UpgradeItemType): Int? {
-        for (slot in 0 until player.inventory.containerSize) {
-            val stack = player.inventory.getItem(slot)
-            val data = stack.get(DataComponents.CUSTOM_DATA) ?: continue
-
-            if (data.copyTag().getString("bedwars_item").orElse(null) == type.name) {
-                player.inventory.setItem(slot, ItemStack.EMPTY)
-                return slot
-            }
-        }
-        return null
     }
 }

@@ -21,24 +21,24 @@ fun registerCommands() {
                 // only test commands
                 // use: /bedwars upgradetool [Axe|Pickaxe|...]
                 .then(
-                    Commands.literal("upgradetool").then(
-                        Commands.argument("tool", StringArgumentType.word())
+                    Commands.literal("upgrade").then(
+                        Commands.argument("type", StringArgumentType.word())
                             .suggests(UpgradeItemsSuggestionProvider)
                             .executes {
-                                val player = it.source.playerOrException
-                                val toolArg = StringArgumentType.getString(it, "tool")
-
-                                val type = UpgradeItemType.entries.firstOrNull { entry ->
-                                    entry.name.equals(toolArg, ignoreCase = true)
+                                val player = it.source.player ?: run {
+                                    it.source.sendFailure(Component.literal("Command must be run by a player"))
+                                    return@executes 0
                                 }
-
-                                if (type == null) {
-                                    player.sendSystemMessage(Component.literal("$toolArg is not a valid tool"))
-                                    return@executes 1
+                                val input = StringArgumentType.getString(it, "type")
+                                val type = UpgradeItemType.entries.firstOrNull { name ->
+                                    name.name.equals(input, ignoreCase = true)
+                                } ?: run {
+                                    player.sendSystemMessage(Component.literal("$input is not a valid upgrade"))
+                                    return@executes 0
                                 }
 
                                 ModDataTracker.upgradeItem(player, type)
-                                0
+                                1
                             }
                     )
                 )
@@ -46,7 +46,7 @@ fun registerCommands() {
                 .then(Commands.literal("resettools").executes {
                     val player = it.source.playerOrException
                     ModDataTracker.clearItems(player)
-                    0
+                    1
                 })
         )
     }
