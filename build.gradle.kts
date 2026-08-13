@@ -15,6 +15,9 @@ repositories {
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
 	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
 	// for more information about repositories.
+	maven {
+		url = uri("https://maven.enginehub.org/repo/")
+	}
 }
 
 loom {
@@ -42,6 +45,9 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation("net.fabricmc.fabric-api:fabric-api:${providers.gradleProperty("fabric_api_version").get()}")
     implementation("net.fabricmc:fabric-language-kotlin:${providers.gradleProperty("fabric_kotlin_version").get()}")
+
+	// for loading schematics
+	implementation("com.sk89q.worldedit:worldedit-fabric-mc${providers.gradleProperty("minecraft_version").get()}:${providers.gradleProperty("worldedit_api_version").get()}")
 }
 
 tasks.processResources {
