@@ -1,19 +1,17 @@
 package mcsoc.bedwars.datatrackers
 
 import mcsoc.bedwars.utils.Team
-import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
-import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.phys.Vec3
+import kotlin.uuid.Uuid
 
 internal interface TeamStateRecord {
-    fun getPlayers(server: MinecraftServer): MutableList<ServerPlayer>
+    fun getPlayers(): MutableList<Uuid>
     fun getBedAlive(): Boolean
     fun getSpawn(): Vec3
-    fun getPlayerCount(): Int
 
     fun setBedAlive(bedAlive: Boolean)
-    fun addPlayer(player: ServerPlayer)
+    fun addPlayer(player: Uuid)
 }
 
 internal interface PlayerTeamState {
@@ -22,15 +20,17 @@ internal interface PlayerTeamState {
 }
 
 internal interface TeamStateExposer {
-    fun getPlayersInTeam(team: Team, level: ServerLevel): List<ServerPlayer>
+    fun getPlayersInTeam(team: Team): List<Uuid>
     fun getBedDestroyed(team: Team): Boolean
     fun getTeamSpawn(team: Team): Vec3
+    fun getActiveTeams(): List<Team>
+    fun getActivePlayers(): List<Uuid>
 
     fun setBedAlive(team: Team, state: Boolean)
-    fun addPlayer(player: ServerPlayer)
-    fun initialiseNumTeams(numTeams: Int)
-    
-    fun getPlayersTeam(player: ServerPlayer): Team
+    fun addPlayer(player: Uuid, team: Team)
+    fun initialiseTeams(numTeams: Int)
+
+    fun getPlayersTeam(player: Uuid): Team
 }
 
 internal interface TeamStateHolder : TeamStateExposer {
@@ -38,7 +38,8 @@ internal interface TeamStateHolder : TeamStateExposer {
 
     override fun getBedDestroyed(team: Team): Boolean = getTeam(team).getBedAlive()
     override fun getTeamSpawn(team: Team): Vec3 = getTeam(team).getSpawn()
-    override fun getPlayersInTeam(team: Team, level: ServerLevel): List<ServerPlayer> = getTeam(team).getPlayers(level.server)
+    override fun getPlayersInTeam(team: Team): List<Uuid> = getTeam(team).getPlayers()
     override fun setBedAlive(team: Team, state: Boolean) = getTeam(team).setBedAlive(state)
+    override fun getActivePlayers(): List<Uuid> = getActiveTeams().flatMap { getPlayersInTeam(it) }
 }
 

@@ -3,21 +3,25 @@ package mcsoc.bedwars
 import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.utils.Team
 import net.minecraft.server.level.ServerPlayer
+import kotlin.uuid.toKotlinUuid
 
+// replace with config
+// useful if method for switching teams is added
+const val MAX_TEAM_PLAYERS = 4
 
 object TeamEffects {
-    // replace with config
-    const val MAX_TEAM_PLAYERS = 4
-    
+    // On start of game run this to add players (probably just active)
     fun createTeamsWithPlayers(players: List<ServerPlayer>, numTeams: Int) {
-        ModDataTracker.initialiseNumTeams(numTeams)
-        
-        players.forEachIndexed { i, player ->
-            ModDataTracker.addPlayer(player)
+        ModDataTracker.initialiseTeams(numTeams)
+        val teams = ModDataTracker.getActiveTeams()
+
+        players.shuffled().forEachIndexed { index, player ->
+            val team = teams[index % numTeams]
+            ModDataTracker.addPlayer(player.uuid.toKotlinUuid(), team)
         }
     }
-    
-    
+
+
     fun destroyBed(team: Team) {
         ModDataTracker.setBedAlive(team, false)
         // other things related to bed destruction like title and sound
