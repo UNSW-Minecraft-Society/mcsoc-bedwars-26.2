@@ -1,5 +1,6 @@
 package mcsoc.bedwars
 
+import mcsoc.bedwars.eventhandlers.AfterRespawnEvent
 import mcsoc.bedwars.eventhandlers.registerCommands
 import mcsoc.bedwars.gui.ShopGui
 import net.fabricmc.api.ModInitializer
@@ -16,9 +17,11 @@ object BedwarsPlugin : ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-		LOGGER.info("Hello Fabric world!")
-
+		LOGGER.info("Bedwars plugin started")
+		
 		// register eventhandlers
+        AfterRespawnEvent.registerEvent()
+        
         registerCommands()
 	}
 
