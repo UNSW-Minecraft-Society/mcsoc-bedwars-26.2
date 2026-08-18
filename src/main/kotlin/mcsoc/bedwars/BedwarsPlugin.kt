@@ -7,14 +7,16 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.resources.Identifier
 
-import mcsoc.bedwars.dataloaders.maploader.MapLoader
-import mcsoc.bedwars.dataloaders.maploader.SchematicMapLoader
 import mcsoc.bedwars.eventhandlers.registerBlockBreakEvents
 import mcsoc.bedwars.eventhandlers.registerCommands
+import net.minecraft.world.level.Level
+import java.nio.file.Files
+import kotlin.io.path.div
 
 
 object BedwarsPlugin : ModInitializer {
 	const val MOD_ID: String = "bedwars-plugin"
+	const val CONFIG_PATH: String = "bedwars"
 
 	val LOGGER = LoggerFactory.getLogger(MOD_ID)
 
@@ -28,10 +30,9 @@ object BedwarsPlugin : ModInitializer {
 		// register eventhandlers
         registerBlockBreakEvents()
         registerCommands()
-
-        ServerLifecycleEvents.SERVER_STARTED.register {server -> 
-            MapLoader.getMapLoader().init(FabricLoader.getInstance().configDir)
-        }
+        
+        val config_dir = FabricLoader.getInstance().configDir / CONFIG_PATH
+		Files.createDirectories(config_dir)
 	}
 
 	fun id(path: String): Identifier
