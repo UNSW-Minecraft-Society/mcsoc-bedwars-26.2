@@ -5,15 +5,17 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import com.mojang.brigadier.arguments.StringArgumentType
+import mcsoc.bedwars.dataloaders.maploader.BedwarsIsland
+import mcsoc.bedwars.dataloaders.maploader.BedwarsMapStructure
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
-import net.minecraft.network.chat.MutableComponent
 import net.minecraft.world.phys.AABB
-import net.minecraft.world.phys.Vec3
 
 import mcsoc.bedwars.datatrackers.ModDataTracker
-import mcsoc.bedwars.dataloaders.maploader.MapLoader
+import mcsoc.bedwars.dataloaders.maploader.StructureLoader.Companion.getStructureLoader
+import mcsoc.bedwars.utils.CylindricalBlockPos
 import mcsoc.bedwars.utils.format
+import kotlin.math.PI
 
 const val ROOT_NODE = "bedwars"
 
@@ -57,7 +59,7 @@ fun registerCommands() {
             
             1
         })
-        .then(Commands.literal("place_map")
+        .then(Commands.literal("place_structure")
             .then(Commands.argument(MAP_NAME_ARGUMENT, StringArgumentType.string())
             // .suggests(TODO)
                 .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
@@ -67,15 +69,56 @@ fun registerCommands() {
                     
                     val source = it.source
                     
-                    val map_loader = MapLoader.getMapLoader()
                     val level = source.level
-                    map_loader.loadMap(map_name)
-                    map_loader.placeMap(level, pos)
-
-                    source.sendSystemMessage(Component.literal("Placed"))            
+                    val map_loader = level.getStructureLoader()
+                    
+                    if (!map_loader.queueStructure(map_name, pos).join()) {
+                        source.sendSystemMessage(Component.literal("joever"))
+                        0
+                    } else {
+                        source.sendSystemMessage(Component.literal("Placed"))
+                        1
+                    }
+                })
+            )   
+        )
+        .then(Commands.literal("place_map")
+            .then(Commands.argument("base", StringArgumentType.string())
+            .then(Commands.argument("mid", StringArgumentType.string())
+            .then(Commands.argument("diamond", StringArgumentType.string())
+            .then(Commands.argument("misc", StringArgumentType.string())
+                .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
+                .executes{
+                    val base_structure_name = StringArgumentType.getString(it, "base")
+                    val mid_structure_name = StringArgumentType.getString(it, "mid")
+                    val diamond_structure_name = StringArgumentType.getString(it, "diamond")
+                    val misc_structure_name = StringArgumentType.getString(it, "misc")
+                    
+                    val pos = BlockPosArgument.getLoadedBlockPos(it, POSITION_ARGUMENT)
+                    
+                    val source = it.source
+                    
+                    val level = source.level
+                    val map = BedwarsMapStructure(level,
+                        listOf(
+                            BedwarsIsland(CylindricalBlockPos(pos, 50F, (PI / 2.0F).toFloat(), 6), base_structure_name),
+                            BedwarsIsland(CylindricalBlockPos(pos, 50F, (3 * PI / 2.0F).toFloat(), 6), base_structure_name)
+                        ),
+                        listOf(
+                            BedwarsIsland(CylindricalBlockPos(pos, 20F, (PI / 4.0F).toFloat(), 3), diamond_structure_name),
+                            BedwarsIsland(CylindricalBlockPos(pos, 20F, (5 * PI / 4.0F).toFloat(), 3), diamond_structure_name)
+                        ),
+                        BedwarsIsland(CylindricalBlockPos(pos, 0F, 0F, 0), mid_structure_name),
+                        listOf(
+                            BedwarsIsland(CylindricalBlockPos(pos, 20F, (3 * PI / 4.0F).toFloat(), -2), misc_structure_name),
+                            BedwarsIsland(CylindricalBlockPos(pos, 20F, (7 * PI / 4.0F).toFloat(), -2), misc_structure_name)
+                        )
+                    )
+                    map.place()
+                    source.sendSystemMessage(Component.literal("Placed"))
                     1
                 })
-            )
+            ))))
         )
         )
     }
