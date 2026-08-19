@@ -3,7 +3,10 @@ package mcsoc.bedwars.gui
 import eu.pb4.sgui.api.ClickType
 import eu.pb4.sgui.api.elements.GuiElement
 import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.network.chat.Component
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.Item
@@ -14,6 +17,10 @@ interface ShopProduct {
     fun getItemStack(): ItemStack
     fun getClickCallback(): GuiElement.ClickCallback
     fun getItemCost(): ItemStack
+}
+
+abstract interface PlayerSpecificShopProduct : ShopProduct {
+    fun setPlayer(player: ServerPlayer)
 }
 
 class ShopItem : ShopProduct {
@@ -80,4 +87,37 @@ class ShopItem : ShopProduct {
     override fun getItemCost(): ItemStack {
         return ItemStack(currency, price)
     }
+}
+
+class ShopPlayerUpgrade : PlayerSpecificShopProduct {
+    private val player_upgrade: UpgradeItemType
+    private val currency: Item
+    private val price: Int
+    private lateinit var player: ServerPlayer
+
+    constructor(player_upgrade: UpgradeItemType, currency: Item, price: Int) {
+        this.player_upgrade = player_upgrade
+        this.currency = currency
+        this.price = price
+    }
+
+    override fun getItemStack(): ItemStack {
+        return ModDataTracker.getItemStack(player, player_upgrade)
+    }
+
+    override fun getClickCallback(): GuiElement.ClickCallback {
+        return GuiElement.ClickCallback { index, clickType, action, gui ->
+            val player = gui.player ?: return@ClickCallback
+
+        }
+    }
+
+    override fun getItemCost(): ItemStack {
+        TODO("Not yet implemented")
+    }
+
+    override fun setPlayer(player: ServerPlayer) {
+        this.player = player
+    }
+
 }

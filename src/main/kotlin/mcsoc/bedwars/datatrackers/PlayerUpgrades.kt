@@ -1,6 +1,7 @@
 package mcsoc.bedwars.datatrackers
 
 import mcsoc.bedwars.upgrades.Resettable
+import mcsoc.bedwars.upgrades.Single
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.core.component.DataComponents
@@ -19,6 +20,7 @@ internal interface PlayerUpgradesExposer {
     fun upgradeItem(player: ServerPlayer, item: UpgradeItemType)
     fun downgradeItems(player: ServerPlayer)
     fun clearItems(player: ServerPlayer)
+    fun getItemStack(player: ServerPlayer, item: UpgradeItemType): ItemStack
 }
 
 internal interface PlayerUpgradesHolder : PlayerUpgradesExposer {
@@ -44,5 +46,13 @@ internal interface PlayerUpgradesHolder : PlayerUpgradesExposer {
         UpgradeItemType.entries.forEach {
             record.removeItem(it)
         }
+    }
+
+    override fun getItemStack(player: ServerPlayer, item: UpgradeItemType): ItemStack {
+        val item_type = getItemUpgradeState(player).getItem(item)
+        if (item_type is Single) { // TEMPORARY THINGY, MODIFY LATER
+            return item_type.createStack(player)
+        }
+        TODO("Not yet implemented; waiting for PlayerUpgrade changes")
     }
 }
