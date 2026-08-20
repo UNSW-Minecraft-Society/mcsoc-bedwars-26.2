@@ -4,7 +4,6 @@ import com.mojang.serialization.Codec
 import net.minecraft.core.component.DataComponents
 import net.minecraft.core.registries.Registries
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.item.Item
@@ -12,7 +11,6 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.component.CustomData
 import net.minecraft.world.item.enchantment.Enchantments
-import net.minecraft.world.level.Level
 
 
 enum class UpgradeItemType(val defaultStr: String, val fromName: (String) -> UpgradableItem) {
@@ -44,6 +42,9 @@ sealed interface UpgradableItem {
 
     fun applyTo(player: ServerPlayer)
 
+    // For displaying upgrade as an item
+    fun createStack(player: ServerPlayer): ItemStack
+
     fun isItemThisUpgrade(item: ItemStack): Boolean {
         val data = item.get(DataComponents.CUSTOM_DATA) ?: return false
 
@@ -54,7 +55,7 @@ sealed interface UpgradableItem {
 sealed interface Single : UpgradableItem {
     val material: Item
 
-    fun createStack(player: ServerPlayer): ItemStack {
+    override fun createStack(player: ServerPlayer): ItemStack {
         val stack = ItemStack(material)
         val tag = CompoundTag()
         tag.putString("bedwars_item", type.name)
@@ -216,5 +217,9 @@ enum class Armour(val boots: Item, val leggings: Item, val chestplate: Item) : U
         setTo(player, EquipmentSlot.FEET, boots)
         setTo(player, EquipmentSlot.LEGS, leggings)
         setTo(player, EquipmentSlot.CHEST, chestplate)
+    }
+
+    override fun createStack(player: ServerPlayer): ItemStack {
+        return ItemStack(chestplate)
     }
 }
