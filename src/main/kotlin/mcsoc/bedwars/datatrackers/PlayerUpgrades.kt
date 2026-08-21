@@ -50,9 +50,6 @@ internal interface PlayerUpgradesHolder : PlayerUpgradesExposer {
 
     override fun getItemStack(player: ServerPlayer, item: UpgradeItemType): ItemStack {
         val item_type = getItemUpgradeState(player).getItem(item)
-        if (item_type is Single) { // TEMPORARY THINGY, MODIFY LATER
-            return item_type.createStack(player)
-        }
-        TODO("Not yet implemented; waiting for PlayerUpgrade changes")
+        return item_type.createStack(player)
     }
 }

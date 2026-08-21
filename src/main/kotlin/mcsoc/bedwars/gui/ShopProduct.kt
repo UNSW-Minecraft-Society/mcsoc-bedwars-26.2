@@ -13,14 +13,38 @@ import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.ItemStackTemplate
 
-interface ShopProduct {
-    fun getItemStack(): ItemStack
-    fun getClickCallback(): GuiElement.ClickCallback
-    fun getItemCost(): ItemStack
+abstract class ShopProduct {
+    abstract fun getItemStack(): ItemStack
+    abstract fun getClickCallback(): GuiElement.ClickCallback
+    abstract fun getItemCost(): ItemStack
+
+    // Handles purchasing logic, returns true if purchase successful.
+    // transaction handles the effect of purchase (e.g. giving an item), returning false if it fails.
+    protected fun purchaseUnit(player: Player, transaction: () -> Boolean, sendMsg: Boolean = true): Boolean {
+        val inventory = player.inventory
+        val currency = getItemCost().item
+        val price = getItemCost().count
+        if (inventory.countItem(currency) < price) {
+            player.playSound(SoundEvents.NOTE_BLOCK_BIT.value())
+            if (sendMsg) player.sendSystemMessage(Component.literal("Insufficient funds"))
+            return false
+        }
+        if (transaction()) {
+            inventory.clearOrCountMatchingItems({it.`is`(currency)},
+                price, inventory)
+            player.playSound(SoundEvents.NOTE_BLOCK_BELL.value())
+            if (sendMsg) player.sendSystemMessage(Component.literal("Purchased ${getItemStack().toString()}"))
+            return true
+        } else {
+            player.playSound(SoundEvents.NOTE_BLOCK_BIT.value())
+            if (sendMsg) player.sendSystemMessage(Component.literal("Insufficient space in inventory"))
+            return false
+        }
+    }
 }
 
-abstract interface PlayerSpecificShopProduct : ShopProduct {
-    fun setPlayer(player: ServerPlayer)
+abstract class PlayerSpecificShopProduct : ShopProduct() {
+    abstract fun setPlayer(player: ServerPlayer)
 }
 
 class ShopItem : ShopProduct {
@@ -49,36 +73,16 @@ class ShopItem : ShopProduct {
         return resolveItemStackTemplate()
     }
 
-    private fun purchaseUnit(player: Player, sendMsg: Boolean = true): Boolean {
-        val inventory = player.inventory
-        if (inventory.countItem(currency) < price) {
-            player.playSound(SoundEvents.NOTE_BLOCK_BIT.value())
-            if (sendMsg) player.sendSystemMessage(Component.literal("Insufficient funds"))
-            return false
-        }
-        if (inventory.add(getItemStack().copy())) {
-            inventory.clearOrCountMatchingItems({it.`is`(currency)},
-                price, inventory)
-            player.playSound(SoundEvents.NOTE_BLOCK_BELL.value())
-            if (sendMsg) player.sendSystemMessage(Component.literal("Purchased ${getItemStack().toString()}"))
-            return true
-        } else {
-            player.playSound(SoundEvents.NOTE_BLOCK_BIT.value())
-            if (sendMsg) player.sendSystemMessage(Component.literal("Insufficient space in inventory"))
-            return false
-        }
-    }
-
     override fun getClickCallback(): GuiElement.ClickCallback {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player ?: return@ClickCallback
             val inventory = player.inventory
             BedwarsPlugin.LOGGER.info("item out: {}", getItemStack())
             if (clickType == ClickType.MOUSE_LEFT) {
-                purchaseUnit(player)
+                purchaseUnit(player, {inventory.add(getItemStack().copy())})
             } else if (clickType == ClickType.MOUSE_LEFT_SHIFT) {
                 var count = 0
-                while (purchaseUnit(player, false)) count++
+                while (purchaseUnit(player, {inventory.add(getItemStack().copy())}, false)) count++
                 player.sendSystemMessage(Component.literal("Purchased ${getItemStack()} x${count}"))
             }
         }
@@ -108,7 +112,10 @@ class ShopPlayerUpgrade : PlayerSpecificShopProduct {
     override fun getClickCallback(): GuiElement.ClickCallback {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player ?: return@ClickCallback
-
+            purchaseUnit(player, fun(): Boolean {
+                ModDataTracker.upgradeItem(player, player_upgrade)
+                return true
+            })
         }
     }
 

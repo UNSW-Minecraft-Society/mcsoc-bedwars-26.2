@@ -107,10 +107,5 @@ object ModDataTracker : PlayerStateExposer, PlayerUpgradesExposer {
     override fun upgradeItem(player: ServerPlayer, item: UpgradeItemType) = mod_data.upgradeItem(player, item)
     override fun downgradeItems(player: ServerPlayer) = mod_data.downgradeItems(player)
     override fun clearItems(player: ServerPlayer) = mod_data.clearItems(player)
-    override fun getItemStack( // REMOVE LATER
-        player: ServerPlayer,
-        item: UpgradeItemType
-    ): ItemStack {
-        TODO("Not yet implemented")
-    }
+    override fun getItemStack(player: ServerPlayer, item: UpgradeItemType) = mod_data.getItemStack(player, item)
 }
