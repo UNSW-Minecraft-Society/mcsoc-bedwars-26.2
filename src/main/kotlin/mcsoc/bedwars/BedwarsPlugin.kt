@@ -1,10 +1,13 @@
 package mcsoc.bedwars
 
-import mcsoc.bedwars.datatrackers.configloader.PluginConfigLoader
-import mcsoc.bedwars.eventhandlers.registerCommands
-import net.fabricmc.api.ModInitializer
-import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
+import net.minecraft.resources.Identifier
+import net.fabricmc.api.ModInitializer
+import mcsoc.bedwars.datatrackers.configloader.PluginConfigLoader
+import mcsoc.bedwars.datatrackers.configloader.TomlConfigReader
+import mcsoc.bedwars.datatrackers.configloader.YamlConfigReader
+import mcsoc.bedwars.eventhandlers.registerCommands
+
 
 object BedwarsPlugin : ModInitializer {
 	const val CONFIG_PATH = "bedwars"
@@ -21,8 +24,9 @@ object BedwarsPlugin : ModInitializer {
 
 		// register eventhandlers
         registerCommands()
-        
-        PluginConfigLoader.initialise()
+
+        TomlConfigReader.initialise()
+        YamlConfigReader.initialise()
 	}
 
 	fun id(path: String): Identifier
