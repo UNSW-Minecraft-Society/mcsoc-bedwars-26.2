@@ -9,7 +9,7 @@ import kotlin.uuid.Uuid
 import kotlin.uuid.toKotlinUuid
 
 
-@Serializable
+
 private class PlayerDataRecord() : PlayerStateRecord {
     companion object {
         val CODEC: Codec<PlayerDataRecord> = RecordCodecBuilder.create{it.group(
@@ -43,7 +43,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder {
                 .fieldOf("player_data_map")
                 .forGetter(ModDataStore::player_data_map)
         ).apply(it, ::ModDataStore)}
-    }    
+    }
     
     private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
     
