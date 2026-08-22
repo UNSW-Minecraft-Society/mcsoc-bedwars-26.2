@@ -220,7 +220,7 @@ object ReducedCylindricalBlockPosSerialiser: KSerializer<CylindricalBlockPos> {
     override fun serialize(encoder: Encoder, value: CylindricalBlockPos) {
         encoder.encodeStructure(descriptor) {
             encodeFloatElement(descriptor, 0, value.radius)
-            encodeFloatElement(descriptor, 1, value.angle)
+            encodeFloatElement(descriptor, 1, (value.angle * 180 / PI).toFloat())
             encodeIntElement(descriptor, 2, value.height)
         }
     }
@@ -233,7 +233,7 @@ object ReducedCylindricalBlockPosSerialiser: KSerializer<CylindricalBlockPos> {
             when (val index = decodeElementIndex(descriptor)) {
                 CompositeDecoder.DECODE_DONE -> break
                 0 -> r = decodeFloatElement(descriptor, 0)
-                1 -> t = decodeFloatElement(descriptor, 1)
+                1 -> t = (decodeFloatElement(descriptor, 1) * PI / 180).toFloat()
                 2 -> h = decodeIntElement(descriptor, 2)
                 else -> error("Unexpected index: $index")
             }
