@@ -1,12 +1,18 @@
 package mcsoc.bedwars.datatrackers.configloader
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import mcsoc.bedwars.utils.MapData
 
+@Serializable
+data class LoadedDebugConfig(
+    val debug: Boolean = true
+)
 
 @Serializable
 data class LoadedPluginConfig(
-    val debug: Boolean = true
+    @SerialName("Debug")
+    val debug: LoadedDebugConfig = LoadedDebugConfig()
 ) : LoadedConfigExposer<LoadedPluginConfig> {
     object Reader : TomlConfigReader<LoadedPluginConfig>("config.toml", LoadedPluginConfig.serializer()) {
         override fun defaultConfigData(): LoadedPluginConfig {
@@ -17,7 +23,7 @@ data class LoadedPluginConfig(
 
 @Serializable
 data class LoadedMapConfig(
-    val map_data: Map<String, MapData> = mapOf()
+    val maps: Map<String, MapData> = mapOf()
 ) : LoadedConfigExposer<LoadedMapConfig> {
     object Reader : YamlConfigReader<LoadedMapConfig>("maps.yml", LoadedMapConfig.serializer()) {
         override fun defaultConfigData(): LoadedMapConfig {
@@ -39,9 +45,9 @@ object BedwarsConfigData : BedwarsConfigExposer {
         get() = LoadedMapConfig.Reader.loaded_config
     
     override val debug: Boolean
-        get() = plugin_config.debug
+        get() = plugin_config.debug.debug
     override val map_data: Map<String, MapData>
-        get() = map_config.map_data
+        get() = map_config.maps
         
     fun initialise() {
         LoadedPluginConfig.Reader.initialise()
