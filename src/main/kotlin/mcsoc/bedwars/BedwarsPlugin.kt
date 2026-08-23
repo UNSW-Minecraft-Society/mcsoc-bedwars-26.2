@@ -1,11 +1,9 @@
 package mcsoc.bedwars
 
+import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import org.slf4j.LoggerFactory
 import net.minecraft.resources.Identifier
 import net.fabricmc.api.ModInitializer
-import mcsoc.bedwars.datatrackers.configloader.PluginConfigLoader
-import mcsoc.bedwars.datatrackers.configloader.TomlConfigReader
-import mcsoc.bedwars.datatrackers.configloader.YamlConfigReader
 import mcsoc.bedwars.eventhandlers.registerCommands
 
 
@@ -25,8 +23,7 @@ object BedwarsPlugin : ModInitializer {
 		// register eventhandlers
         registerCommands()
 
-        TomlConfigReader.initialise()
-        YamlConfigReader.initialise()
+        BedwarsConfigData.initialise()
 	}
 
 	fun id(path: String): Identifier

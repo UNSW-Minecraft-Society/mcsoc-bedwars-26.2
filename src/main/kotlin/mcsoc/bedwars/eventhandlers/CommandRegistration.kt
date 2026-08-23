@@ -1,6 +1,6 @@
 package mcsoc.bedwars.eventhandlers
 
-import mcsoc.bedwars.datatrackers.configloader.PluginConfigLoader
+import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.configloader.TomlConfigReader
 import mcsoc.bedwars.datatrackers.configloader.YamlConfigReader
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
@@ -17,7 +17,7 @@ fun registerCommands() {
         .then(Commands.literal("reload")
         .requires{it.permissionContext.permissionLevel().isEqualOrHigherThan(PermissionLevel.GAMEMASTERS)}
         .executes{ctx ->
-            YamlConfigReader.loadDataFromFiles()
+            BedwarsConfigData.reloadConfig()
             1
         })
     )}

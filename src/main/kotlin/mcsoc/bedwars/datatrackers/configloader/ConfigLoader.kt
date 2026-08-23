@@ -4,7 +4,6 @@ import kotlinx.io.IOException
 import kotlinx.serialization.KSerializer
 import java.nio.file.Path
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
@@ -15,8 +14,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.contextual
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.utils.CylindricalBlockPos
 import net.fabricmc.loader.api.FabricLoader
@@ -27,47 +24,6 @@ import kotlin.io.path.div
 import kotlin.io.path.notExists
 
 import kotlin.math.PI
-
-
-private const val base_structure_name = "base"
-private const val mid_structure_name = "mid"
-private const val diamond_structure_name = "diamond"
-private const val misc_structure_name = "misc"
-
-
-interface ConfigDataExposer {
-    val debug: Boolean
-    val map_data: Map<String, MapData>
-}
-
-@Serializable
-internal data class ConfigData(
-    @SerialName("plugin")
-    val config_data: PluginConfigData = PluginConfigData(), 
-    
-    @SerialName("maps")
-    override val map_data: Map<String, MapData> = mapOf(
-        Pair("example", 
-            MapData(
-                IslandData(CylindricalBlockPos(BlockPos(0, 100, 0), 0F, 0F, 0), mid_structure_name),
-                listOf(
-                    TeamIslandData(CylindricalBlockPos(BlockPos(0, 100, 0), 50F, (PI / 2.0F).toFloat(), 6), base_structure_name, "rec"),
-                    TeamIslandData(CylindricalBlockPos(BlockPos(0, 100, 0), 50F, (3 * PI / 2.0F).toFloat(), 6), base_structure_name, "blue")
-                ),
-                listOf(
-                    IslandData(CylindricalBlockPos(BlockPos(0, 100, 0), 20F, (PI / 4.0F).toFloat(), 3), diamond_structure_name),
-                    IslandData(CylindricalBlockPos(BlockPos(0, 100, 0), 20F, (5 * PI / 4.0F).toFloat(), 3), diamond_structure_name)
-                ),
-                listOf(
-                    IslandData(CylindricalBlockPos(BlockPos(0, 100, 0), 20F, (3 * PI / 4.0F).toFloat(), -2), misc_structure_name),
-                    IslandData(CylindricalBlockPos(BlockPos(0, 100, 0), 20F, (7 * PI / 4.0F).toFloat(), -2), misc_structure_name)
-                )
-            )
-        )
-    )
-) : ConfigDataExposer {
-    override val debug get() = config_data.debug
-}
 
 
 private interface Island {
@@ -95,54 +51,6 @@ data class MapData(
     val diamond_islands: List<IslandData>,
     val misc_islands: List<IslandData>
 )
-
-@Serializable
-internal data class PluginConfigData(
-    val debug: Boolean = false
-)
-
-abstract class PluginConfigLoader {
-    lateinit var loaded_config: ConfigDataExposer
-    internal lateinit var config_path: Path
-    
-    fun initialise() {
-        config_path = getConfigPath()
-        config_path.createParentDirectories()
-        config_path.takeIf{it.notExists()}?.createFile()
-        loadDataFromFiles()
-    }
-
-    private fun loadConfigData() {
-        loaded_config = try {
-            getConfigData()
-        } catch (e: Exception) {
-            when (e) {
-                is SerializationException -> BedwarsPlugin.LOGGER.error("Error while deserialising ConfigData: ", e)
-                is IllegalArgumentException -> BedwarsPlugin.LOGGER.error("Invalid ConfigData: ", e)
-                is IOException -> BedwarsPlugin.LOGGER.error("Cannot read config file: ", e)
-                else -> throw e
-            }
-            ConfigData()
-        }
-        
-        saveConfigData()
-    }
-    
-    fun loadDataFromFiles() {
-        this.loadConfigData()
-        
-        this.saveDataToFiles()
-    }
-    
-    fun saveDataToFiles() {
-        this.saveConfigData()
-    }
-    
-    open fun getConfigPath(): Path = FabricLoader.getInstance().configDir / BedwarsPlugin.CONFIG_PATH
-    abstract fun getConfigData(): ConfigDataExposer
-    abstract fun saveConfigData()
-}
-
 
 /*
  *  pos: BlockPos
@@ -307,6 +215,7 @@ object TeamIslandDataSerialiser: KSerializer<TeamIslandData> {
     }
 }
 
+
 object MapDataSerialiser : KSerializer<MapData> {
     
     override val descriptor = buildClassSerialDescriptor("MapDataReduced") {
@@ -356,6 +265,46 @@ object MapDataSerialiser : KSerializer<MapData> {
     }
 }
 
-val module = SerializersModule {
-    contextual(BlockPosSerialiser)
+
+interface LoadedConfigExposer<T: LoadedConfigExposer<T>>
+
+abstract class ConfigLoader<T : LoadedConfigExposer<T>>(serialiser: KSerializer<T>) {
+    internal abstract val config_filename: String
+    internal val config_path: Path
+        get() = FabricLoader.getInstance().configDir / BedwarsPlugin.CONFIG_PATH / config_filename
+    lateinit var loaded_config: T
+    
+    private fun loadConfigData() {
+        loaded_config = try {
+            getConfigData()
+        } catch (e: Exception) {
+            when (e) {
+                is SerializationException -> BedwarsPlugin.LOGGER.error("Error while loading $config_path: ", e)
+                is IllegalArgumentException -> BedwarsPlugin.LOGGER.error("Invalid config $config_path: ", e)
+                is IOException -> BedwarsPlugin.LOGGER.error("Cannot read file $config_path: ", e)
+                else -> throw e
+            }
+            defaultConfigData()
+        }
+        
+        saveConfigToFile(loaded_config)
+    }
+    
+    fun saveConfigToFile(config: T) {
+        this.saveConfigData(config)
+    }
+    
+    fun initialise() {
+        config_path.createParentDirectories()
+        config_path.takeIf{it.notExists()}?.createFile()
+        loadConfigFromFile()
+    }
+    
+    fun loadConfigFromFile() {
+        this.loadConfigData()
+    }
+
+    internal abstract fun defaultConfigData(): T
+    internal abstract fun getConfigData(): T
+    internal abstract fun saveConfigData(config: T)
 }

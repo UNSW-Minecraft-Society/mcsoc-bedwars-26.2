@@ -4,34 +4,28 @@ import com.akuleshov7.ktoml.TomlInputConfig
 import com.akuleshov7.ktoml.file.TomlFileReader
 import com.akuleshov7.ktoml.file.TomlFileWriter
 import com.akuleshov7.ktoml.source.decodeFromStream
-import kotlinx.io.IOException
-import kotlinx.serialization.SerializationException
-import java.nio.file.Path
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlin.io.path.absolutePathString
-import kotlin.io.path.div
 import kotlin.io.path.inputStream
-import net.fabricmc.loader.api.FabricLoader
-import mcsoc.bedwars.BedwarsPlugin
-import mcsoc.bedwars.datatrackers.configloader.ConfigData
-import mcsoc.bedwars.datatrackers.configloader.ConfigDataExposer
-import mcsoc.bedwars.datatrackers.configloader.PluginConfigLoader
 
 
-object TomlConfigReader : PluginConfigLoader() {
-    const val CONFIG_FILE = "config.toml"
-    override fun getConfigPath(): Path = super.getConfigPath() / CONFIG_FILE
-    
-    override fun getConfigData(): ConfigDataExposer {
+abstract class TomlConfigReader<T : LoadedConfigExposer<T>>(
+    override val config_filename: String,
+    private val config_serialiser: KSerializer<T>
+) : ConfigLoader<T>(config_serialiser) {    
+    override fun getConfigData(): T {
         return config_path.inputStream().use {
             TomlFileReader(
                 TomlInputConfig.compliant(ignoreUnknownNames = true)
-            ).decodeFromStream(ConfigData.serializer(), it)
+            ).decodeFromStream(config_serialiser, it)
         }
     }
     
-    override fun saveConfigData() {
+    override fun saveConfigData(config: T) {
         TomlFileWriter().apply{
-            this.encodeToFile(ConfigData.serializer(), loaded_config as ConfigData, config_path.absolutePathString())
+            this.encodeToFile(config_serialiser, config, config_path.absolutePathString())
         }
     }
 }
