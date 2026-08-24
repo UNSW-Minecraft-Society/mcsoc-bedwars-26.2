@@ -38,19 +38,26 @@ object ShopGui {
 
     private fun getProducts(): Array<ShopProduct> {
         return arrayOf(
-            // These should all be replaced with ShopUpgrades once I get around to it
-            ShopItem(Items.CHAINMAIL_CHESTPLATE, 1, Items.IRON_INGOT, 40),
+            // These are ShopPlayerUpgrades
+            ShopPlayerUpgrade(UpgradeItemType.ARMOUR,
+                arrayOf(Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
+                arrayOf(3, 4, 5)),
+            ShopPlayerUpgrade(UpgradeItemType.SWORD,
+                arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND),
+                arrayOf(3, 4, 5)),
             ShopPlayerUpgrade(UpgradeItemType.PICKAXE,
                 arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
                 arrayOf(1, 2, 3, 4)),
-            ShopItem(Items.SHEARS, 1, Items.IRON_INGOT, 30),
-            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+            ShopPlayerUpgrade(UpgradeItemType.AXE,
+                arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
+                arrayOf(1, 2, 3, 4)),
+
 
             // These are ShopItems
-            ShopItem(Items.STONE_SWORD, 1, Items.IRON_INGOT, 10),
-            ShopItem(Items.IRON_SWORD, 1, Items.GOLD_INGOT, 7),
-            ShopItem(Items.DIAMOND_SWORD, 1, Items.EMERALD, 4),
+            ShopItem(Items.SHEARS, 1, Items.IRON_INGOT, 30),
             ShopItem(Items.STICK, 1, Items.GOLD_INGOT, 10),
+            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
 
             ShopItem(Items.ARROW, 16, Items.GOLD_INGOT, 2),
             ShopItem(Items.BOW, 1, Items.GOLD_INGOT, 12),
