@@ -107,5 +107,7 @@ object ModDataTracker : PlayerStateExposer, PlayerUpgradesExposer {
     override fun upgradeItem(player: ServerPlayer, item: UpgradeItemType) = mod_data.upgradeItem(player, item)
     override fun downgradeItems(player: ServerPlayer) = mod_data.downgradeItems(player)
     override fun clearItems(player: ServerPlayer) = mod_data.clearItems(player)
-    override fun getItemStack(player: ServerPlayer, item: UpgradeItemType) = mod_data.getItemStack(player, item)
+
+    override fun getNextItemStack(player: ServerPlayer, item: UpgradeItemType) = mod_data.getNextItemStack(player, item)
+    override fun getTier(player: ServerPlayer, item: UpgradeItemType) = mod_data.getTier(player, item)
 }
