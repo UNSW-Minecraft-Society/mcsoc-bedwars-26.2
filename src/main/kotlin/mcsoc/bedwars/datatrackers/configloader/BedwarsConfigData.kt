@@ -39,9 +39,9 @@ interface BedwarsConfigExposer {
 }
 
 object BedwarsConfigData : BedwarsConfigExposer {
-    val plugin_config: LoadedPluginConfig 
+    private val plugin_config: LoadedPluginConfig 
         get() = LoadedPluginConfig.Reader.loaded_config
-    val map_config: LoadedMapConfig
+    private val map_config: LoadedMapConfig
         get() = LoadedMapConfig.Reader.loaded_config
     
     override val debug: Boolean
