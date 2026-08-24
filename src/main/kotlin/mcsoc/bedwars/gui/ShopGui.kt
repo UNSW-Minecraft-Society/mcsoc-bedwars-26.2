@@ -28,7 +28,7 @@ import java.util.UUID
 object ShopGui {
     private val LOGGER = BedwarsPlugin.LOGGER
 
-    // Slots on
+    // Slot order which the `PRODUCTS` appear in.
     private val PRODUCT_SLOT_INDEX = arrayOf(
         1, 10, 19, 28,
         2, 11, 20, 29,
@@ -37,7 +37,6 @@ object ShopGui {
         5, 14, 23, 32,
         6, 15, 24, 33,
         7, 16, 25, 34)
-
 
     private val PRODUCTS: Array<ShopProduct> = getProducts()
 
