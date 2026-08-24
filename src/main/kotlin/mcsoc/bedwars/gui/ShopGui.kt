@@ -18,14 +18,17 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.inventory.ContainerInput
 import net.minecraft.world.inventory.MenuType
 import net.minecraft.world.inventory.Slot
-import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.ItemStackTemplate
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.enchantment.Enchantments
 import java.util.UUID
 
+/**
+ * Object containing logic pertaining to storing and displaying (via a GUI) items in the shop.
+ */
 object ShopGui {
     private val LOGGER = BedwarsPlugin.LOGGER
+
+    // Slots on
     private val PRODUCT_SLOT_INDEX = arrayOf(
         1, 10, 19, 28,
         2, 11, 20, 29,
@@ -34,9 +37,15 @@ object ShopGui {
         5, 14, 23, 32,
         6, 15, 24, 33,
         7, 16, 25, 34)
+
+
     private val PRODUCTS: Array<ShopProduct> = getProducts()
 
+    /**
+     * Fetches a list of the ShopProducts.
+     */
     private fun getProducts(): Array<ShopProduct> {
+        // At some point put this into a config file to be read, instead of hard-coded
         return arrayOf(
             // These are ShopPlayerUpgrades
             ShopPlayerUpgrade(UpgradeItemType.ARMOUR,
@@ -84,17 +93,21 @@ object ShopGui {
             ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
             ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
         )
-        // return Array(SHOP_SIZE) { ShopItem(Items.WOOL.white, 16, Items.IRON_INGOT, 4) }
     }
 
-    fun displayShop(objectCommandContext: CommandContext<CommandSourceStack>): Int {
+    /**
+     * Displays the shop GUI to the provided player. Returns 0 if succeeded.
+     */
+    fun displayShop(player: ServerPlayer): Int {
         try {
-
             LOGGER.info("Displaying shop gui")
-            val player = objectCommandContext.source.player
+
+            /**
+             * Update items within the shop gui.
+             */
             fun updateItems(gui: SimpleGui) {
                 for ((slot_index, product) in PRODUCT_SLOT_INDEX zip PRODUCTS) {
-                    if (product is PlayerSpecificShopProduct && player is ServerPlayer) product.setPlayer(player)
+                    if (product is PlayerSpecificShopProduct) product.setPlayer(player)
                     gui.setSlot(slot_index, GuiElementBuilder(product.getItemStack())
                         .addLoreLine(Component.literal("Cost: ${product.getItemCost()}"))
                         .setCallback(product.getClickCallback()))
@@ -124,7 +137,22 @@ object ShopGui {
         return 0
     }
 
-    // Test Guis from Sgui translated to kotlin
+    /**
+     * Displays the shop GUI to the provided player. Returns 0 if succeeded.
+     */
+    fun displayShop(objectCommandContext: CommandContext<CommandSourceStack>): Int {
+        try {
+            return displayShop(objectCommandContext.source.playerOrException)
+        } catch (e: Exception) {
+            LOGGER.error(e.stackTraceToString())
+            e.printStackTrace()
+            return 1
+        }
+    }
+
+    /**
+     * Test GUIs from Sgui translated to kotlin
+     */
     fun testSimpleGui(objectCommandContext: CommandContext<CommandSourceStack>): Int {
         try {
             LOGGER.info("Testing simple gui")

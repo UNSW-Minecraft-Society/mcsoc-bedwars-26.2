@@ -14,13 +14,25 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.ItemStackTemplate
 import net.minecraft.world.item.Items
 
+/**
+ * Abstract class for storing data on shop products.
+ */
 abstract class ShopProduct {
+    /**
+     * Gets the `ItemStack` to display in the shop menu.
+     */
     abstract fun getItemStack(): ItemStack
+
+    /**
+     * Gets the callback function to be executed when this item is clicked in the shop.
+     */
     abstract fun getClickCallback(): GuiElement.ClickCallback
     abstract fun getItemCost(): ItemStack
 
-    // Handles purchasing logic, returns true if purchase successful.
-    // transaction handles the effect of purchase (e.g. giving an item), returning false if it fails.
+    /**
+     * Handles purchasing logic, returns true if purchase successful.
+     * transaction is a function that handles the effect of purchase (e.g. giving an item), returning false if it fails.
+      */
     protected fun purchaseUnit(player: Player, transaction: () -> Boolean, sendMsg: Boolean = true): Boolean {
         val inventory = player.inventory
         val currency = getItemCost().item
@@ -38,16 +50,23 @@ abstract class ShopProduct {
             return true
         } else {
             player.playSound(SoundEvents.NOTE_BLOCK_BIT.value())
-            if (sendMsg) player.sendSystemMessage(Component.literal("Insufficient space in inventory"))
+            if (sendMsg) player.sendSystemMessage(Component.literal("Transaction failed"))
             return false
         }
     }
 }
 
+/**
+ * Abstract class for storing data on player-specific shop product (e.g. team colored blocks, player-specific upgrades).
+ * `setPlayer` needs to be called to initialize the player it before this class is used.
+ */
 abstract class PlayerSpecificShopProduct : ShopProduct() {
     abstract fun setPlayer(player: ServerPlayer)
 }
 
+/**
+ * Class for storing data on default item shop products.
+ */
 class ShopItem : ShopProduct {
     private val item_template: ItemStackTemplate
     private lateinit var item: ItemStack
@@ -94,6 +113,9 @@ class ShopItem : ShopProduct {
     }
 }
 
+/**
+ * Class for storing data on player upgrades (e.g. tool and armor material upgrades).
+ */
 class ShopPlayerUpgrade : PlayerSpecificShopProduct {
     private val playerUpgrade: UpgradeItemType
     private val currencies: Array<Item>
