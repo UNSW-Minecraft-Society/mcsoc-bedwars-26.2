@@ -43,7 +43,6 @@ object ShopGui {
             ShopPlayerUpgrade(UpgradeItemType.PICKAXE,
                 arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
                 arrayOf(1, 2, 3, 4)),
-            ShopItem(Items.WOODEN_PICKAXE, 1, Items.IRON_INGOT, 10),
             ShopItem(Items.SHEARS, 1, Items.IRON_INGOT, 30),
             ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
 
@@ -86,6 +85,14 @@ object ShopGui {
 
             LOGGER.info("Displaying shop gui")
             val player = objectCommandContext.source.player
+            fun updateItems(gui: SimpleGui) {
+                for ((slot_index, product) in PRODUCT_SLOT_INDEX zip PRODUCTS) {
+                    if (product is PlayerSpecificShopProduct && player is ServerPlayer) product.setPlayer(player)
+                    gui.setSlot(slot_index, GuiElementBuilder(product.getItemStack())
+                        .addLoreLine(Component.literal("Cost: ${product.getItemCost()}"))
+                        .setCallback(product.getClickCallback()))
+                }
+            }
 
             val gui = object : SimpleGui(MenuType.GENERIC_9x5, player, false) {
                 override fun onClick(
@@ -95,18 +102,12 @@ object ShopGui {
                     element: GuiElement?
                 ): Boolean {
                     this.player.sendSystemMessage(Component.literal(type.toString()), false)
-
+                    updateItems(this)
                     return super.onClick(index, type, action, element)
                 }
             }
 
-            for ((slot_index, product) in PRODUCT_SLOT_INDEX zip PRODUCTS) {
-                if (product is PlayerSpecificShopProduct && player is ServerPlayer) product.setPlayer(player)
-                gui.setSlot(slot_index, GuiElementBuilder(product.getItemStack())
-                    .addLoreLine(Component.literal("Cost: ${product.getItemCost()}"))
-                    .setCallback(product.getClickCallback()))
-            }
-
+            updateItems(gui)
             gui.title = Component.literal("Shop")
             gui.open()
         } catch (e: Exception) {
