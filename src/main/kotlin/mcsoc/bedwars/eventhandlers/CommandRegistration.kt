@@ -6,7 +6,9 @@ import net.minecraft.commands.Commands
 
 const val ROOT_NODE = "bedwars"
 
-
+/**
+ * Function to register commands for the plugin
+ */
 fun registerCommands() {
     CommandRegistrationCallback.EVENT.register{dispatcher, buildContext, selection ->
         dispatcher.register(Commands.literal(ROOT_NODE)
