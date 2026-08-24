@@ -28,8 +28,13 @@ abstract class StructureLoader {
         }
         
         val loaders_map: MutableMap<ResourceKey<Level>, StructureLoader> = mutableMapOf()
-        fun Level.getStructureLoader(): StructureLoader {
+        
+        private fun Level.getStructureLoader(): StructureLoader {
             return loaders_map.getOrPut(this.dimension()){getNewLoader(this.dimension())}
+        }
+        
+        fun Level.place(structure: String, pos: BlockPos): CompletableFuture<Boolean> {
+            return this.getStructureLoader().queueStructure(structure, pos)
         }
         
         fun initialise() {

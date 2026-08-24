@@ -2,9 +2,9 @@ package mcsoc.bedwars.eventhandlers.commands
 
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
-import mcsoc.bedwars.dataloaders.maploader.StructureLoader.Companion.getStructureLoader
 import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
+import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader.Companion.place
 import mcsoc.bedwars.utils.MapData
 import mcsoc.bedwars.utils.format
 import net.minecraft.commands.CommandSourceStack
@@ -47,9 +47,9 @@ object CommandActions {
         val source = ctx.source
         
         val level = source.level
-        val map_loader = level.getStructureLoader()
         
-        return if (!map_loader.queueStructure(map_name, pos).join()) {
+        
+        return if (!level.place(map_name, pos).join()) {
             source.sendFailure(Component.literal("Failed to place $map_name"))
             0
         } else {

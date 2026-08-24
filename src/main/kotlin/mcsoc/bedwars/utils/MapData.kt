@@ -10,7 +10,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
-import mcsoc.bedwars.dataloaders.maploader.StructureLoader.Companion.getStructureLoader
+import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader.Companion.place
 import net.minecraft.core.BlockPos
 import net.minecraft.world.level.Level
 import kotlin.math.PI
@@ -23,7 +23,7 @@ internal interface Island {
     operator fun component1(): CylindricalBlockPos = cpos
     
     fun place(level: Level, origin: BlockPos) {
-        level.getStructureLoader().queueStructure(structure, cpos.toBlockPos(origin))
+        level.place(structure, cpos.toBlockPos(origin))
     }
 }
 
