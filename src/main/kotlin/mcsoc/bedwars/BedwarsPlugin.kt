@@ -1,6 +1,6 @@
 package mcsoc.bedwars
 
-import mcsoc.bedwars.eventhandlers.registerCommands
+import mcsoc.bedwars.eventhandlers.commands.registerCommands
 import mcsoc.bedwars.eventhandlers.registerItemCallbacks
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
