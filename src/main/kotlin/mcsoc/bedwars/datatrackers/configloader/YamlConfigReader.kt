@@ -16,7 +16,8 @@ abstract class YamlConfigReader<T : LoadedConfigExposer<T>>(
 ) : ConfigLoader<T>(config_serialiser) {     
     private val yaml_reader = Yaml(
         configuration = YamlConfiguration(
-            encodeDefaults = true
+            encodeDefaults = true,
+            strictMode = false
         )
     )
     

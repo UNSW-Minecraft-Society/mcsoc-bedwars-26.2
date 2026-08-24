@@ -1,22 +1,11 @@
 package mcsoc.bedwars
 
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
-import org.slf4j.LoggerFactory
-import net.minecraft.resources.Identifier
-import net.fabricmc.api.ModInitializer
-import mcsoc.bedwars.eventhandlers.registerCommands
-
-
-import net.fabricmc.api.ModInitializer
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
-import net.fabricmc.loader.api.FabricLoader
-import net.minecraft.resources.Identifier
-
 import mcsoc.bedwars.eventhandlers.registerBlockBreakEvents
 import mcsoc.bedwars.eventhandlers.registerCommands
-import net.minecraft.world.level.Level
-import java.nio.file.Files
-import kotlin.io.path.div
+import net.fabricmc.api.ModInitializer
+import net.minecraft.resources.Identifier
+import org.slf4j.LoggerFactory
 
 
 object BedwarsPlugin : ModInitializer {
