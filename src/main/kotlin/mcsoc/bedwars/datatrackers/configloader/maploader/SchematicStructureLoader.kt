@@ -58,8 +58,8 @@ class SchematicStructureLoader(
         if (schematic_queue.isEmpty()) return
         
         val world: World = FabricAdapter.get().fromNativeWorld(server.getLevel(level_key))
-        WorldEdit.getInstance().newEditSession(world).use{session ->
-            while (schematic_queue.isNotEmpty()) {
+        while (schematic_queue.isNotEmpty()) {
+            WorldEdit.getInstance().newEditSession(world).use{session ->
                 val schematic = schematic_queue.removeFirstOrNull() ?: return
                 try {
                     val operation: Operation = ClipboardHolder(schematic.schematic)
