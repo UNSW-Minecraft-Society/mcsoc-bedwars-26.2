@@ -1,21 +1,24 @@
 package mcsoc.bedwars.eventhandlers
 
 
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
-import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import com.mojang.brigadier.arguments.StringArgumentType
-import mcsoc.bedwars.dataloaders.maploader.BedwarsIsland
-import mcsoc.bedwars.dataloaders.maploader.BedwarsMapStructure
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
 import net.minecraft.world.phys.AABB
-
+import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
+import mcsoc.bedwars.datatrackers.configloader.TomlConfigReader
+import mcsoc.bedwars.datatrackers.configloader.YamlConfigReader
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
+import net.minecraft.commands.Commands
+import net.minecraft.server.permissions.Permission
+import net.minecraft.server.permissions.PermissionLevel
 import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.dataloaders.maploader.StructureLoader.Companion.getStructureLoader
 import mcsoc.bedwars.utils.CylindricalBlockPos
 import mcsoc.bedwars.utils.format
 import kotlin.math.PI
+
 
 const val ROOT_NODE = "bedwars"
 
@@ -83,43 +86,30 @@ fun registerCommands() {
             )   
         )
         .then(Commands.literal("place_map")
-            .then(Commands.argument("base", StringArgumentType.string())
-            .then(Commands.argument("mid", StringArgumentType.string())
-            .then(Commands.argument("diamond", StringArgumentType.string())
-            .then(Commands.argument("misc", StringArgumentType.string())
+            .then(Commands.argument("map_name", StringArgumentType.string())
                 .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
                 .executes{
-                    val base_structure_name = StringArgumentType.getString(it, "base")
-                    val mid_structure_name = StringArgumentType.getString(it, "mid")
-                    val diamond_structure_name = StringArgumentType.getString(it, "diamond")
-                    val misc_structure_name = StringArgumentType.getString(it, "misc")
-                    
+                    val map_name = StringArgumentType.getString(it, "map_name")      
                     val pos = BlockPosArgument.getLoadedBlockPos(it, POSITION_ARGUMENT)
                     
                     val source = it.source
                     
                     val level = source.level
-                    val map = BedwarsMapStructure(level,
-                        listOf(
-                            BedwarsIsland(CylindricalBlockPos(pos, 50F, (PI / 2.0F).toFloat(), 6), base_structure_name),
-                            BedwarsIsland(CylindricalBlockPos(pos, 50F, (3 * PI / 2.0F).toFloat(), 6), base_structure_name)
-                        ),
-                        listOf(
-                            BedwarsIsland(CylindricalBlockPos(pos, 20F, (PI / 4.0F).toFloat(), 3), diamond_structure_name),
-                            BedwarsIsland(CylindricalBlockPos(pos, 20F, (5 * PI / 4.0F).toFloat(), 3), diamond_structure_name)
-                        ),
-                        BedwarsIsland(CylindricalBlockPos(pos, 0F, 0F, 0), mid_structure_name),
-                        listOf(
-                            BedwarsIsland(CylindricalBlockPos(pos, 20F, (3 * PI / 4.0F).toFloat(), -2), misc_structure_name),
-                            BedwarsIsland(CylindricalBlockPos(pos, 20F, (7 * PI / 4.0F).toFloat(), -2), misc_structure_name)
-                        )
-                    )
-                    map.place()
-                    source.sendSystemMessage(Component.literal("Placed"))
+                    val map = BedwarsConfigData.map_data[map_name] ?: run {
+                        source.sendFailure(Component.literal("No map exists with id $map_name"))
+                        return@executes 0
+                    }
+                    map.place(level, pos)
+                    source.sendSystemMessage(Component.literal("Placed $map_name"))
                     1
                 })
-            ))))
+            )
         )
-        )
-    }
+        .then(Commands.literal("reload")
+        .requires{it.permissionContext.permissionLevel().isEqualOrHigherThan(PermissionLevel.GAMEMASTERS)}
+        .executes{ctx ->
+            BedwarsConfigData.reloadConfig()
+            1
+        })
+    )}
 }

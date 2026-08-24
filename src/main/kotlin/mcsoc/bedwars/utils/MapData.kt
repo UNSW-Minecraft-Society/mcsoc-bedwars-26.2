@@ -1,0 +1,259 @@
+package mcsoc.bedwars.utils
+
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
+import mcsoc.bedwars.dataloaders.maploader.StructureLoader.Companion.getStructureLoader
+import net.minecraft.core.BlockPos
+import net.minecraft.world.level.Level
+import kotlin.math.PI
+
+
+internal interface Island {
+    val cpos: CylindricalBlockPos
+    val structure: String
+    
+    operator fun component1(): CylindricalBlockPos = cpos
+    
+    fun place(level: Level, origin: BlockPos) {
+        level.getStructureLoader().queueStructure(structure, cpos.toBlockPos(origin))
+    }
+}
+
+data class IslandData(
+    override val cpos: CylindricalBlockPos = CylindricalBlockPos(),
+    override val structure: String = "default"
+) : Island
+
+data class TeamIslandData(
+    override val cpos: CylindricalBlockPos = CylindricalBlockPos(),
+    override val structure: String = "default",
+    val team: String
+) : Island
+
+@Serializable(with = MapDataSerialiser::class)
+data class MapData(
+    val mid_island: IslandData,
+    val base_islands: List<TeamIslandData>,
+    val diamond_islands: List<IslandData>,
+    val misc_islands: List<IslandData>
+)  {
+    fun place(level: Level, origin: BlockPos) {
+        // also register generators
+        base_islands.forEach{it.place(level, origin)}
+        diamond_islands.forEach{it.place(level, origin)}
+        misc_islands.forEach{it.place(level, origin)}
+        mid_island.place(level, origin)
+    }
+}
+
+/*
+ *  pos: BlockPos
+ * 
+ *  mid: IslandData
+ *    cpos: CylindricalBlockPos
+ *      radius: Float
+ *      theta: Float
+ *      height: Int
+ *    structure: String
+ * 
+ *  bases: List<TeamIslandData> [
+ *      cpos: CylindricalBlockPos
+ *        radius: Float
+ *        theta: Float
+ *        height: Int
+ *      structure: String
+ *      team: String
+ *  ]
+ *  diamonds: List<IslandData> [
+ *      cpos: CylindricalBlockPos
+ *        radius: Float
+ *        theta: Float
+ *        height: Int
+ *      structure: String
+ *  ]
+ *  misc: List<IslandData> [
+ *      cpos: CylindricalBlockPos
+ *        radius: Float
+ *        theta: Float
+ *        height: Int
+ *      structure: String
+ *  ]
+ */
+
+object BlockPosSerialiser: KSerializer<BlockPos> {
+    override val descriptor = buildClassSerialDescriptor("BlockPos") {
+        element<Int>("x") // 0
+        element<Int>("y") // 1
+        element<Int>("z") // 2
+    }
+    override fun serialize(encoder: Encoder, value: BlockPos) {
+        encoder.encodeStructure(descriptor) {
+            encodeIntElement(descriptor, 0, value.x)
+            encodeIntElement(descriptor, 1, value.y)
+            encodeIntElement(descriptor, 2, value.z)
+        }
+    }
+    override fun deserialize(decoder: Decoder): BlockPos = decoder.decodeStructure(descriptor) {
+        var x = 0
+        var y = 0
+        var z = 0
+        
+        while (true) {
+            when (val index = decodeElementIndex(descriptor)) {
+                CompositeDecoder.DECODE_DONE -> break
+                0 -> x = decodeIntElement(descriptor, 0)
+                1 -> y = decodeIntElement(descriptor, 1)
+                2 -> z = decodeIntElement(descriptor, 2)
+                else -> error("Unexpected index: $index")
+            }
+        }
+        
+        BlockPos(x, y, z)
+    }
+}
+
+object CylindricalBlockPosSerialiser: KSerializer<CylindricalBlockPos> {
+    override val descriptor = buildClassSerialDescriptor("ReducedCylindricalBlockPos") {
+        element<Float>("radius")
+        element<Float>("angle")
+        element<Int>("height")
+    }
+    
+    override fun serialize(encoder: Encoder, value: CylindricalBlockPos) {
+        encoder.encodeStructure(descriptor) {
+            encodeFloatElement(descriptor, 0, value.radius)
+            encodeFloatElement(descriptor, 1, (value.angle * 180 / PI).toFloat())
+            encodeIntElement(descriptor, 2, value.height)
+        }
+    }
+    override fun deserialize(decoder: Decoder): CylindricalBlockPos = decoder.decodeStructure(descriptor) {
+        var r = 0F
+        var t = 0F
+        var h = 0
+        
+        while (true) {
+            when (val index = decodeElementIndex(descriptor)) {
+                CompositeDecoder.DECODE_DONE -> break
+                0 -> r = decodeFloatElement(descriptor, 0)
+                1 -> t = (decodeFloatElement(descriptor, 1) * PI / 180).toFloat()
+                2 -> h = decodeIntElement(descriptor, 2)
+                else -> error("Unexpected index: $index")
+            }
+        }
+        
+        CylindricalBlockPos(r, t, h)
+    }
+}
+
+object IslandDataSerialiser: KSerializer<IslandData> {
+    override val descriptor = buildClassSerialDescriptor("IslandDataReduced") {
+        element("cpos", CylindricalBlockPosSerialiser.descriptor)
+        element<String>("structure")
+    }
+    
+    override fun serialize(encoder: Encoder, value: IslandData) {
+        encoder.encodeStructure(descriptor) {
+            encodeSerializableElement(descriptor, 0, CylindricalBlockPosSerialiser, value.cpos)
+            encodeStringElement(descriptor, 1, value.structure)
+        }
+    }
+    
+    override fun deserialize(decoder: Decoder): IslandData = decoder.decodeStructure(descriptor) {
+        var cpos = CylindricalBlockPos()
+        var structure = ""
+        
+        while (true) {
+            when (val index = decodeElementIndex(descriptor)) {
+                CompositeDecoder.DECODE_DONE -> break
+                0 -> cpos = decodeSerializableElement(descriptor, 0, CylindricalBlockPosSerialiser)
+                1 -> structure = decodeStringElement(descriptor, 1)
+                else -> error("Unexpected index: $index")
+            }
+        }
+        
+        IslandData(cpos, structure)
+    }
+}
+
+object TeamIslandDataSerialiser: KSerializer<TeamIslandData> {
+    override val descriptor = buildClassSerialDescriptor("IslandDataReduced") {
+        element("cpos", CylindricalBlockPosSerialiser.descriptor)
+        element<String>("structure")
+        element<String>("team")
+    }
+    
+    override fun serialize(encoder: Encoder, value: TeamIslandData) {
+        encoder.encodeStructure(descriptor) {
+            encodeSerializableElement(descriptor, 0, CylindricalBlockPosSerialiser, value.cpos)
+            encodeStringElement(descriptor, 1, value.structure)
+            encodeStringElement(descriptor, 2, value.team)
+        }
+    }
+    
+    override fun deserialize(decoder: Decoder): TeamIslandData = decoder.decodeStructure(descriptor) {
+        var cpos = CylindricalBlockPos()
+        var structure = ""
+        var team = ""
+        
+        while (true) {
+            when (val index = decodeElementIndex(descriptor)) {
+                CompositeDecoder.DECODE_DONE -> break
+                0 -> cpos = decodeSerializableElement(descriptor, 0, CylindricalBlockPosSerialiser)
+                1 -> structure = decodeStringElement(descriptor, 1)
+                2 -> team = decodeStringElement(descriptor, 2)
+                else -> error("Unexpected index: $index")
+            }
+        }
+        
+        TeamIslandData(cpos, structure, team)
+    }
+}
+
+
+object MapDataSerialiser : KSerializer<MapData> {
+    
+    override val descriptor = buildClassSerialDescriptor("MapDataReduced") {
+        element("mid_island", IslandDataSerialiser.descriptor)
+        element("base_islands", ListSerializer(TeamIslandDataSerialiser).descriptor)
+        element("diamond_islands", ListSerializer(IslandDataSerialiser).descriptor)
+        element("misc_islands", ListSerializer(IslandDataSerialiser).descriptor)
+    }
+    
+    // pos: value.mid_island.pos.origin
+    override fun serialize(encoder: Encoder, value: MapData) {
+        encoder.encodeStructure(descriptor) {
+            encodeSerializableElement(descriptor, 0, IslandDataSerialiser, value.mid_island)
+            encodeSerializableElement(descriptor, 1, ListSerializer(TeamIslandDataSerialiser), value.base_islands)
+            encodeSerializableElement(descriptor, 2, ListSerializer(IslandDataSerialiser), value.diamond_islands)
+            encodeSerializableElement(descriptor, 3, ListSerializer(IslandDataSerialiser), value.misc_islands)
+        }
+    }
+    
+    override fun deserialize(decoder: Decoder): MapData = decoder.decodeStructure(descriptor) {
+        var mid_island: IslandData = IslandData()
+        var base_islands: List<TeamIslandData> = listOf()
+        var diamond_islands: List<IslandData> = listOf()
+        var misc_islands: List<IslandData> = listOf()
+        
+        while (true) {
+            when (val index = decodeElementIndex(descriptor)) {
+                CompositeDecoder.DECODE_DONE -> break
+                0 -> mid_island = decodeSerializableElement(descriptor, 0, IslandDataSerialiser)
+                1 -> base_islands = decodeSerializableElement(descriptor, 1, ListSerializer(TeamIslandDataSerialiser))
+                2 -> diamond_islands = decodeSerializableElement(descriptor, 2, ListSerializer(IslandDataSerialiser))
+                3 -> misc_islands = decodeSerializableElement(descriptor, 3, ListSerializer(IslandDataSerialiser))
+                else -> error("Unexpected index: $index")
+            }
+        }
+        
+        MapData(mid_island, base_islands, diamond_islands, misc_islands)
+    }
+}
