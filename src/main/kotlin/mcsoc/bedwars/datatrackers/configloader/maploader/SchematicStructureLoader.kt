@@ -1,4 +1,4 @@
-package mcsoc.bedwars.dataloaders.maploader
+package mcsoc.bedwars.datatrackers.configloader.maploader
 
 import com.sk89q.worldedit.EditSession
 import com.sk89q.worldedit.WorldEdit

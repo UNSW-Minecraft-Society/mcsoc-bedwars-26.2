@@ -2,6 +2,7 @@ package mcsoc.bedwars.datatrackers.configloader
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader
 import mcsoc.bedwars.utils.MapData
 
 @Serializable
@@ -52,6 +53,7 @@ object BedwarsConfigData : BedwarsConfigExposer {
     fun initialise() {
         LoadedPluginConfig.Reader.initialise()
         LoadedMapConfig.Reader.initialise()
+        StructureLoader.initialise()
     }
     
     fun reloadConfig() {
