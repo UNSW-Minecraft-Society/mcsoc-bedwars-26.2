@@ -1,8 +1,6 @@
 package mcsoc.bedwars.eventhandlers
 
 
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
-import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import com.mojang.brigadier.arguments.StringArgumentType
 import mcsoc.bedwars.dataloaders.maploader.BedwarsIsland
@@ -10,12 +8,19 @@ import mcsoc.bedwars.dataloaders.maploader.BedwarsMapStructure
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
 import net.minecraft.world.phys.AABB
-
+import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
+import mcsoc.bedwars.datatrackers.configloader.TomlConfigReader
+import mcsoc.bedwars.datatrackers.configloader.YamlConfigReader
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
+import net.minecraft.commands.Commands
+import net.minecraft.server.permissions.Permission
+import net.minecraft.server.permissions.PermissionLevel
 import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.dataloaders.maploader.StructureLoader.Companion.getStructureLoader
 import mcsoc.bedwars.utils.CylindricalBlockPos
 import mcsoc.bedwars.utils.format
 import kotlin.math.PI
+
 
 const val ROOT_NODE = "bedwars"
 
@@ -120,6 +125,11 @@ fun registerCommands() {
                 })
             ))))
         )
-        )
-    }
+        .then(Commands.literal("reload")
+        .requires{it.permissionContext.permissionLevel().isEqualOrHigherThan(PermissionLevel.GAMEMASTERS)}
+        .executes{ctx ->
+            BedwarsConfigData.reloadConfig()
+            1
+        })
+    )}
 }

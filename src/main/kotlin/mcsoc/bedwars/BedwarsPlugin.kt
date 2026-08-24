@@ -1,6 +1,11 @@
 package mcsoc.bedwars
 
+import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import org.slf4j.LoggerFactory
+import net.minecraft.resources.Identifier
+import net.fabricmc.api.ModInitializer
+import mcsoc.bedwars.eventhandlers.registerCommands
+
 
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
@@ -15,8 +20,8 @@ import kotlin.io.path.div
 
 
 object BedwarsPlugin : ModInitializer {
+	const val CONFIG_PATH = "bedwars"
 	const val MOD_ID: String = "bedwars-plugin"
-	const val CONFIG_PATH: String = "bedwars"
 
 	val LOGGER = LoggerFactory.getLogger(MOD_ID)
 
@@ -30,9 +35,8 @@ object BedwarsPlugin : ModInitializer {
 		// register eventhandlers
         registerBlockBreakEvents()
         registerCommands()
-        
-        val config_dir = FabricLoader.getInstance().configDir / CONFIG_PATH
-		Files.createDirectories(config_dir)
+
+        BedwarsConfigData.initialise()
 	}
 
 	fun id(path: String): Identifier

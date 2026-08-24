@@ -13,7 +13,7 @@ import kotlin.uuid.Uuid
 import kotlin.uuid.toKotlinUuid
 
 
-@Serializable
+
 private class PlayerDataRecord() : PlayerStateRecord {
     companion object {
         val CODEC: Codec<PlayerDataRecord> = RecordCodecBuilder.create{it.group(

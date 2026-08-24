@@ -4,6 +4,7 @@ plugins {
 	id("net.fabricmc.fabric-loom")
 	`maven-publish`
 	id("org.jetbrains.kotlin.jvm") version "2.4.10"
+	kotlin("plugin.serialization") version "2.4.10"
 }
 
 version = providers.gradleProperty("mod_version").get()
@@ -18,6 +19,7 @@ repositories {
 	maven {
 		url = uri("https://maven.enginehub.org/repo/")
 	}
+	mavenCentral()
 }
 
 loom {
@@ -48,6 +50,13 @@ dependencies {
 
 	// for loading schematics
 	implementation("com.sk89q.worldedit:worldedit-fabric-mc${providers.gradleProperty("minecraft_version").get()}:${providers.gradleProperty("worldedit_api_version").get()}")
+	
+	// toml and yaml support
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+	implementation("com.akuleshov7:ktoml-core:0.7.1")
+	implementation("com.akuleshov7:ktoml-file:0.7.1")
+	implementation("io.heapy.kotaml:kotaml:0.110.0")
+
 }
 
 tasks.processResources {
