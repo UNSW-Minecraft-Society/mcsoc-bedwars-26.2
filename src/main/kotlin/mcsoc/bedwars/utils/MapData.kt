@@ -46,6 +46,12 @@ enum class LoadedGenerator(
     )
 }
 
+@Serializable
+enum class LoadedShopkeeper {
+    PERSONAL,
+    TEAM
+}
+
 private interface Island {
     val cpos: CylindricalBlockPos
     val structure: String
@@ -77,6 +83,7 @@ data class BaseIslandData(
     override val cpos: CylindricalBlockPos = CylindricalBlockPos(),
     override val structure: String = "default",
     override val generators: Iterable<Pair<LoadedGenerator, BlockPos>> = listOf(Pair(LoadedGenerator.BASE, BlockPos(0, -2, 0))),
+    val shops: Iterable<Pair<LoadedShopkeeper, BlockPos>> = listOf(Pair(LoadedShopkeeper.PERSONAL, BlockPos(2, 0, 0))),
     val team: String = "red"
 ) : GeneratorIsland
 
@@ -288,11 +295,41 @@ object GeneratorIslandDataSerialiser: KSerializer<GeneratorIslandData> {
     }
 }
 
+object ShopkeeperPositionSerialiser: KSerializer<Pair<LoadedShopkeeper, BlockPos>> {
+    override val descriptor = buildClassSerialDescriptor("GeneratorIslandData") {
+        element<String>("type")
+        element("pos", BlockPosSerialiser.descriptor)
+    }
+    
+    override fun serialize(encoder: Encoder, value: Pair<LoadedShopkeeper, BlockPos>) {
+        encoder.encodeStructure(descriptor) {
+            encodeStringElement(descriptor, 0, value.first.name.lowercase())
+            encodeSerializableElement(descriptor, 1, BlockPosSerialiser, value.second)
+        }
+    }
+    
+    override fun deserialize(decoder: Decoder): Pair<LoadedShopkeeper, BlockPos> = decoder.decodeStructure(descriptor) {
+        var type: LoadedShopkeeper = LoadedShopkeeper.PERSONAL
+        var pos: BlockPos = BlockPos(0, 0, 0)
+        
+        while (true) {
+            when (val index = decodeElementIndex(descriptor)) {
+                CompositeDecoder.DECODE_DONE -> break
+                0 -> type = LoadedShopkeeper.valueOf(decodeStringElement(descriptor, index))
+                1 -> pos = decodeSerializableElement(descriptor, index, BlockPosSerialiser)
+                else -> error("Unexpected index: $index")
+            }
+        }
+        Pair(type, pos)
+    }
+}
+
 object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
     override val descriptor = buildClassSerialDescriptor("BaseIslandData") {
         element("cpos", CylindricalBlockPos.serializer().descriptor)
         element<String>("structure")
-        element("generator_positions", ListSerializer(GeneratorPositionSerialiser).descriptor)
+        element("generators", ListSerializer(GeneratorPositionSerialiser).descriptor)
+        element("shopkeepers", ListSerializer(ShopkeeperPositionSerialiser).descriptor)
         element<String>("team")
     }
     
@@ -301,7 +338,8 @@ object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
             encodeSerializableElement(descriptor, 0, CylindricalBlockPos.serializer(), value.cpos)
             encodeStringElement(descriptor, 1, value.structure)
             encodeSerializableElement(descriptor, 2, ListSerializer(GeneratorPositionSerialiser), value.generators.toList())
-            encodeStringElement(descriptor, 3, value.team)
+            encodeSerializableElement(descriptor, 3, ListSerializer(ShopkeeperPositionSerialiser), value.shops.toList())
+            encodeStringElement(descriptor, 4, value.team)
         }
     }
     
@@ -309,6 +347,7 @@ object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
         var cpos = CylindricalBlockPos()
         var structure = ""
         var generators: List<Pair<LoadedGenerator, BlockPos>> = listOf()
+        var shops: List<Pair<LoadedShopkeeper, BlockPos>> = listOf()
         var team = ""
         
         while (true) {
@@ -317,12 +356,13 @@ object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
                 0 -> cpos = decodeSerializableElement(descriptor, index, CylindricalBlockPos.serializer())
                 1 -> structure = decodeStringElement(descriptor, index)
                 2 -> generators = decodeSerializableElement(descriptor, index, ListSerializer(GeneratorPositionSerialiser))
-                3 -> team = decodeStringElement(descriptor, index)
+                3 -> shops = decodeSerializableElement(descriptor, index, ListSerializer(ShopkeeperPositionSerialiser))
+                4 -> team = decodeStringElement(descriptor, index)
                 else -> error("Unexpected index: $index")
             }
         }
 
-        BaseIslandData(cpos, structure, generators, team)
+        BaseIslandData(cpos, structure, generators, shops, team)
     }
 }
 
