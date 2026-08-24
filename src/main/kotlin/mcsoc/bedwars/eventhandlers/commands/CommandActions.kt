@@ -78,5 +78,16 @@ object CommandActions {
         BedwarsConfigData.reloadConfig()
         return 1
     }
+    
+    fun ping(ctx: CommandContext<CommandSourceStack>): Int {
+        ctx.source.sendSystemMessage(Component.literal("pong!"))
+        return 1
+    }
+    
+    fun pingWord(ctx: CommandContext<CommandSourceStack>): Int {
+        val word = StringArgumentType.getString(ctx, SOME_ARGUMENT)
+        ctx.source.sendSystemMessage(Component.literal(word))
+        return 1
+    }
 }
 

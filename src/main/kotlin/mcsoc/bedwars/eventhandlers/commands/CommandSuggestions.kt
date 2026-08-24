@@ -27,7 +27,13 @@ internal class AvailableStructureSuggestionProvider: SuggestionProvider<CommandS
 		for (schematic in structures_directory.listDirectoryEntries()) {
 		    builder.suggest(schematic.name)
         }
-        
+		return builder.buildFuture()
+	}
+}
+
+internal class ExampleSuggestionProvider: SuggestionProvider<CommandSourceStack> {
+	override fun getSuggestions(ctx: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
+		builder.suggest(ctx.source.textName)
 		return builder.buildFuture()
 	}
 }

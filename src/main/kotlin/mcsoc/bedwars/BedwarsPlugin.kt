@@ -3,6 +3,7 @@ package mcsoc.bedwars
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.eventhandlers.commands.registerCommands
 import mcsoc.bedwars.eventhandlers.registerBlockBreakEvents
+import mcsoc.bedwars.eventhandlers.commands.registerCommands
 import mcsoc.bedwars.eventhandlers.registerItemCallbacks
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
