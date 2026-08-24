@@ -1,5 +1,6 @@
 package mcsoc.bedwars.utils
 
+import kotlinx.serialization.Serializable
 import net.minecraft.core.BlockPos
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -8,6 +9,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 
+@Serializable
 data class CylindricalBlockPos(
     var radius: Float = 0F,
     var angle: Float = 0F,

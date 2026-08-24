@@ -24,7 +24,7 @@ data class LoadedPluginConfig(
 
 @Serializable
 data class LoadedMapConfig(
-    val maps: Map<String, MapData> = mapOf()
+    val maps: Map<String, MapData> = mapOf(Pair("example", MapData()))
 ) : LoadedConfigExposer<LoadedMapConfig> {
     object Reader : YamlConfigReader<LoadedMapConfig>("maps.yml", LoadedMapConfig.serializer()) {
         override fun defaultConfigData(): LoadedMapConfig {
