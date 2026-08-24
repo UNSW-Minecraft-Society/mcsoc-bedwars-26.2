@@ -9,10 +9,12 @@ import eu.pb4.sgui.api.elements.GuiElementBuilder
 import eu.pb4.sgui.api.elements.SimpleGuiElement
 import eu.pb4.sgui.api.gui.SimpleGui
 import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.ChatFormatting
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.Style
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.inventory.ContainerInput
 import net.minecraft.world.inventory.MenuType
 import net.minecraft.world.inventory.Slot
@@ -32,15 +34,18 @@ object ShopGui {
         5, 14, 23, 32,
         6, 15, 24, 33,
         7, 16, 25, 34)
-    private val PRODUCTS: Array<ShopItem> = getProducts()
+    private val PRODUCTS: Array<ShopProduct> = getProducts()
 
-    private fun getProducts(): Array<ShopItem> {
+    private fun getProducts(): Array<ShopProduct> {
         return arrayOf(
             // These should all be replaced with ShopUpgrades once I get around to it
             ShopItem(Items.CHAINMAIL_CHESTPLATE, 1, Items.IRON_INGOT, 40),
+            ShopPlayerUpgrade(UpgradeItemType.PICKAXE,
+                arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
+                arrayOf(1, 2, 3, 4)),
             ShopItem(Items.WOODEN_PICKAXE, 1, Items.IRON_INGOT, 10),
             ShopItem(Items.SHEARS, 1, Items.IRON_INGOT, 30),
-            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 16, Items.BARRIER, 999),
+            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
 
             // These are ShopItems
             ShopItem(Items.STONE_SWORD, 1, Items.IRON_INGOT, 10),
@@ -56,12 +61,12 @@ object ShopGui {
             ShopItem(Items.WOOL.white, 16, Items.IRON_INGOT, 4),
             ShopItem(Items.SANDSTONE, 16, Items.IRON_INGOT, 16),
             ShopItem(Items.END_STONE, 12, Items.IRON_INGOT, 24),
-            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 16, Items.BARRIER, 999),
+            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
 
             ShopItem(Items.OBSIDIAN, 4, Items.EMERALD, 4),
             ShopItem(Items.LADDER, 16, Items.IRON_INGOT, 16),
             ShopItem(Items.OAK_PLANKS, 16, Items.GOLD_INGOT, 6),
-            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 16, Items.BARRIER, 999),
+            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
 
             ShopItem(Items.GOLDEN_APPLE, 1, Items.GOLD_INGOT, 3),
             ShopItem(Items.IRON_GOLEM_SPAWN_EGG, 2, Items.IRON_INGOT, 150),
@@ -71,7 +76,7 @@ object ShopGui {
             ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
             ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
             ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
-            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 16, Items.BARRIER, 999),
+            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
         )
         // return Array(SHOP_SIZE) { ShopItem(Items.WOOL.white, 16, Items.IRON_INGOT, 4) }
     }
@@ -96,6 +101,7 @@ object ShopGui {
             }
 
             for ((slot_index, product) in PRODUCT_SLOT_INDEX zip PRODUCTS) {
+                if (product is PlayerSpecificShopProduct && player is ServerPlayer) product.setPlayer(player)
                 gui.setSlot(slot_index, GuiElementBuilder(product.getItemStack())
                     .addLoreLine(Component.literal("Cost: ${product.getItemCost()}"))
                     .setCallback(product.getClickCallback()))

@@ -12,6 +12,7 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.ItemStackTemplate
+import net.minecraft.world.item.Items
 
 abstract class ShopProduct {
     abstract fun getItemStack(): ItemStack
@@ -94,33 +95,35 @@ class ShopItem : ShopProduct {
 }
 
 class ShopPlayerUpgrade : PlayerSpecificShopProduct {
-    private val player_upgrade: UpgradeItemType
-    private val currency: Item
-    private val price: Int
+    private val playerUpgrade: UpgradeItemType
+    private val currencies: Array<Item>
+    private val prices: Array<Int>
     private lateinit var player: ServerPlayer
 
-    constructor(player_upgrade: UpgradeItemType, currency: Item, price: Int) {
-        this.player_upgrade = player_upgrade
-        this.currency = currency
-        this.price = price
+    constructor(playerUpgrade: UpgradeItemType, currencies: Array<Item>, prices: Array<Int>) {
+        this.playerUpgrade = playerUpgrade
+        this.currencies = currencies
+        this.prices = prices
     }
 
     override fun getItemStack(): ItemStack {
-        return ModDataTracker.getItemStack(player, player_upgrade)
+        return ModDataTracker.getNextItemStack(player, playerUpgrade) ?: Items.STAINED_GLASS_PANE.lightGray.defaultInstance
     }
 
     override fun getClickCallback(): GuiElement.ClickCallback {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player ?: return@ClickCallback
             purchaseUnit(player, fun(): Boolean {
-                ModDataTracker.upgradeItem(player, player_upgrade)
+                ModDataTracker.upgradeItem(player, playerUpgrade)
                 return true
             })
         }
     }
 
     override fun getItemCost(): ItemStack {
-        TODO("Not yet implemented")
+        val tier = ModDataTracker.getTier(player, playerUpgrade)
+        if (tier >= currencies.size) return ItemStack(Items.BARRIER, 999)
+        return ItemStack(currencies[tier], prices[tier])
     }
 
     override fun setPlayer(player: ServerPlayer) {

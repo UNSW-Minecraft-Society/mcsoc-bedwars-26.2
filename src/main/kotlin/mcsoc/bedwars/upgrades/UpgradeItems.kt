@@ -119,13 +119,13 @@ enum class Pickaxe(override val material: Item, override val efficiency: Int) : 
     GOLDEN(Items.GOLDEN_PICKAXE, 3) {
         override fun next() = DIAMOND
         override fun prev() = IRON
-        override fun tier() = 2
+        override fun tier() = 3
         override val cost = ItemCost(iron = 0)
     },
     DIAMOND(Items.DIAMOND_PICKAXE, 3) {
         override fun next() = null
         override fun prev() = GOLDEN
-        override fun tier() = 3
+        override fun tier() = 4
         override val cost = ItemCost(iron = 0)
     };
 
