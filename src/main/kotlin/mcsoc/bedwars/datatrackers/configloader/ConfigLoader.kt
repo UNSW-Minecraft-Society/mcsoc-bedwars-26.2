@@ -24,13 +24,15 @@ import kotlin.io.path.div
 import kotlin.io.path.notExists
 import kotlin.math.PI
 
+val config_dir 
+    get() = FabricLoader.getInstance().configDir / BedwarsPlugin.CONFIG_PATH
 
 interface LoadedConfigExposer<T: LoadedConfigExposer<T>>
 
 abstract class ConfigLoader<T : LoadedConfigExposer<T>>(serialiser: KSerializer<T>) {
     internal abstract val config_filename: String
     internal val config_path: Path
-        get() = FabricLoader.getInstance().configDir / BedwarsPlugin.CONFIG_PATH / config_filename
+        get() = config_dir / config_filename
     lateinit var loaded_config: T
     
     private fun loadConfigData() {
@@ -54,8 +56,7 @@ abstract class ConfigLoader<T : LoadedConfigExposer<T>>(serialiser: KSerializer<
     }
     
     fun initialise() {
-        config_path.createParentDirectories()
-        config_path.takeIf{it.notExists()}?.createFile()
+        config_path.createParentDirectories().takeIf{it.notExists()}?.createFile()
         loadConfigFromFile()
     }
     
