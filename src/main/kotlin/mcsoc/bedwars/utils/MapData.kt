@@ -84,7 +84,7 @@ data class BaseIslandData(
     override val structure: String = "default",
     override val generators: Iterable<Pair<LoadedGenerator, BlockPos>> = listOf(Pair(LoadedGenerator.BASE, BlockPos(0, -2, 0))),
     val shops: Iterable<Pair<LoadedShopkeeper, BlockPos>> = listOf(Pair(LoadedShopkeeper.PERSONAL, BlockPos(2, 0, 0))),
-    val team: String = "red"
+    val team: Team = Team.RED
 ) : GeneratorIsland
 
 
@@ -277,7 +277,7 @@ object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
             encodeStringElement(descriptor, 1, value.structure)
             encodeSerializableElement(descriptor, 2, ListSerializer(GeneratorPositionSerialiser), value.generators.toList())
             encodeSerializableElement(descriptor, 3, ListSerializer(ShopkeeperPositionSerialiser), value.shops.toList())
-            encodeStringElement(descriptor, 4, value.team)
+            encodeStringElement(descriptor, 4, value.team.name.lowercase())
         }
     }
     
@@ -296,7 +296,7 @@ object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
                 1 -> structure = decodeStringElement(descriptor, index)
                 2 -> generators = decodeSerializableElement(descriptor, index, ListSerializer(GeneratorPositionSerialiser))
                 3 -> shops = decodeSerializableElement(descriptor, index, ListSerializer(ShopkeeperPositionSerialiser))
-                4 -> team = decodeStringElement(descriptor, index)
+                4 -> team = Team.valueOf(decodeStringElement(descriptor, index).uppercase())
                 else -> error("Unexpected index: $index")
             }
         }
