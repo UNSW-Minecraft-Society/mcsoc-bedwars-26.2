@@ -1,6 +1,8 @@
 package mcsoc.bedwars
 
-import mcsoc.bedwars.eventhandlers.registerCommands
+import mcsoc.bedwars.eventhandlers.commands.registerCommands
+import mcsoc.bedwars.eventhandlers.registerItemCallbacks
+import mcsoc.bedwars.eventhandlers.registerPlayerJoinEvent
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
@@ -19,6 +21,8 @@ object BedwarsPlugin : ModInitializer {
 
 		// register eventhandlers
         registerCommands()
+		registerItemCallbacks()
+        registerPlayerJoinEvent()
 	}
 
 	fun id(path: String): Identifier
