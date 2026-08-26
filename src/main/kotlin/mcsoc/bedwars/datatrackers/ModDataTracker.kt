@@ -3,6 +3,10 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import kotlinx.serialization.Serializable
+import mcsoc.bedwars.utils.inWholeTicks
+import mcsoc.bedwars.utils.ticks
+import kotlin.time.Duration
+import kotlin.time.TimeSource
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
@@ -80,7 +84,7 @@ private class TeamDataRecord(
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder {
+private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker {
     companion object {
         val UUIDCodec: Codec<Uuid> = Codec.STRING.xmap(Uuid::parse, Uuid::toString)
         
@@ -91,21 +95,46 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder {
                     
             Codec.unboundedMap(Team.CODEC, TeamDataRecord.CODEC)
                 .fieldOf("teams_map")
-                .forGetter(ModDataStore::teams_map)
+                .forGetter(ModDataStore::teams_map),
+
+            Codec.STRING.xmap(Duration::parseIsoString, Duration::toIsoString)
+                .fieldOf("game_timer")
+                .forGetter(ModDataStore::game_timer)
         ).apply(it, ::ModDataStore)}
     }    
     
     private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
     private val teams_map = HashMap<Team, TeamDataRecord>()
     private val active_players = mutableSetOf<UUID>()
-
+    private var prev_tick_time = TimeSource.Monotonic.markNow()
+    private var tick_delta = Duration.ZERO
+    private var game_timer = Duration.ZERO
+    private var timer_tick = false
+    
+    
     private constructor(
         playerMap: Map<Uuid, PlayerDataRecord>,
-        teamMap: Map<Team, TeamDataRecord>
+        teamMap: Map<Team, TeamDataRecord>,
+        timer: Duration
     ) : this() {
         this.player_data_map.putAll(playerMap)
         this.teams_map.putAll(teamMap)
+        this.game_timer = timer
     }
+    
+    
+    override fun tick() {
+        tick_delta = prev_tick_time.elapsedNow()
+        prev_tick_time = TimeSource.Monotonic.markNow()
+        
+        timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
+        game_timer += tick_delta
+    }
+
+    override fun getGameTime() = game_timer
+        
+    override fun getTimerTick() = timer_tick
+
 
     private fun getPlayerData(id: Uuid): PlayerDataRecord {
         return player_data_map.getOrPut(id) { PlayerDataRecord() }
@@ -148,8 +177,12 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder {
 }
 
 
-object ModDataTracker : PlayerStateExposer, TeamStateExposer {
+object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer {
     private val mod_data = ModDataStore()
+
+    override fun tick() = mod_data.tick()
+    override fun getGameTime(): Duration = mod_data.getGameTime()
+    override fun getTimerTick(): Boolean = mod_data.getTimerTick()
 
     override fun isPlayerAlive(player: Player) = mod_data.isPlayerAlive(player)
     override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
