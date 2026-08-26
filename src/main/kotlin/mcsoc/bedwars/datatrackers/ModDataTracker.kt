@@ -3,8 +3,13 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import kotlinx.serialization.Serializable
+import mcsoc.bedwars.utils.inWholeTicks
+import mcsoc.bedwars.utils.ticks
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.saveddata.SavedData
+import kotlin.time.Clock
+import kotlin.time.Duration
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 import kotlin.uuid.toKotlinUuid
 
@@ -46,6 +51,24 @@ private class ModDataStore() : SavedData(), PlayerStateHolder {
     }    
     
     private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
+
+    var game_timer = Duration.ZERO
+    var timer_tick = false
+    private var prev_tick_time: Instant = Clock.System.now()
+    private var tick_delta: Duration = Duration.ZERO
+
+    fun tick() {
+        val curr_time = Clock.System.now()
+        tick_delta = curr_time - prev_tick_time
+        prev_tick_time = curr_time
+
+        tickTimer()
+    }
+
+    private fun tickTimer() {
+        timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
+        game_timer += tick_delta
+    }
     
     private constructor(map: Map<Uuid, PlayerDataRecord>): this() {
         this.player_data_map.putAll(map)
@@ -66,6 +89,15 @@ private class ModDataStore() : SavedData(), PlayerStateHolder {
 
 object ModDataTracker : PlayerStateExposer {
     private val mod_data = ModDataStore()
+
+    fun tick() = mod_data.tick()
+    fun getGameTime() : Duration {
+        return mod_data.game_timer
+    }
+    // TimerTick registers as true once every tick
+    fun getTimerTick(): Boolean {
+        return mod_data.timer_tick
+    }
     
     override fun isPlayerAlive(player: Player) = mod_data.isPlayerAlive(player)
     override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
