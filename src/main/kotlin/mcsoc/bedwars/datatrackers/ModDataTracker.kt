@@ -37,7 +37,7 @@ private class PlayerDataRecord() : PlayerStateRecord {
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder {
+private class ModDataStore() : SavedData(), PlayerStateHolder, Ticker {
     companion object {
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
             Codec.unboundedMap(
@@ -51,28 +51,26 @@ private class ModDataStore() : SavedData(), PlayerStateHolder {
     }    
     
     private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
-
-    var game_timer = Duration.ZERO
-    var timer_tick = false
-    private var prev_tick_time: Instant = Clock.System.now()
-    private var tick_delta: Duration = Duration.ZERO
-
-    fun tick() {
-        val curr_time = Clock.System.now()
-        tick_delta = curr_time - prev_tick_time
-        prev_tick_time = curr_time
-
-        tickTimer()
-    }
-
-    private fun tickTimer() {
-        timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
-        game_timer += tick_delta
-    }
+    private var prev_tick_time = Clock.System.now()
+    private var tick_delta = Duration.ZERO
+    private var game_timer = Duration.ZERO
+    private var timer_tick = false
     
     private constructor(map: Map<Uuid, PlayerDataRecord>): this() {
         this.player_data_map.putAll(map)
     }
+    
+    
+    override fun tick() {
+        
+        timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
+        game_timer += tick_delta
+    }
+
+    override fun getGameTime() = game_timer
+        
+    override fun getTimerTick() = timer_tick
+
     
     private fun getPlayerData(id: Uuid): PlayerDataRecord {
         return player_data_map.getOrPut(id){PlayerDataRecord()}
@@ -87,16 +85,16 @@ private class ModDataStore() : SavedData(), PlayerStateHolder {
 }
 
 
-object ModDataTracker : PlayerStateExposer {
+object ModDataTracker : PlayerStateExposer, TickExposer {
     private val mod_data = ModDataStore()
 
-    fun tick() = mod_data.tick()
-    fun getGameTime() : Duration {
-        return mod_data.game_timer
+    override fun tick() = mod_data.tick()
+    override fun getGameTime() : Duration {
+        return mod_data.getGameTime()
     }
-    // TimerTick registers as true once every tick
-    fun getTimerTick(): Boolean {
-        return mod_data.timer_tick
+    
+    override fun getTimerTick(): Boolean {
+        return mod_data.getTimerTick()
     }
     
     override fun isPlayerAlive(player: Player) = mod_data.isPlayerAlive(player)
