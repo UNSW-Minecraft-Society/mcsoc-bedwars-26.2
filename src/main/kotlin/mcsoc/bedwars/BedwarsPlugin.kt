@@ -5,6 +5,9 @@ import mcsoc.bedwars.eventhandlers.commands.registerCommands
 import mcsoc.bedwars.eventhandlers.registerBlockBreakEvents
 import mcsoc.bedwars.eventhandlers.commands.registerCommands
 import mcsoc.bedwars.eventhandlers.registerItemCallbacks
+import mcsoc.bedwars.eventhandlers.commands.registerCommands
+import mcsoc.bedwars.eventhandlers.registerItemCallbacks
+import mcsoc.bedwars.eventhandlers.registerPlayerJoinEvent
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
@@ -29,6 +32,8 @@ object BedwarsPlugin : ModInitializer {
         registerCommands()
         
         BedwarsConfigData.initialise()
+		registerItemCallbacks()
+        registerPlayerJoinEvent()
 	}
 
 	fun id(path: String): Identifier
