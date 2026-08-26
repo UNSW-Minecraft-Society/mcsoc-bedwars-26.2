@@ -29,5 +29,9 @@ fun registerCommands() {
             .executes(CommandActions::pingWord)
             )
         )
+
+        .then(Commands.literal("give_fireball")
+            .requires {it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)}
+            .executes(CommandActions::giveFireball))
     )}
 }
