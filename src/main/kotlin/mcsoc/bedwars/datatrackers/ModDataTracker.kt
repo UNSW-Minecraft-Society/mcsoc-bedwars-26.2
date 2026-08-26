@@ -97,6 +97,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder {
     
     private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
     private val teams_map = HashMap<Team, TeamDataRecord>()
+    private val active_players = mutableSetOf<UUID>()
 
     private constructor(
         playerMap: Map<Uuid, PlayerDataRecord>,
@@ -140,6 +141,10 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder {
     }
     
     override fun getPlayersTeam(player: Uuid): Team = getPlayerData(player).getTeamName()
+    
+    fun addActivePlayer(uuid: UUID) = active_players.add(uuid)
+    fun removeActivePlayer(uuid: UUID) = active_players.remove(uuid)
+    fun getActivePlayers() = active_players
 }
 
 
@@ -157,7 +162,9 @@ object ModDataTracker : PlayerStateExposer, TeamStateExposer {
     override fun setBedAlive(team: Team, state: Boolean) = mod_data.setBedAlive(team, state)
     override fun initialiseTeams(numTeams: Int) = mod_data.initialiseTeams(numTeams)
     override fun addPlayer(player: Uuid, team: Team) = mod_data.addPlayer(player, team)
-    override fun getActivePlayers(): List<Uuid> = mod_data.getActivePlayers()
     
     override fun getPlayersTeam(player: Uuid): Team = mod_data.getPlayersTeam(player)
+    fun getActivePlayers() = mod_data.getActivePlayers()
+    fun addActivePlayer(uuid: UUID) = mod_data.addActivePlayer(uuid)
+    fun removeActivePlayer(uuid: UUID) = mod_data.removeActivePlayer(uuid)
 }

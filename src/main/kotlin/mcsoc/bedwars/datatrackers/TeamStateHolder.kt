@@ -24,7 +24,6 @@ internal interface TeamStateExposer {
     fun getBedDestroyed(team: Team): Boolean
     fun getTeamSpawn(team: Team): Vec3
     fun getActiveTeams(): List<Team>
-    fun getActivePlayers(): List<Uuid>
 
     fun setBedAlive(team: Team, state: Boolean)
     fun addPlayer(player: Uuid, team: Team)
@@ -40,6 +39,5 @@ internal interface TeamStateHolder : TeamStateExposer {
     override fun getTeamSpawn(team: Team): Vec3 = getTeam(team).getSpawn()
     override fun getPlayersInTeam(team: Team): List<Uuid> = getTeam(team).getPlayers()
     override fun setBedAlive(team: Team, state: Boolean) = getTeam(team).setBedAlive(state)
-    override fun getActivePlayers(): List<Uuid> = getActiveTeams().flatMap { getPlayersInTeam(it) }
 }
 

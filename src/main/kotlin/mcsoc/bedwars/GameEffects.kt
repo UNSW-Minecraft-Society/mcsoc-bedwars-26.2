@@ -11,13 +11,14 @@ const val MAX_TEAM_PLAYERS = 4
 
 object TeamEffects {
     // On start of game run this to add players (probably just active)
-    fun createTeamsWithPlayers(players: List<ServerPlayer>, numTeams: Int) {
+    fun createTeamsWithPlayers(numTeams: Int) {
+        val players = ModDataTracker.getActivePlayers()
         ModDataTracker.initialiseTeams(numTeams)
         val teams = ModDataTracker.getActiveTeams()
 
         players.shuffled().forEachIndexed { index, player ->
             val team = teams[index % numTeams]
-            ModDataTracker.addPlayer(player.uuid.toKotlinUuid(), team)
+            ModDataTracker.addPlayer(player.toKotlinUuid(), team)
         }
     }
 
