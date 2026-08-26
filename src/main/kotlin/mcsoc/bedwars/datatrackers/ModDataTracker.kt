@@ -9,7 +9,7 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.saveddata.SavedData
 import kotlin.time.Clock
 import kotlin.time.Duration
-import kotlin.time.Instant
+import kotlin.time.TimeSource
 import kotlin.uuid.Uuid
 import kotlin.uuid.toKotlinUuid
 
@@ -51,7 +51,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, Ticker {
     }    
     
     private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
-    private var prev_tick_time = Clock.System.now()
+    private var prev_tick_time = TimeSource.Monotonic.markNow()
     private var tick_delta = Duration.ZERO
     private var game_timer = Duration.ZERO
     private var timer_tick = false
@@ -62,6 +62,8 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, Ticker {
     
     
     override fun tick() {
+        tick_delta = prev_tick_time.elapsedNow()
+        prev_tick_time = TimeSource.Monotonic.markNow()
         
         timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
         game_timer += tick_delta
