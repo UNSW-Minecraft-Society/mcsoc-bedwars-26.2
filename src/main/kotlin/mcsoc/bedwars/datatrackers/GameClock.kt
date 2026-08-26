@@ -2,7 +2,7 @@ package mcsoc.bedwars.datatrackers
 
 import kotlin.time.Duration
 
-interface TickExposer {
+internal interface TickExposer {
     fun tick()
     fun getGameTime(): Duration
     
@@ -10,4 +10,4 @@ interface TickExposer {
     fun getTimerTick(): Boolean
 }
 
-interface Ticker : TickExposer
+internal interface Ticker : TickExposer
