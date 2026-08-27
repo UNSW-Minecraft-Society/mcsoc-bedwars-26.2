@@ -3,11 +3,11 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import kotlinx.serialization.Serializable
-import net.minecraft.server.level.ServerPlayer
+import mcsoc.bedwars.generators.Generator
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.saveddata.SavedData
 import net.minecraft.world.phys.Vec3
-import kotlin.time.Duration
 import kotlin.uuid.Uuid
 import kotlin.uuid.toKotlinUuid
 
@@ -44,15 +44,17 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, GeneratorsHolder 
                 PlayerDataRecord.CODEC
             )
                 .fieldOf("player_data_map")
-                .forGetter(ModDataStore::player_data_map)
+                .forGetter(ModDataStore::player_data_map),
+            Codec.list(Generator.CODEC).fieldOf("generators").forGetter(ModDataStore::generators)
         ).apply(it, ::ModDataStore)}
     }    
     
     private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
     private val generators = ArrayList<Generator>()
     
-    private constructor(map: Map<Uuid, PlayerDataRecord>): this() {
+    private constructor(map: Map<Uuid, PlayerDataRecord>, gens: List<Generator>): this() {
         this.player_data_map.putAll(map)
+        this.generators.addAll(gens)
     }
     
     private fun getPlayerData(id: Uuid): PlayerDataRecord {
@@ -84,10 +86,9 @@ object ModDataTracker : PlayerStateExposer, GeneratorsExposer {
     override fun isPlayerAlive(player: Player) = mod_data.isPlayerAlive(player)
     override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
     override fun isPlayerDead(player: Player) = mod_data.isPlayerDead(player)
-    
-    override fun addGenerator(type: GeneratorType, location: Vec3, player: ServerPlayer) = mod_data.addGenerator(type, location, player)
+
+    override fun addGenerator(type: String, location: Vec3) = mod_data.addGenerator(type, location)
     override fun removeGenerator(location: Vec3) = mod_data.removeGenerator(location)
-    override fun tickGenerators(deltaTime: Duration) = mod_data.tickGenerators(deltaTime)
+    override fun tickGenerators(level: ServerLevel) = mod_data.tickGenerators(level)
     override fun upgradeGeneratorTier() = mod_data.upgradeGeneratorTier()
-    override fun upgradeIslandGenerators(team: String) = mod_data.upgradeIslandGenerators(team)
 }
