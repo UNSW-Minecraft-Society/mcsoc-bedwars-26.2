@@ -30,7 +30,7 @@ internal object GeneratorFactory {
 // cycle time in ticks
 internal open class Generator(val location: Vec3, val cycleTime: Int, val items: List<GeneratorItem>) {
     companion object {
-        val CODEC = RecordCodecBuilder.create {
+        val CODEC: Codec<Generator> = RecordCodecBuilder.create {
             it.group(
                 Vec3.CODEC.fieldOf("location").forGetter(Generator::location),
                 Codec.INT.fieldOf("ticks_per_cycle").forGetter(Generator::cycleTime),

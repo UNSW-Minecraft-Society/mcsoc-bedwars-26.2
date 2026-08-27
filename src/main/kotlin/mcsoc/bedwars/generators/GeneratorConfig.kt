@@ -18,7 +18,7 @@ sealed interface GeneratorKind {
 
 data class GeneratorItem(val item: Item, val itemsPerCycle: Int, val maxItems: Int) {
     companion object {
-        val CODEC = RecordCodecBuilder.create {
+        val CODEC: Codec<GeneratorItem> = RecordCodecBuilder.create {
             it.group(
                 BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(GeneratorItem::item),
                 Codec.INT.fieldOf("generation_time").forGetter(GeneratorItem::itemsPerCycle),
