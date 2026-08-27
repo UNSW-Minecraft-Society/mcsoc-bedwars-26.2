@@ -86,7 +86,7 @@ object CommandActions {
     fun addGenerator(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.playerOrException
         val genArg = StringArgumentType.getString(ctx, "type")
-        val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, "pos").above()
+        val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, "pos").above()        
         return addGenerator(player, genArg, pos)
     }
 
@@ -104,7 +104,7 @@ object CommandActions {
 
     private fun addGenerator(player: ServerPlayer, type: String, block: BlockPos): Int {
         val position = Vec3.atBottomCenterOf(block)
-        val success = ModDataTracker.addGenerator(type, position)
+        val success = ModDataTracker.addGenerator(type, position, player.level().dimension())
 
         if (!success) {
             player.sendSystemMessage(Component.literal("$type is not a valid generator"))

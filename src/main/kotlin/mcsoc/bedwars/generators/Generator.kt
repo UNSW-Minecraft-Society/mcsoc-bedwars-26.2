@@ -2,37 +2,46 @@ package mcsoc.bedwars.generators
 
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+import net.minecraft.core.registries.Registries
+import net.minecraft.resources.ResourceKey
+import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.item.ItemEntity
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.level.Level
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
 
 // todo show time remaining until next gen (depending on generator type)
 
 internal object GeneratorFactory {
-    fun createGenerator(config: GeneratorConfig, loc: Vec3): Generator {
+    fun createGenerator(config: GeneratorConfig, loc: Vec3, dim: ResourceKey<Level>): Generator {
+        val place = GenPlace(loc, dim)
         return when (config.kind) {
-            is GeneratorKind.Default -> Generator(loc, config.cycleTime, config.items)
-            is GeneratorKind.Upgradable -> IslandGenerator(
-                loc,
-                config.cycleTime,
-                config.items,
-                config.kind.upgradeMultipliers
-            )
-
-            is GeneratorKind.Tiered -> TieredGenerator(loc, config.cycleTime, config.items, config.kind.tierMultipliers)
+            is GeneratorKind.Default -> Generator(place, config.cycleTime, config.items)
+            is GeneratorKind.Upgradable -> IslandGenerator(place, config.cycleTime, config.items, config.kind.upgradeMultipliers)
+            is GeneratorKind.Tiered -> TieredGenerator(place, config.cycleTime, config.items, config.kind.tierMultipliers)
         }
     }
 }
 
+
+internal data class GenPlace(val location: Vec3, val dim: ResourceKey<Level>) {
+    companion object {
+        val CODEC: Codec<GenPlace> = RecordCodecBuilder.create { it.group(
+            Vec3.CODEC.fieldOf("location").forGetter(GenPlace::location),
+            ResourceKey.codec(Registries.DIMENSION).fieldOf("dimension").forGetter(GenPlace::dim)
+        ).apply(it, ::GenPlace)}
+    }
+}
+
 // cycle time in ticks
-internal open class Generator(val location: Vec3, val cycleTime: Int, val items: List<GeneratorItem>) {
+internal open class Generator(val place: GenPlace, val cycleTime: Int, val items: List<GeneratorItem>) {
     companion object {
         val CODEC: Codec<Generator> = RecordCodecBuilder.create {
             it.group(
-                Vec3.CODEC.fieldOf("location").forGetter(Generator::location),
+                GenPlace.CODEC.fieldOf("location").forGetter(Generator::place),
                 Codec.INT.fieldOf("ticks_per_cycle").forGetter(Generator::cycleTime),
                 GeneratorItem.CODEC.listOf().fieldOf("items").forGetter(Generator::items)
             ).apply(it, ::Generator)
@@ -54,7 +63,8 @@ internal open class Generator(val location: Vec3, val cycleTime: Int, val items:
         playerRange = range
     }
 
-    fun tick(level: ServerLevel) {
+    fun tick(server: MinecraftServer) {
+        val level = server.getLevel(place.dim) ?: return
         currentTick++
         val cycle = cycleTime / rateMultiplier
 
@@ -77,7 +87,7 @@ internal open class Generator(val location: Vec3, val cycleTime: Int, val items:
     private fun hasSpace(level: ServerLevel, max: Int): Boolean {
         val nearby = level.getEntitiesOfClass(
             ItemEntity::class.java,
-            AABB.ofSize(location, 2.0, 2.0, 2.0)
+            AABB.ofSize(place.location, 2.0, 2.0, 2.0)
         )
 
         return nearby.sumOf { it.item.count } < max
@@ -85,7 +95,8 @@ internal open class Generator(val location: Vec3, val cycleTime: Int, val items:
 
     private fun generateItem(level: ServerLevel, item: Item) {
         val itemstack = ItemStack(item, 1)
-        val entity = ItemEntity(level, location.x, location.y + 1, location.z, itemstack)
+        val loc = place.location
+        val entity = ItemEntity(level, loc.x, loc.y + 1, loc.z, itemstack)
         entity.addTag("generator_item")
         entity.setDeltaMovement(0.0, 0.0, 0.0)
         level.addFreshEntity(entity)
@@ -93,8 +104,8 @@ internal open class Generator(val location: Vec3, val cycleTime: Int, val items:
 }
 
 
-internal class IslandGenerator(location: Vec3, cycleTime: Int, items: List<GeneratorItem>, val upgrades: List<Double>) :
-    Generator(location, cycleTime, items) {
+internal class IslandGenerator(place: GenPlace, cycleTime: Int, items: List<GeneratorItem>, val upgrades: List<Double>) :
+    Generator(place, cycleTime, items) {
     private var currentUpgrade = 0
 
     fun upgrade() {
@@ -104,8 +115,8 @@ internal class IslandGenerator(location: Vec3, cycleTime: Int, items: List<Gener
     }
 }
 
-internal class TieredGenerator(location: Vec3, cycleTime: Int, items: List<GeneratorItem>, val tiers: List<Double>) :
-    Generator(location, cycleTime, items) {
+internal class TieredGenerator(place: GenPlace, cycleTime: Int, items: List<GeneratorItem>, val tiers: List<Double>) :
+    Generator(place, cycleTime, items) {
     private var currentTier = 0
 
     fun upgrade() {

@@ -1,9 +1,10 @@
 package mcsoc.bedwars.datatrackers
 
+import net.minecraft.server.MinecraftServer
 import kotlin.time.Duration
 
 internal interface TickExposer {
-    fun tick()
+    fun tick(server: MinecraftServer)
     fun getGameTime(): Duration
     
     // TimerTick registers as true once every tick

@@ -7,7 +7,7 @@ class EventRegistration {
     companion object {
         fun registerEventHandlers() {
             ServerTickEvents.END_SERVER_TICK.register{server ->
-                ModDataTracker.tick()
+                ModDataTracker.tick(server)
             }
         }
     }

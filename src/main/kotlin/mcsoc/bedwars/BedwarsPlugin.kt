@@ -1,6 +1,5 @@
 package mcsoc.bedwars
 
-import mcsoc.bedwars.eventhandlers.ServerTickEvent
 import mcsoc.bedwars.eventhandlers.commands.registerCommands
 import mcsoc.bedwars.eventhandlers.registerItemCallbacks
 import mcsoc.bedwars.eventhandlers.registerPlayerJoinEvent
@@ -22,7 +21,6 @@ object BedwarsPlugin : ModInitializer {
 
 		// register eventhandlers
         registerCommands()
-        ServerTickEvent.registerHandler()
 		registerItemCallbacks()
         registerPlayerJoinEvent()
 	}

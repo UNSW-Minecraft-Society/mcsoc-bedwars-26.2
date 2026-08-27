@@ -11,8 +11,11 @@ import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerPlayer
 import mcsoc.bedwars.generators.Generator
+import net.minecraft.resources.ResourceKey
+import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.level.Level
 import net.minecraft.world.level.saveddata.SavedData
 import java.util.UUID
 import net.minecraft.world.phys.Vec3
@@ -131,12 +134,14 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     }
     
     
-    override fun tick() {
+    override fun tick(server: MinecraftServer) {
         tick_delta = prev_tick_time.elapsedNow()
         prev_tick_time = TimeSource.Monotonic.markNow()
         
         timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
         game_timer += tick_delta
+        
+        getGenerators().forEach { it.tick(server) }
     }
 
     override fun getGameTime() = game_timer
@@ -197,7 +202,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, GeneratorsExposer {
     private val mod_data = ModDataStore()
 
-    override fun tick() = mod_data.tick()
+    override fun tick(server: MinecraftServer) = mod_data.tick(server)
     override fun getGameTime(): Duration = mod_data.getGameTime()
     override fun getTimerTick(): Boolean = mod_data.getTimerTick()
 
@@ -218,8 +223,7 @@ object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Gener
     override fun addActivePlayer(uuid: UUID) = mod_data.addActivePlayer(uuid)
     override fun removeActivePlayer(uuid: UUID) = mod_data.removeActivePlayer(uuid)
 
-    override fun addGenerator(type: String, location: Vec3) = mod_data.addGenerator(type, location)
+    override fun addGenerator(type: String, location: Vec3, dim: ResourceKey<Level>) = mod_data.addGenerator(type, location, dim)
     override fun removeGenerator(location: Vec3) = mod_data.removeGenerator(location)
-    override fun tickGenerators(level: ServerLevel) = mod_data.tickGenerators(level)
     override fun upgradeGeneratorTier() = mod_data.upgradeGeneratorTier()
 }
