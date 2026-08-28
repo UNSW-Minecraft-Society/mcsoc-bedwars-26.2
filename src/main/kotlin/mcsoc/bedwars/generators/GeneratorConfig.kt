@@ -34,10 +34,10 @@ object DefaultGeneratorTypes {
         "base" to GeneratorConfig(
             GeneratorKind.Upgradable(listOf(1.0, 1.5, 2.5, 2.5, 4.5)),
             listOf(
-                GeneratorItem(Items.IRON_INGOT, 8, 48),
-                GeneratorItem(Items.GOLD_INGOT, 1, 16)
+                GeneratorItem(Items.IRON_INGOT, 4 * 80, 48),
+                GeneratorItem(Items.GOLD_INGOT, 1 * 80, 16)
             ),
-            4 * 20
+            4 * 80 * 20 // 80 scale factor to ensure emerald upgrade generation is slow
         ),
         "diamond" to GeneratorConfig(
             GeneratorKind.Tiered(listOf(1.0, 1.25, 2.5)),

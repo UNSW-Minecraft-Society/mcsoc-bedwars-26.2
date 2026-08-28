@@ -13,7 +13,6 @@ import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.TextColor
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.phys.Vec3
-import kotlin.uuid.toKotlinUuid
 
 
 object CommandActions {
@@ -69,7 +68,7 @@ object CommandActions {
             return 0
         }
 
-        val team = ModDataTracker.getPlayersTeam(player.uuid.toKotlinUuid())
+        val team = ModDataTracker.getPlayersTeam(player.uuid)
         player.sendSystemMessage(
             Component.literal("Your team is ${team.name}").withColor(TextColor.GREEN)
         )
@@ -89,6 +88,14 @@ object CommandActions {
         val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, "pos").above()        
         return addGenerator(player, genArg, pos)
     }
+    
+    fun addGeneratorForTeam(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.playerOrException
+        val genArg = StringArgumentType.getString(ctx, "type")
+        val teamArg = StringArgumentType.getString(ctx, "team")
+        val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, "pos").above()        
+        return addGeneratorTeam(player, genArg, pos, teamArg)
+    }
 
     fun removeGenerator(ctx: CommandContext<CommandSourceStack>): Int {
         val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, "pos").above()
@@ -100,12 +107,42 @@ object CommandActions {
         ModDataTracker.upgradeGeneratorTier()
         return 1
     }
+    
+    fun upgradeTeamGen(ctx: CommandContext<CommandSourceStack>): Int {
+        val teamArg = StringArgumentType.getString(ctx, "team")
+        val team = ModDataTracker.getActiveTeams().find { it.getName() == teamArg }
+        if (team == null) {
+            ctx.source.sendSystemMessage(Component.literal("$teamArg is not a valid team"))
+            return 0
+        }
+        
+        ModDataTracker.upgradeTeamGenerators(team)
+        return 1
+    }
 
 
     private fun addGenerator(player: ServerPlayer, type: String, block: BlockPos): Int {
         val position = Vec3.atBottomCenterOf(block)
         val success = ModDataTracker.addGenerator(type, position, player.level().dimension())
 
+        if (!success) {
+            player.sendSystemMessage(Component.literal("$type is not a valid generator"))
+            return 0
+        }
+
+        player.sendSystemMessage(Component.literal("added $type generator at ${position.format}"))
+        return 1
+    }
+    
+    private fun addGeneratorTeam(player: ServerPlayer, type: String, block: BlockPos, teamStr: String): Int {
+        val team = ModDataTracker.getActiveTeams().find { it.getName() == teamStr }
+        if (team == null) {
+            player.sendSystemMessage(Component.literal("$teamStr is not a valid team"))
+            return 0
+        }
+        
+        val position = Vec3.atBottomCenterOf(block)
+        val success = ModDataTracker.addGenerator(type, position, player.level().dimension(), team)
         if (!success) {
             player.sendSystemMessage(Component.literal("$type is not a valid generator"))
             return 0

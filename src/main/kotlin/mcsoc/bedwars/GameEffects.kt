@@ -3,7 +3,6 @@ package mcsoc.bedwars
 import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.utils.Team
 import net.minecraft.server.level.ServerPlayer
-import kotlin.uuid.toKotlinUuid
 
 // replace with config
 // useful if method for switching teams is added
@@ -18,7 +17,7 @@ object TeamEffects {
 
         players.shuffled().forEachIndexed { index, player ->
             val team = teams[index % numTeams]
-            ModDataTracker.addPlayer(player.toKotlinUuid(), team)
+            ModDataTracker.addPlayer(player, team)
         }
     }
 

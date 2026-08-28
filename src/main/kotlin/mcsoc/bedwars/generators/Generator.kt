@@ -9,6 +9,7 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.item.ItemEntity
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
@@ -19,9 +20,9 @@ internal object GeneratorFactory {
     fun createGenerator(config: GeneratorConfig, loc: Vec3, dim: ResourceKey<Level>): Generator {
         val place = GenPlace(loc, dim)
         return when (config.kind) {
-            is GeneratorKind.Default -> Generator(place, config.cycleTime, config.items)
-            is GeneratorKind.Upgradable -> IslandGenerator(place, config.cycleTime, config.items, config.kind.upgradeMultipliers)
-            is GeneratorKind.Tiered -> TieredGenerator(place, config.cycleTime, config.items, config.kind.tierMultipliers)
+            is GeneratorKind.Default -> Generator(place, config.cycleTime, config.items.toMutableList())
+            is GeneratorKind.Upgradable -> IslandGenerator(place, config.cycleTime, config.items.toMutableList(), config.kind.upgradeMultipliers)
+            is GeneratorKind.Tiered -> TieredGenerator(place, config.cycleTime, config.items.toMutableList(), config.kind.tierMultipliers)
         }
     }
 }
@@ -37,10 +38,9 @@ internal data class GenPlace(val location: Vec3, val dim: ResourceKey<Level>) {
 }
 
 // cycle time in ticks
-internal open class Generator(val place: GenPlace, val cycleTime: Int, val items: List<GeneratorItem>) {
+internal open class Generator(val place: GenPlace, val cycleTime: Int, val items: MutableList<GeneratorItem>) {
     companion object {
-        val CODEC: Codec<Generator> = RecordCodecBuilder.create {
-            it.group(
+        val CODEC: Codec<Generator> = RecordCodecBuilder.create {it.group(
                 GenPlace.CODEC.fieldOf("location").forGetter(Generator::place),
                 Codec.INT.fieldOf("ticks_per_cycle").forGetter(Generator::cycleTime),
                 GeneratorItem.CODEC.listOf().fieldOf("items").forGetter(Generator::items)
@@ -62,6 +62,10 @@ internal open class Generator(val place: GenPlace, val cycleTime: Int, val items
     fun setPlayerRange(range: Int) {
         playerRange = range
     }
+    
+    fun addItem(item: GeneratorItem) {
+        items.add(item)
+    }
 
     fun tick(server: MinecraftServer) {
         val level = server.getLevel(place.dim) ?: return
@@ -72,7 +76,12 @@ internal open class Generator(val place: GenPlace, val cycleTime: Int, val items
             val generated = curCycleItems[item] ?: 0
             val expected = (currentTick / cycle * item.itemsPerCycle).toInt()
 
-            if (generated >= expected || !hasSpace(level, item.maxItems)) continue
+            if (generated >= expected) continue
+            
+            if (!hasSpace(level, item.maxItems, item.item)) {
+                curCycleItems[item] = expected
+                continue
+            }
 
             generateItem(level, item.item)
             curCycleItems[item] = generated + 1
@@ -84,13 +93,13 @@ internal open class Generator(val place: GenPlace, val cycleTime: Int, val items
         }
     }
 
-    private fun hasSpace(level: ServerLevel, max: Int): Boolean {
+    private fun hasSpace(level: ServerLevel, max: Int, item: Item): Boolean {
         val nearby = level.getEntitiesOfClass(
             ItemEntity::class.java,
             AABB.ofSize(place.location, 2.0, 2.0, 2.0)
         )
 
-        return nearby.sumOf { it.item.count } < max
+        return nearby.filter { it.item.item == item }.sumOf { it.item.count } < max
     }
 
     private fun generateItem(level: ServerLevel, item: Item) {
@@ -104,19 +113,42 @@ internal open class Generator(val place: GenPlace, val cycleTime: Int, val items
 }
 
 
-internal class IslandGenerator(place: GenPlace, cycleTime: Int, items: List<GeneratorItem>, val upgrades: List<Double>) :
+internal class IslandGenerator(place: GenPlace, cycleTime: Int, items: MutableList<GeneratorItem>, val upgrades: List<Double>) :
     Generator(place, cycleTime, items) {
+    companion object {
+        val CODEC: Codec<IslandGenerator> = RecordCodecBuilder.create {it.group(
+                GenPlace.CODEC.fieldOf("location").forGetter(IslandGenerator::place),
+                Codec.INT.fieldOf("ticks_per_cycle").forGetter(IslandGenerator::cycleTime),
+                GeneratorItem.CODEC.listOf().fieldOf("items").forGetter(IslandGenerator::items),
+                Codec.DOUBLE.listOf().fieldOf("upgrades").forGetter(IslandGenerator::upgrades)
+            ).apply(it, ::IslandGenerator)
+        }
+    }
+    
     private var currentUpgrade = 0
 
     fun upgrade() {
         currentUpgrade++
         if (currentUpgrade >= upgrades.size) return
         setRateMultiplier(upgrades[currentUpgrade])
+        if (currentUpgrade == 3) {
+            addItem(GeneratorItem(Items.EMERALD, 1, 4))
+        }
     }
 }
 
-internal class TieredGenerator(place: GenPlace, cycleTime: Int, items: List<GeneratorItem>, val tiers: List<Double>) :
+internal class TieredGenerator(place: GenPlace, cycleTime: Int, items: MutableList<GeneratorItem>, val tiers: List<Double>) :
     Generator(place, cycleTime, items) {
+    companion object {
+        val CODEC: Codec<TieredGenerator> = RecordCodecBuilder.create {it.group(
+                GenPlace.CODEC.fieldOf("location").forGetter(TieredGenerator::place),
+                Codec.INT.fieldOf("ticks_per_cycle").forGetter(TieredGenerator::cycleTime),
+                GeneratorItem.CODEC.listOf().fieldOf("items").forGetter(TieredGenerator::items),
+                Codec.DOUBLE.listOf().fieldOf("upgrades").forGetter(TieredGenerator::tiers)
+            ).apply(it, ::TieredGenerator)
+        }
+    }
+    
     private var currentTier = 0
 
     fun upgrade() {

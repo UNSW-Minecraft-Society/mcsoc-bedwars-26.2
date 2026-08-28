@@ -3,6 +3,7 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import kotlinx.serialization.Serializable
+import mcsoc.bedwars.generators.DefaultGeneratorTypes
 import mcsoc.bedwars.utils.inWholeTicks
 import mcsoc.bedwars.utils.ticks
 import kotlin.time.Duration
@@ -11,6 +12,8 @@ import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerPlayer
 import mcsoc.bedwars.generators.Generator
+import mcsoc.bedwars.generators.GeneratorFactory
+import mcsoc.bedwars.generators.IslandGenerator
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
@@ -19,9 +22,6 @@ import net.minecraft.world.level.Level
 import net.minecraft.world.level.saveddata.SavedData
 import java.util.UUID
 import net.minecraft.world.phys.Vec3
-import kotlin.uuid.Uuid
-import kotlin.uuid.toJavaUuid
-import kotlin.uuid.toKotlinUuid
 
 
 @Serializable
@@ -57,43 +57,47 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState {
 
 
 private class TeamDataRecord(
-    private val players: MutableList<Uuid> = mutableListOf(),
+    private val players: MutableList<UUID> = mutableListOf(),
     private var bedAlive: Boolean = true,
     private val spawn: Vec3 = Vec3(0.0, 0.0, 0.0),
+    private val generators: MutableList<Generator> = mutableListOf()
 ) : TeamStateRecord {
     companion object {
-        val UUID_LIST_CODEC: Codec<MutableList<Uuid>> = UUIDUtil.CODEC.listOf().xmap(
-            { it.map(UUID::toKotlinUuid).toMutableList() },
-            { it.map(Uuid::toJavaUuid) }
-        )
-        
         val CODEC: Codec<TeamDataRecord> = RecordCodecBuilder.create { it.group(
-            UUID_LIST_CODEC.fieldOf("players").forGetter(TeamDataRecord::players),
+            UUIDUtil.CODEC.listOf().fieldOf("players").forGetter(TeamDataRecord::players),
             Codec.BOOL.fieldOf("bed_alive").forGetter(TeamDataRecord::bedAlive),
             Vec3.CODEC.fieldOf("spawn").forGetter(TeamDataRecord::spawn),
+            Generator.CODEC.listOf().fieldOf("generators").forGetter(TeamDataRecord::generators)
         ).apply(it, ::TeamDataRecord)}
     }
 
     override fun getBedAlive(): Boolean = bedAlive
     override fun getSpawn(): Vec3 = spawn
-    override fun getPlayers(): MutableList<Uuid> = players
+    override fun getPlayers(): MutableList<UUID> = players
+    override fun getGenerators(): List<Generator> = generators
 
     override fun setBedAlive(bedAlive: Boolean) {
        this.bedAlive = bedAlive
     }
 
-    override fun addPlayer(player: Uuid) {
+    override fun addPlayer(player: UUID) {
         players.add(player)
+    }
+
+    override fun addGenerator(gen: Generator) {
+        generators.add(gen)    
+    }
+
+    override fun upgradeGenerators() {
+        generators.filterIsInstance<IslandGenerator>().forEach(IslandGenerator::upgrade)
     }
 }
 
 
 private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, GeneratorsHolder {
     companion object {
-        val UUIDCodec: Codec<Uuid> = Codec.STRING.xmap(Uuid::parse, Uuid::toString)
-        
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
-            Codec.unboundedMap(UUIDCodec, PlayerDataRecord.CODEC)
+            Codec.unboundedMap(UUIDUtil.CODEC, PlayerDataRecord.CODEC)
                 .fieldOf("player_data_map")
                 .forGetter(ModDataStore::player_data_map),
 
@@ -111,7 +115,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         ).apply(it, ::ModDataStore)}
     }    
     
-    private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
+    private val player_data_map = HashMap<UUID, PlayerDataRecord>()
     private val teams_map = HashMap<Team, TeamDataRecord>()
     private val generators = ArrayList<Generator>()
     private val active_players = mutableSetOf<UUID>()
@@ -122,7 +126,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     
     
     private constructor(
-        playerMap: Map<Uuid, PlayerDataRecord>,
+        playerMap: Map<UUID, PlayerDataRecord>,
         teamMap: Map<Team, TeamDataRecord>,
         timer: Duration,
         gens: List<Generator>
@@ -148,12 +152,12 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         
     override fun getTimerTick() = timer_tick
 
-    private fun getPlayerData(id: Uuid): PlayerDataRecord {
+    private fun getPlayerData(id: UUID): PlayerDataRecord {
         return player_data_map.getOrPut(id) { PlayerDataRecord() }
     }
 
     private fun getPlayerData(player: Player): PlayerDataRecord {
-        return getPlayerData(player.uuid.toKotlinUuid())
+        return getPlayerData(player.uuid)
     }
 
     override fun getPlayerState(player: Player): PlayerDataRecord {
@@ -164,10 +168,22 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         generators.add(gen)
     }
     
+    override fun addGenerator(type: String, location: Vec3, dim: ResourceKey<Level>, team: Team): Boolean {
+        val config = DefaultGeneratorTypes.generators[type] ?: return false
+        val gen = GeneratorFactory.createGenerator(config, location, dim)
+        addGenerator(gen)
+        getTeam(team).addGenerator(gen)
+        return true
+    }
+    
     override fun getGenerators(): List<Generator> = generators
 
     override fun removeGenerator(gen: Generator) {
         generators.remove(gen)
+    }
+    
+    override fun upgradeTeamGenerators(team: Team) {
+        getTeam(team).upgradeGenerators()
     }
 
     override fun getTeam(team: Team): TeamDataRecord {
@@ -186,12 +202,12 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         teams.forEach { teams_map[it] = TeamDataRecord() }
     }
 
-    override fun addPlayer(player: Uuid, team: Team) {
+    override fun addPlayer(player: UUID, team: Team) {
         getTeam(team).addPlayer(player)
         getPlayerData(player).setTeamName(team)
     }
     
-    override fun getPlayersTeam(player: Uuid): Team = getPlayerData(player).getTeamName()
+    override fun getPlayersTeam(player: UUID): Team = getPlayerData(player).getTeamName()
     
     override fun addActivePlayer(uuid: UUID) = active_players.add(uuid)
     override fun removeActivePlayer(uuid: UUID) = active_players.remove(uuid)
@@ -211,19 +227,21 @@ object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Gener
     override fun isPlayerDead(player: Player) = mod_data.isPlayerDead(player)
 
     override fun getBedDestroyed(team: Team): Boolean = mod_data.getBedDestroyed(team)
-    override fun getPlayersInTeam(team: Team): List<Uuid> = mod_data.getPlayersInTeam(team)
+    override fun getPlayersInTeam(team: Team): List<UUID> = mod_data.getPlayersInTeam(team)
     override fun getTeamSpawn(team: Team): Vec3 = mod_data.getTeamSpawn(team)
     override fun getActiveTeams(): List<Team> = mod_data.getActiveTeams()
     override fun setBedAlive(team: Team, state: Boolean) = mod_data.setBedAlive(team, state)
     override fun initialiseTeams(numTeams: Int) = mod_data.initialiseTeams(numTeams)
-    override fun addPlayer(player: Uuid, team: Team) = mod_data.addPlayer(player, team)
+    override fun addPlayer(player: UUID, team: Team) = mod_data.addPlayer(player, team)
     
-    override fun getPlayersTeam(player: Uuid): Team = mod_data.getPlayersTeam(player)
+    override fun getPlayersTeam(player: UUID): Team = mod_data.getPlayersTeam(player)
     override fun getActivePlayers() = mod_data.getActivePlayers()
     override fun addActivePlayer(uuid: UUID) = mod_data.addActivePlayer(uuid)
     override fun removeActivePlayer(uuid: UUID) = mod_data.removeActivePlayer(uuid)
 
     override fun addGenerator(type: String, location: Vec3, dim: ResourceKey<Level>) = mod_data.addGenerator(type, location, dim)
+    override fun addGenerator(type: String, location: Vec3, dim: ResourceKey<Level>, team: Team) = mod_data.addGenerator(type, location, dim, team)
     override fun removeGenerator(location: Vec3) = mod_data.removeGenerator(location)
     override fun upgradeGeneratorTier() = mod_data.upgradeGeneratorTier()
+    override fun upgradeTeamGenerators(team: Team) = mod_data.upgradeTeamGenerators(team)
 }
