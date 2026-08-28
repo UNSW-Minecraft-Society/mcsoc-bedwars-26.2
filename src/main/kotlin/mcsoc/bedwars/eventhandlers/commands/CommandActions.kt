@@ -90,7 +90,7 @@ object CommandActions {
         return 1
     }
 
-    fun resetItems(ctx: CommandContext<CommandSourceStack>): Int {
+    fun resetUpgrades(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.player ?: run {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
             return 0

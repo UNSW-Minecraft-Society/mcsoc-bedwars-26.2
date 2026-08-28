@@ -2,13 +2,9 @@ package mcsoc.bedwars.eventhandlers.commands
 
 
 import com.mojang.brigadier.arguments.IntegerArgumentType
-import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import com.mojang.brigadier.arguments.StringArgumentType
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.commands.Commands
-import net.minecraft.server.permissions.PermissionLevel
-import mcsoc.bedwars.eventhandlers.commands.CommandActions
-import net.minecraft.server.permissions.Permission
 import net.minecraft.server.permissions.Permissions
 
 
@@ -48,9 +44,9 @@ fun registerCommands() {
                         .executes(CommandActions::upgradeItem)
                     )
                 )
-                .then(Commands.literal("resettools")
+                .then(Commands.literal("reset_upgrades")
                     .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
-                    .executes(CommandActions::resetItems)
+                    .executes(CommandActions::resetUpgrades)
                 )
         )
     }
