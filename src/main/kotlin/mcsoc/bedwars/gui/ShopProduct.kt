@@ -5,6 +5,7 @@ import eu.pb4.sgui.api.elements.GuiElement
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.upgrades.UpgradeItemType
+import mcsoc.bedwars.utils.Team
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
@@ -13,6 +14,9 @@ import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.ItemStackTemplate
 import net.minecraft.world.item.Items
+import kotlin.uuid.toKotlinUuid
+
+val DEFAULT_TEAM = Team.BLACK
 
 /**
  * Abstract class for storing data on shop products.
@@ -57,24 +61,24 @@ abstract class ShopProduct {
 }
 
 /**
- * Abstract class for storing data on player-specific shop product (e.g. team colored blocks, player-specific upgrades).
- * `setPlayer` needs to be called to initialize the player it before this class is used.
+ * Interface for the functionality to store data used by player-specific shop products (e.g. team colored blocks,
+ * player-specific upgrades). `setPlayer` needs to be called to initialize the player it before this class is used.
  */
-abstract class PlayerSpecificShopProduct : ShopProduct() {
-    abstract fun setPlayer(player: ServerPlayer)
+interface PlayerSpecificShopProduct {
+    fun setPlayer(player: ServerPlayer)
 }
 
 /**
  * Class for storing data on default item shop products.
  */
-class ShopItem : ShopProduct {
-    private val item_template: ItemStackTemplate
-    private lateinit var item: ItemStack
+open class ShopItem : ShopProduct {
+    private var itemTemplate: ItemStackTemplate
+    private lateinit var stack: ItemStack
     private val currency: Item
     private val price: Int
 
     constructor(template: ItemStackTemplate, currency: Item, price: Int) {
-        this.item_template = template
+        this.itemTemplate = template
         this.currency = currency
         this.price = price
     }
@@ -82,11 +86,11 @@ class ShopItem : ShopProduct {
         currency, price)
 
     private fun resolveItemStackTemplate(): ItemStack {
-        if (!this::item.isInitialized) {
+        if (!this::stack.isInitialized) {
             BedwarsPlugin.LOGGER.info("creating")
-            this.item = item_template.create()
+            this.stack = itemTemplate.create()
         }
-        return this.item.copy()
+        return this.stack.copy()
     }
 
     override fun getItemStack(): ItemStack {
@@ -111,12 +115,40 @@ class ShopItem : ShopProduct {
     override fun getItemCost(): ItemStack {
         return ItemStack(currency, price)
     }
+
+    protected fun setItemStack(stack: ItemStack) {
+        this.itemTemplate = ItemStackTemplate(stack.item, stack.count)
+        this.stack = stack
+    }
+
+    protected fun setItemStack(itemTemplate: ItemStackTemplate) {
+        if (!this::stack.isInitialized) this.itemTemplate = itemTemplate
+        else setItemStack(itemTemplate.create())
+    }
+
+}
+
+class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
+    private val templates: Map<Team, ItemStackTemplate>
+
+    constructor(templates: Map<Team, ItemStackTemplate>, currency: Item, price: Int) : super(
+        templates.get(Team.NONE) ?: ItemStackTemplate(Items.BARRIER), currency, price) {
+        this.templates = templates
+    }
+
+    constructor(items: Map<Team, Item>, count: Int, currency: Item, price: Int) : this(
+        items.mapValues { ItemStackTemplate(it.value, count) },currency, price)
+
+    override fun setPlayer(player: ServerPlayer) {
+        val team = ModDataTracker.getPlayersTeam(player.uuid.toKotlinUuid())
+        setItemStack(templates.getValue(team))
+    }
 }
 
 /**
  * Class for storing data on player upgrades (e.g. tool and armor material upgrades).
  */
-class ShopPlayerUpgrade : PlayerSpecificShopProduct {
+class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
     private val playerUpgrade: UpgradeItemType
     private val currencies: Array<Item>
     private val prices: Array<Int>

@@ -1,8 +1,6 @@
 package mcsoc.bedwars
 
 import mcsoc.bedwars.eventhandlers.AfterRespawnEvent
-import mcsoc.bedwars.eventhandlers.registerCommands
-import mcsoc.bedwars.gui.ShopGui
 import mcsoc.bedwars.eventhandlers.commands.registerCommands
 import mcsoc.bedwars.eventhandlers.registerItemCallbacks
 import mcsoc.bedwars.eventhandlers.registerPlayerJoinEvent
