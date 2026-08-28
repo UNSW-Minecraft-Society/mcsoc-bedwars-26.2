@@ -20,37 +20,18 @@ import kotlin.math.PI
 import kotlin.time.Duration
 
 
-enum class LoadedGenerator(
-    val base_cooldown: Duration,
-    val products: Iterable<Pair<ItemStackTemplate, Int>>
-) {  
-    BASE(
-        10.ticks,
-        setOf(
-            Pair(ItemStackTemplate(Items.IRON_INGOT), 1),
-            Pair(ItemStackTemplate(Items.GOLD_INGOT), 5)
-        )
-    ) {
+enum class LoadedGenerator {  
+    BASE {
         override fun place(pos: BlockPos) {
             
         }
     },
-    DIAMOND(
-        100.ticks,
-        setOf(
-            Pair(ItemStackTemplate(Items.DIAMOND), 1),
-        )
-    ) {
+    DIAMOND {
         override fun place(pos: BlockPos) {
             
         }
     },
-    EMERALD(
-        200.ticks,
-        setOf(
-            Pair(ItemStackTemplate(Items.EMERALD), 1),
-        )
-    ) {
+    EMERALD {
         override fun place(pos: BlockPos) {
             
         }
