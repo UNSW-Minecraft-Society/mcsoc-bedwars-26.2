@@ -3,7 +3,9 @@
 	"package": "mcsoc.bedwars.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"ExampleMixin"
+		"BlockPlacementMixin",
+		"SnowReplacementMixin",
+		"LevelSetBlockMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
