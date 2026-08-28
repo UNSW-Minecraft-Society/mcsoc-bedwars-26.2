@@ -10,6 +10,7 @@ import eu.pb4.sgui.api.elements.SimpleGuiElement
 import eu.pb4.sgui.api.gui.SimpleGui
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.upgrades.UpgradeItemType
+import mcsoc.bedwars.utils.Team
 import net.minecraft.ChatFormatting
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.network.chat.Component
@@ -72,7 +73,8 @@ object ShopGui {
             ShopItem(Items.BOW, 1, Items.GOLD_INGOT, 24),
             ShopItem(Items.BOW, 1, Items.EMERALD, 6),
 
-            ShopItem(Items.WOOL.white, 16, Items.IRON_INGOT, 4),
+            ShopTeamItem(Team.entries.associateWith { Items.WOOL.pick(it.dyeColour) },
+                16, Items.IRON_INGOT, 4),
             ShopItem(Items.SANDSTONE, 16, Items.IRON_INGOT, 16),
             ShopItem(Items.END_STONE, 12, Items.IRON_INGOT, 24),
             ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),

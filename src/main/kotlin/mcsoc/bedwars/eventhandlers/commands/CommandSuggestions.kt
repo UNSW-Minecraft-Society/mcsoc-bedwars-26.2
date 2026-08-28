@@ -35,6 +35,7 @@ internal class AvailableStructureSuggestionProvider: SuggestionProvider<CommandS
 internal class ExampleSuggestionProvider: SuggestionProvider<CommandSourceStack> {
 	override fun getSuggestions(ctx: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
 		builder.suggest(ctx.source.textName)
+		UpgradeItemType.entries.forEach { builder.suggest(it.name.lowercase()) }
 		return builder.buildFuture()
 	}
 }

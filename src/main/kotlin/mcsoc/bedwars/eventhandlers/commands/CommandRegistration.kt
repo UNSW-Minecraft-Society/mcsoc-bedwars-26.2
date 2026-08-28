@@ -1,8 +1,8 @@
 package mcsoc.bedwars.eventhandlers.commands
 
 import com.mojang.brigadier.arguments.IntegerArgumentType
-import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import com.mojang.brigadier.arguments.StringArgumentType
+import mcsoc.bedwars.datatrackers.ModDataTracker
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.commands.Commands
 import net.minecraft.server.permissions.PermissionLevel
@@ -11,6 +11,9 @@ import mcsoc.bedwars.eventhandlers.commands.LoadedMapSuggestionProvider
 import mcsoc.bedwars.eventhandlers.commands.AvailableStructureSuggestionProvider
 import mcsoc.bedwars.gui.ShopGui
 import net.minecraft.server.permissions.Permission
+import mcsoc.bedwars.upgrades.UpgradeItemType
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument
+import net.minecraft.network.chat.Component
 import net.minecraft.server.permissions.Permissions
 
 

@@ -24,6 +24,7 @@ import kotlin.io.path.div
 import kotlin.io.path.notExists
 import kotlin.math.PI
 
+
 val config_dir 
     get() = FabricLoader.getInstance().configDir / BedwarsPlugin.CONFIG_PATH
 
