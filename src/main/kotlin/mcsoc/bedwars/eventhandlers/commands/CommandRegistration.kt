@@ -9,6 +9,7 @@ import net.minecraft.server.permissions.PermissionLevel
 import mcsoc.bedwars.eventhandlers.commands.CommandActions
 import mcsoc.bedwars.eventhandlers.commands.LoadedMapSuggestionProvider
 import mcsoc.bedwars.eventhandlers.commands.AvailableStructureSuggestionProvider
+import mcsoc.bedwars.gui.ShopGui
 import net.minecraft.server.permissions.Permission
 import net.minecraft.server.permissions.Permissions
 
@@ -83,6 +84,16 @@ fun registerCommands() {
             .then(Commands.argument("number_of_teams", IntegerArgumentType.integer())
                 .executes(CommandActions::assignTeams)
             )
-        ))
+        )
+        .then(Commands.literal("open_shop_gui")
+        .executes(ShopGui::displayShop)
+        )
+        .then(Commands.literal("test_simple_gui")
+        .executes(ShopGui::testSimpleGui)
+        )
+        .then(Commands.literal("test_simple_gui_4")
+        .executes(ShopGui::testSimpleGui4)
+        )
+
     }
 }

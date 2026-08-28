@@ -20,6 +20,10 @@ repositories {
 		url = uri("https://maven.enginehub.org/repo/")
 	}
 	mavenCentral()
+	maven{
+		url = uri("https://maven.nucleoid.xyz/") 
+		name = "Nucleoid"
+	}
 }
 
 loom {
@@ -57,6 +61,8 @@ dependencies {
 	implementation("com.akuleshov7:ktoml-file:0.7.1")
 	implementation("io.heapy.kotaml:kotaml:0.110.0")
 
+	implementation("eu.pb4:sgui:2.1.0+26.2")
+	include("eu.pb4:sgui:2.1.0+26.2")
 }
 
 tasks.processResources {

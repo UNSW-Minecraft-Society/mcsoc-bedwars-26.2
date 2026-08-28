@@ -11,6 +11,9 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.levelgen.structure.BoundingBox
+import mcsoc.bedwars.upgrades.UpgradableItem
+import mcsoc.bedwars.upgrades.UpgradeItemType
+import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.saveddata.SavedData
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
@@ -20,22 +23,38 @@ import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 
 
-private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState {
+private class PlayerDataRecord() : PlayerStateRecord, PlayerUpgradesRecord, PlayerTeamState {
     companion object {
+        val TOOL_UPGRADES_CODEC: Codec<HashMap<UpgradeItemType, UpgradableItem>> =
+            Codec.unboundedMap(UpgradeItemType.CODEC, Codec.STRING).xmap(
+                    { HashMap(it.mapValues { (type, tier) -> type.fromName(tier) }) },
+                    { it.mapValues { (_, item) -> (item as Enum<*>).name } }
+                )
+    
         val CODEC: Codec<PlayerDataRecord> = RecordCodecBuilder.create{it.group(
-            LifeState.CODEC.fieldOf("life_state").forGetter(PlayerDataRecord::life_state),
-            Team.CODEC.fieldOf("team").forGetter(PlayerDataRecord::team)
+            LifeState.CODEC
+                .fieldOf("life_state")
+                .forGetter(PlayerDataRecord::life_state),
+            TOOL_UPGRADES_CODEC
+                .fieldOf("player_upgrades")
+                .forGetter(PlayerDataRecord::toolUpgrades),
+            Team.CODEC
+                .fieldOf("team")
+                .forGetter(PlayerDataRecord::team)
         ).apply(it, ::PlayerDataRecord)}
     }
 
     private var life_state: LifeState = LifeState.ALIVE
+    private var toolUpgrades = HashMap<UpgradeItemType, UpgradableItem>()
     private var team: Team = Team.NONE
 
     private constructor(
         life_state: LifeState,
+        toolUpgrades: Map<UpgradeItemType, UpgradableItem>,
         team: Team
     ) : this() {
         this.life_state = life_state
+        this.toolUpgrades.putAll(toolUpgrades)
         this.team = Team.NONE
     }
 
@@ -47,6 +66,18 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState {
 
     override fun setTeamName(team: Team) {
         this.team = team
+    }
+    
+    override fun getItem(item: UpgradeItemType): UpgradableItem {
+        return toolUpgrades.getOrPut(item) { item.default }
+    }
+
+    override fun setItem(item: UpgradableItem) {
+        toolUpgrades[item.type] = item
+    }
+
+    override fun removeItem(item: UpgradeItemType) {
+        toolUpgrades.remove(item)
     }
 }
 
@@ -83,7 +114,7 @@ private class TeamDataRecord(
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHolder, TeamStateHolder {
+private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHolder, TeamStateHolder, PlayerUpgradesHolder {
     companion object {
         val UUIDCodec: Codec<Uuid> = Codec.STRING.xmap(Uuid::parse, Uuid::toString)
         
@@ -198,10 +229,14 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHo
     fun addActivePlayer(uuid: UUID) = active_players.add(uuid)
     fun removeActivePlayer(uuid: UUID) = active_players.remove(uuid)
     fun getActivePlayers() = active_players
+
+    override fun getItemUpgradeState(player: Player): PlayerUpgradesRecord {
+        return getPlayerData(player)
+    }
 }
 
 
-object ModDataTracker : PlayerStateExposer, BlockProtectionExposer, TeamStateExposer {
+object ModDataTracker : PlayerStateExposer, PlayerUpgradesExposer, BlockProtectionExposer, TeamStateExposer {
     private val mod_data = ModDataStore()
     
     override fun isPlayerAlive(player: Player) =  mod_data.isPlayerAlive(player)
@@ -227,4 +262,10 @@ object ModDataTracker : PlayerStateExposer, BlockProtectionExposer, TeamStateExp
     fun getActivePlayers() = mod_data.getActivePlayers()
     fun addActivePlayer(uuid: UUID) = mod_data.addActivePlayer(uuid)
     fun removeActivePlayer(uuid: UUID) = mod_data.removeActivePlayer(uuid)
+    override fun upgradeItem(player: ServerPlayer, item: UpgradeItemType) = mod_data.upgradeItem(player, item)
+    override fun downgradeItems(player: ServerPlayer) = mod_data.downgradeItems(player)
+    override fun clearItems(player: ServerPlayer) = mod_data.clearItems(player)
+
+    override fun getNextItemStack(player: ServerPlayer, item: UpgradeItemType) = mod_data.getNextItemStack(player, item)
+    override fun getTier(player: ServerPlayer, item: UpgradeItemType) = mod_data.getTier(player, item)
 }
