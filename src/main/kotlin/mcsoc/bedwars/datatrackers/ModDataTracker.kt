@@ -4,6 +4,10 @@ import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import kotlinx.serialization.Serializable
 import net.minecraft.core.BlockPos
+import mcsoc.bedwars.utils.inWholeTicks
+import mcsoc.bedwars.utils.ticks
+import kotlin.time.Duration
+import kotlin.time.TimeSource
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
@@ -114,7 +118,7 @@ private class TeamDataRecord(
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHolder, TeamStateHolder, PlayerUpgradesHolder {
+private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHolder, TeamStateHolder, PlayerUpgradesHolder, Ticker {
     companion object {
         val UUIDCodec: Codec<Uuid> = Codec.STRING.xmap(Uuid::parse, Uuid::toString)
         
@@ -130,7 +134,11 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHo
             
             Codec.unboundedMap(Team.CODEC, TeamDataRecord.CODEC)
                 .fieldOf("teams_map")
-                .forGetter(ModDataStore::teams_map)
+                .forGetter(ModDataStore::teams_map),
+
+            Codec.STRING.xmap(Duration::parseIsoString, Duration::toIsoString)
+                .fieldOf("game_timer")
+                .forGetter(ModDataStore::game_timer)
         ).apply(it, ::ModDataStore)}
     }
     
@@ -139,17 +147,37 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHo
     private val block_protection_zone_list = HashMap<Long, MutableList<AABB>>()
     private val teams_map = HashMap<Team, TeamDataRecord>()
     private val active_players = mutableSetOf<UUID>()
+    private var prev_tick_time = TimeSource.Monotonic.markNow()
+    private var tick_delta = Duration.ZERO
+    private var game_timer = Duration.ZERO
+    private var timer_tick = false
     
     private constructor(
         player_data: Map<Uuid, PlayerDataRecord>,
         placed_blocks: Set<BlockPos>,
-        teamMap: Map<Team, TeamDataRecord>
+        teamMap: Map<Team, TeamDataRecord>,
+        timer: Duration
     ): this() {
         placed_blocks.toList().toSet()
         this.player_data_map.putAll(player_data)
         this.placed_blocks_set.addAll(placed_blocks)
         this.teams_map.putAll(teamMap)
+        this.game_timer = timer
     }
+    
+    
+    override fun tick() {
+        tick_delta = prev_tick_time.elapsedNow()
+        prev_tick_time = TimeSource.Monotonic.markNow()
+        
+        timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
+        game_timer += tick_delta
+    }
+
+    override fun getGameTime() = game_timer
+        
+    override fun getTimerTick() = timer_tick
+
 
 
     private fun getPlayerData(id: Uuid): PlayerDataRecord {
@@ -226,20 +254,23 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHo
     
     override fun getPlayersTeam(player: Uuid): Team = getPlayerData(player).getTeamName()
     
-    fun addActivePlayer(uuid: UUID) = active_players.add(uuid)
-    fun removeActivePlayer(uuid: UUID) = active_players.remove(uuid)
-    fun getActivePlayers() = active_players
+    override fun addActivePlayer(uuid: UUID) = active_players.add(uuid)
+    override fun removeActivePlayer(uuid: UUID) = active_players.remove(uuid)
+    override fun getActivePlayers() = active_players
 
     override fun getItemUpgradeState(player: Player): PlayerUpgradesRecord {
         return getPlayerData(player)
     }
 }
 
-
-object ModDataTracker : PlayerStateExposer, PlayerUpgradesExposer, BlockProtectionExposer, TeamStateExposer {
+object ModDataTracker : PlayerStateExposer, PlayerUpgradesExposer, BlockProtectionExposer, TeamStateExposer, TickExposer {
     private val mod_data = ModDataStore()
-    
-    override fun isPlayerAlive(player: Player) =  mod_data.isPlayerAlive(player)
+
+    override fun tick() = mod_data.tick()
+    override fun getGameTime(): Duration = mod_data.getGameTime()
+    override fun getTimerTick(): Boolean = mod_data.getTimerTick()
+
+    override fun isPlayerAlive(player: Player) = mod_data.isPlayerAlive(player)
     override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
     override fun isPlayerDead(player: Player) = mod_data.isPlayerDead(player)
 
@@ -259,9 +290,10 @@ object ModDataTracker : PlayerStateExposer, PlayerUpgradesExposer, BlockProtecti
     override fun addPlayer(player: Uuid, team: Team) = mod_data.addPlayer(player, team)
     
     override fun getPlayersTeam(player: Uuid): Team = mod_data.getPlayersTeam(player)
-    fun getActivePlayers() = mod_data.getActivePlayers()
-    fun addActivePlayer(uuid: UUID) = mod_data.addActivePlayer(uuid)
-    fun removeActivePlayer(uuid: UUID) = mod_data.removeActivePlayer(uuid)
+    override fun getActivePlayers() = mod_data.getActivePlayers()
+    override fun addActivePlayer(uuid: UUID) = mod_data.addActivePlayer(uuid)
+    override fun removeActivePlayer(uuid: UUID) = mod_data.removeActivePlayer(uuid)
+    
     override fun upgradeItem(player: ServerPlayer, item: UpgradeItemType) = mod_data.upgradeItem(player, item)
     override fun downgradeItems(player: ServerPlayer) = mod_data.downgradeItems(player)
     override fun clearItems(player: ServerPlayer) = mod_data.clearItems(player)

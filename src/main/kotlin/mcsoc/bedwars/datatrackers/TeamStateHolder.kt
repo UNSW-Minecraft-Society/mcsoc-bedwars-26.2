@@ -3,6 +3,7 @@ package mcsoc.bedwars.datatrackers
 import mcsoc.bedwars.utils.Team
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.phys.Vec3
+import java.util.UUID
 import kotlin.uuid.Uuid
 
 internal interface TeamStateRecord {
@@ -30,6 +31,10 @@ internal interface TeamStateExposer {
     fun initialiseTeams(numTeams: Int)
 
     fun getPlayersTeam(player: Uuid): Team
+    
+    fun getActivePlayers(): Set<UUID>
+    fun addActivePlayer(uuid: UUID): Boolean
+    fun removeActivePlayer(uuid: UUID): Boolean
 }
 
 internal interface TeamStateHolder : TeamStateExposer {
@@ -40,4 +45,3 @@ internal interface TeamStateHolder : TeamStateExposer {
     override fun getPlayersInTeam(team: Team): List<Uuid> = getTeam(team).getPlayers()
     override fun setBedAlive(team: Team, state: Boolean) = getTeam(team).setBedAlive(state)
 }
-
