@@ -19,16 +19,16 @@ import net.minecraft.world.phys.AABB
 import kotlin.uuid.toKotlinUuid
 
 
-fun setProtectionZoneMsg(p1: BlockPos, p2: BlockPos) = 
+private fun setProtectionZoneMsg(p1: BlockPos, p2: BlockPos) = 
     Component.literal("Created new protection zone between ${p1.format} and ${p2.format}")
 
-fun listProtectionZoneMsg(box: AABB): Component {
+private fun listProtectionZoneMsg(box: AABB): Component {
     val p1 = BlockPos.containing(box.minPosition)
     val p2 = BlockPos.containing(box.maxPosition)
     return Component.literal("  from ${p1.format} to ${p2.format}")
 }
 
-object CommandActions {
+internal object CommandActions {
     fun setProtectionZone(ctx: CommandContext<CommandSourceStack>): Int {
         val p1 = BlockPosArgument.getBlockPos(ctx, FIRST_POSITION_ARGUMENT)
         val p2 = BlockPosArgument.getBlockPos(ctx, SECOND_POSITION_ARGUMENT)
