@@ -6,6 +6,7 @@ import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.configloader.maploader.structures_directory
+import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.commands.CommandSourceStack
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.listDirectoryEntries
@@ -36,4 +37,16 @@ internal class ExampleSuggestionProvider: SuggestionProvider<CommandSourceStack>
 		builder.suggest(ctx.source.textName)
 		return builder.buildFuture()
 	}
+}
+
+internal class UpgradeItemsSuggestionProvider : SuggestionProvider<CommandSourceStack> {
+    override fun getSuggestions(
+        context: CommandContext<CommandSourceStack>,
+        builder: SuggestionsBuilder
+    ): CompletableFuture<Suggestions> {
+        for (type in UpgradeItemType.entries) {
+        	builder.suggest(type.name.lowercase())
+        }
+        return builder.buildFuture()
+    }
 }

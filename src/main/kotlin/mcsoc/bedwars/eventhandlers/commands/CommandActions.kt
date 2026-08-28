@@ -7,6 +7,7 @@ import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader.Companion.place
+import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.utils.MapData
 import mcsoc.bedwars.utils.format
 import net.minecraft.commands.CommandSourceStack
@@ -141,6 +142,29 @@ object CommandActions {
             Component.literal("Your team is ${team.name}").withColor(TextColor.GREEN)
         )
 
+        return 1
+    }
+    
+    fun upgradeTool(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player ?: run {
+            ctx.source.sendFailure(Component.literal("Command must be run by a player"))
+            return 0
+        }
+        val input = StringArgumentType.getString(ctx, "type")
+        val type = try {
+            UpgradeItemType.valueOf(input)
+        } catch (e: IllegalArgumentException) {
+            player.sendSystemMessage(Component.literal("$input is not a valid upgrade"))
+            return 0
+        }
+
+        ModDataTracker.upgradeItem(player, type)
+        return 1
+    }
+    
+    fun resetTools(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.playerOrException
+        ModDataTracker.clearItems(player)
         return 1
     }
 }

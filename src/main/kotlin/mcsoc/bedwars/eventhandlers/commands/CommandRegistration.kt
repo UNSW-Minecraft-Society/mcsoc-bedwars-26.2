@@ -68,21 +68,19 @@ fun registerCommands() {
             .executes(CommandActions::pingWord)
             )
         )
-        .then(Commands.literal("ping")
-            .requires { it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER) }
-            .executes(CommandActions::ping)
-            .then(Commands.argument(SOME_ARGUMENT, StringArgumentType.word())
-                .suggests(ExampleSuggestionProvider())
-                .executes(CommandActions::pingWord)
-            )
+        .then(Commands.literal("join")
+        .executes(CommandActions::join)
         )
-        .then(Commands.literal("join").executes(CommandActions::join))
-        .then(Commands.literal("leave").executes(CommandActions::leave))
-        .then(Commands.literal("get_team").executes(CommandActions::getTeam))
+        .then(Commands.literal("leave")
+        .executes(CommandActions::leave)
+        )
+        .then(Commands.literal("get_team")
+        .executes(CommandActions::getTeam)
+        )
         .then(Commands.literal("assign_teams")
-            .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
+        .requires{source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
             .then(Commands.argument("number_of_teams", IntegerArgumentType.integer())
-                .executes(CommandActions::assignTeams)
+            .executes(CommandActions::assignTeams)
             )
         )
         .then(Commands.literal("open_shop_gui")
@@ -95,5 +93,19 @@ fun registerCommands() {
         .executes(ShopGui::testSimpleGui4)
         )
 
+        // only test commands
+        // use: /bedwars upgradetool [Axe|Pickaxe|...]
+        .then(
+            Commands.literal("upgrade")
+                .then(Commands.argument("type", StringArgumentType.word())
+                .suggests(UpgradeItemsSuggestionProvider())
+                .executes(CommandActions::upgradeTool)
+            )
+        )
+
+        .then(Commands.literal("resettools")
+        .executes(CommandActions::resetTools)
+        )
+        )
     }
 }
