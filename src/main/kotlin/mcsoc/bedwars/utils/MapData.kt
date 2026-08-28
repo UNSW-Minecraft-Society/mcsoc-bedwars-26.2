@@ -20,7 +20,6 @@ import kotlin.math.PI
 import kotlin.time.Duration
 
 
-@Serializable
 enum class LoadedGenerator(
     val base_cooldown: Duration,
     val products: Iterable<Pair<ItemStackTemplate, Int>>
@@ -31,26 +30,51 @@ enum class LoadedGenerator(
             Pair(ItemStackTemplate(Items.IRON_INGOT), 1),
             Pair(ItemStackTemplate(Items.GOLD_INGOT), 5)
         )
-    ),
+    ) {
+        override fun place(pos: BlockPos) {
+            
+        }
+    },
     DIAMOND(
         100.ticks,
         setOf(
             Pair(ItemStackTemplate(Items.DIAMOND), 1),
         )
-    ),
+    ) {
+        override fun place(pos: BlockPos) {
+            
+        }
+    },
     EMERALD(
         200.ticks,
         setOf(
             Pair(ItemStackTemplate(Items.EMERALD), 1),
         )
-    )
+    ) {
+        override fun place(pos: BlockPos) {
+            
+        }
+    };
+
+    abstract fun place(pos: BlockPos)
 }
 
-@Serializable
+
 enum class LoadedShopkeeper {
-    PERSONAL,
-    TEAM
-}
+    PERSONAL {
+        override fun place(pos: BlockPos) {
+            
+        }
+    },
+    TEAM {
+        override fun place(pos: BlockPos) {
+
+        }
+    };
+    
+    abstract fun place(pos: BlockPos)
+} 
+
 
 private interface Island {
     val cpos: CylindricalBlockPos
@@ -65,6 +89,14 @@ private interface Island {
 
 private interface GeneratorIsland : Island {
     val generators: Iterable<Pair<LoadedGenerator, BlockPos>>
+
+    override fun place(level: Level, origin: BlockPos) {
+        super.place(level, origin)
+        for (generator_pos in generators) {
+            val generator = generator_pos.first
+            generator.place(generator_pos.second)
+        }
+    } 
 }
 
 @Serializable
@@ -85,7 +117,16 @@ data class BaseIslandData(
     override val generators: Iterable<Pair<LoadedGenerator, BlockPos>> = listOf(Pair(LoadedGenerator.BASE, BlockPos(0, -2, 0))),
     val shops: Iterable<Pair<LoadedShopkeeper, BlockPos>> = listOf(Pair(LoadedShopkeeper.PERSONAL, BlockPos(2, 0, 0))),
     val team: Team = Team.RED
-) : GeneratorIsland
+) : GeneratorIsland {
+    override fun place(level: Level, origin: BlockPos) {
+        super.place(level, origin)
+        
+        for (shop_pos in shops) {
+            val shop = shop_pos.first
+            shop.place(shop_pos.second)
+        }
+    }
+}
 
 
 @Serializable
