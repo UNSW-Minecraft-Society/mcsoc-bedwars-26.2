@@ -35,8 +35,8 @@ fun registerCommands() {
                 .then(Commands.literal("leave").executes(CommandActions::leave))
                 .then(Commands.literal("get_team").executes(CommandActions::getTeam))
                 .then(Commands.literal("assign_teams")
-                    .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
                     .then(Commands.argument("number_of_teams", IntegerArgumentType.integer())
+                        .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
                         .executes(CommandActions::assignTeams)
                     )
                 )
