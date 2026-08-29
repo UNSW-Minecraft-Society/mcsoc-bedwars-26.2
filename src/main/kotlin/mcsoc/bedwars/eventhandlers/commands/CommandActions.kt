@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.gamestate.GameManager
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.TextColor
@@ -69,6 +70,16 @@ object CommandActions {
             Component.literal("Your team is ${team.name}").withColor(TextColor.GREEN)
         )
 
+        return 1
+    }
+
+    fun start(ctx: CommandContext<CommandSourceStack>): Int {
+        GameManager.startGame(ctx.source.player)
+        return 1
+    }
+
+    fun end(ctx: CommandContext<CommandSourceStack>): Int {
+        GameManager.endGame(ctx.source.player)
         return 1
     }
 }

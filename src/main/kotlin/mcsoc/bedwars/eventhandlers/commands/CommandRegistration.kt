@@ -40,6 +40,12 @@ fun registerCommands() {
                         .executes(CommandActions::assignTeams)
                     )
                 )
+                .then(Commands.literal("start")
+                    .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
+                    .executes(CommandActions::start))
+                .then(Commands.literal("end")
+                    .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
+                    .executes(CommandActions::end))
         )
     }
 }
