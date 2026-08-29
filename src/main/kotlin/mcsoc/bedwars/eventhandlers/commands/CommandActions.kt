@@ -31,9 +31,7 @@ object CommandActions {
         }
 
         ModDataTracker.addActivePlayer(player.uuid)
-        player.sendSystemMessage(
-            Component.literal("You have joined the bedwars lobby").withColor(TextColor.GREEN)
-        )
+        player.sendSystemMessage(Component.literal("You have joined the bedwars lobby").withColor(TextColor.GREEN))
 
         return 1
     }
@@ -45,10 +43,7 @@ object CommandActions {
         }
 
         ModDataTracker.removeActivePlayer(player.uuid)
-        // todo add other things when a player leaves
-        player.sendSystemMessage(
-            Component.literal("You have left the bedwars lobby").withColor(TextColor.RED)
-        )
+        player.sendSystemMessage(Component.literal("You have left the bedwars lobby").withColor(TextColor.RED))
 
         return 1
     }
@@ -66,9 +61,7 @@ object CommandActions {
         }
 
         val team = ModDataTracker.getPlayersTeam(player.uuid.toKotlinUuid())
-        player.sendSystemMessage(
-            Component.literal("Your team is ${team.name}").withColor(TextColor.GREEN)
-        )
+        player.sendSystemMessage(Component.literal("Your team is ${team.name}").withColor(TextColor.GREEN))
 
         return 1
     }
@@ -79,9 +72,9 @@ object CommandActions {
             return 0
         }
         val input = StringArgumentType.getString(ctx, UPGRADE_TYPE_ARG)
-        val type = UpgradeItemType.entries.firstOrNull { name ->
-            name.name.equals(input, ignoreCase = true)
-        } ?: run {
+        val type = try {
+            UpgradeItemType.valueOf(input)
+        } catch (e: IllegalArgumentException) {
             player.sendSystemMessage(Component.literal("$input is not a valid upgrade"))
             return 0
         }
