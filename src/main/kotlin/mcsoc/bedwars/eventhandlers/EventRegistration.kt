@@ -9,6 +9,8 @@ class EventRegistration {
             ServerTickEvents.END_SERVER_TICK.register{server ->
                 ModDataTracker.tick()
             }
+            registerItemCallbacks()
+            registerPlayerJoinEvent()
         }
     }
 }
