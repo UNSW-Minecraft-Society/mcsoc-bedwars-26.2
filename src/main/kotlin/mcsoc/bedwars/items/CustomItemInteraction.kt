@@ -2,15 +2,18 @@ package mcsoc.bedwars.items
 
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.ModDataTracker
+import net.minecraft.core.Direction
 import net.minecraft.core.component.DataComponents
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.LightningBolt
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.entity.projectile.ThrowableProjectile
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
+import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.phys.HitResult
 import net.minecraft.world.phys.Vec3
 
@@ -51,5 +54,17 @@ object CustomItemInteraction {
         level.addFreshEntity(fireball)
         if (!player.isCreative) item.count -= 1
         return InteractionResult.SUCCESS
+    }
+
+    fun triggerCustomThrowableProjectileEffect(projectile: ThrowableProjectile): InteractionResult {
+        val level = projectile.level()
+        val owner = projectile.owner
+        if (level.isClientSide)
+            return InteractionResult.PASS
+        if (owner !is Player)
+            return InteractionResult.PASS
+        val blockPos = projectile.blockPosition().relative(Direction.DOWN, 2)
+        level.setBlockAndUpdate(blockPos, Blocks.WOOL.white.defaultBlockState())
+        return InteractionResult.FAIL
     }
 }

@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback
 import net.fabricmc.fabric.api.event.player.UseItemCallback
 import net.minecraft.core.component.DataComponents
 import net.minecraft.world.InteractionResult
+import net.minecraft.world.entity.projectile.ThrowableProjectile
 
 /**
  * Function to register all item interaction events for the plugin
@@ -22,5 +23,11 @@ fun registerItemCallbacks() {
         BedwarsPlugin.LOGGER.info("UseBlock called")
         return@register CustomItemInteraction.triggerCustomItemEffect(player, level, hand)
     }
+    ThrowableProjectileTickCallback.EVENT.register(object : ThrowableProjectileTickCallback {
+        override fun tick(projectile: ThrowableProjectile): InteractionResult {
+            BedwarsPlugin.LOGGER.info("Projectile ticked")
+            return CustomItemInteraction.triggerCustomThrowableProjectileEffect(projectile)
+        }
+    })
 }
 
