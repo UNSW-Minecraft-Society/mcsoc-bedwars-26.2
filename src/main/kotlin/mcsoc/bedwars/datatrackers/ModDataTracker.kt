@@ -19,6 +19,18 @@ import kotlin.uuid.Uuid
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 
+enum class GamePhase {
+    STARTING,
+    ACTIVE,
+    ENDED,
+    INACTIVE
+}
+
+enum class GamePeriod {
+    ACTIVE,
+    DEATHMATCH,
+    INACTIVE
+}
 
 @Serializable
 private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState {
@@ -110,7 +122,8 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     private var tick_delta = Duration.ZERO
     private var game_timer = Duration.ZERO
     private var timer_tick = false
-    
+    private var game_phase = GamePhase.INACTIVE
+    private var game_period = GamePeriod.INACTIVE
     
     private constructor(
         playerMap: Map<Uuid, PlayerDataRecord>,
@@ -134,6 +147,22 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     override fun getGameTime() = game_timer
         
     override fun getTimerTick() = timer_tick
+
+    fun getGamePhase(): GamePhase {
+        return game_phase
+    }
+
+    fun setGamePhase(phase: GamePhase) {
+        game_phase = phase
+    }
+
+    fun getGamePeriod(): GamePeriod {
+        return game_period
+    }
+
+    fun setGamePeriod(period: GamePeriod) {
+        game_period = period
+    }
 
 
     private fun getPlayerData(id: Uuid): PlayerDataRecord {
@@ -183,6 +212,11 @@ object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer {
     override fun tick() = mod_data.tick()
     override fun getGameTime(): Duration = mod_data.getGameTime()
     override fun getTimerTick(): Boolean = mod_data.getTimerTick()
+
+    fun getGamePhase(): GamePhase = mod_data.getGamePhase()
+    fun setGamePhase(phase: GamePhase) = mod_data.setGamePhase(phase)
+    fun getGamePeriod(): GamePeriod = mod_data.getGamePeriod()
+    fun setGamePeriod(period: GamePeriod) = mod_data.setGamePeriod(period)
 
     override fun isPlayerAlive(player: Player) = mod_data.isPlayerAlive(player)
     override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)

@@ -74,12 +74,12 @@ object CommandActions {
     }
 
     fun start(ctx: CommandContext<CommandSourceStack>): Int {
-        GameManager.startGame(ctx.source.player)
+        GameManager.startGame(ctx.source.level)
         return 1
     }
 
     fun end(ctx: CommandContext<CommandSourceStack>): Int {
-        GameManager.endGame(ctx.source.player)
+        GameManager.endGame(ctx.source.level)
         return 1
     }
 }
