@@ -2,9 +2,6 @@ package mcsoc.bedwars
 
 import mcsoc.bedwars.eventhandlers.EventRegistration
 import mcsoc.bedwars.eventhandlers.commands.CommandRegistration
-import mcsoc.bedwars.eventhandlers.commands.registerCommands
-import mcsoc.bedwars.eventhandlers.registerItemCallbacks
-import mcsoc.bedwars.eventhandlers.registerPlayerJoinEvent
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
