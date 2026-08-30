@@ -43,6 +43,9 @@ fun registerCommands() {
                 .then(Commands.literal("give_fireball")
                     .requires {it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)}
                     .executes(CommandActions::giveFireball))
+                .then(Commands.literal("give_bridge_egg")
+                    .requires {it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)}
+                    .executes(CommandActions::giveBridgeEgg))
         )
     }
 }

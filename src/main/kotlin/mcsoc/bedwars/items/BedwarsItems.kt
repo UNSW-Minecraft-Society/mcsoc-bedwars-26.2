@@ -18,4 +18,13 @@ object BedwarsItems {
         addItemLore(stack, "Right click to shoot a fireball in the direction you look.")
         return stack
     }
+
+    fun bridgeEggStack(): ItemStack {
+        val stack = Items.EGG.defaultInstance
+        applyTag(stack, BEDWARS_ITEM_TAG, CUSTOM_BRIDGE_EGG_VAL)
+        applyTag(stack, CUSTOM_ITEM_TAG, CUSTOM_BRIDGE_EGG_VAL)
+        renameItem(stack, "Bridge Egg")
+        addItemLore(stack, "Right click to throw the egg, creating a bridge in it's wake.")
+        return stack
+    }
 }

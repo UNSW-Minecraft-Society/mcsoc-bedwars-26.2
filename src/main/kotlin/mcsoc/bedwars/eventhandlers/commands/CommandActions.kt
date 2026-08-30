@@ -81,5 +81,13 @@ object CommandActions {
         }
         return 1
     }
+
+    fun giveBridgeEgg(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player
+        if (player is ServerPlayer && player.addItem(BedwarsItems.bridgeEggStack())) {
+            return 0
+        }
+        return 1
+    }
 }
 

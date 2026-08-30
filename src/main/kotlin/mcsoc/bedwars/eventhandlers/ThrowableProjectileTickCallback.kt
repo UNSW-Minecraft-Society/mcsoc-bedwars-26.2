@@ -6,21 +6,21 @@ import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.entity.projectile.ThrowableProjectile
 
-interface ThrowableProjectileTickCallback {
+fun interface ThrowableProjectileTickCallback {
     companion object {
-        val EVENT: Event<ThrowableProjectileTickCallback>
-            get() = EventFactory.createArrayBacked(ThrowableProjectileTickCallback::class.java,{
-                    listeners: Array<ThrowableProjectileTickCallback> -> object : ThrowableProjectileTickCallback {
-                override fun tick(projectile: ThrowableProjectile): InteractionResult {
-                    for (listener in listeners) {
-                        val result = listener.tick(projectile)
-                        if (result != InteractionResult.PASS) return result
-                    }
+        @JvmStatic
+        val EVENT = EventFactory.createArrayBacked(ThrowableProjectileTickCallback::class.java) { listeners ->
+            ThrowableProjectileTickCallback { projectile: ThrowableProjectile ->
+                for (listener in listeners) {
+                    val result = listener.tick(projectile)
 
-                    return InteractionResult.PASS
+                    if (result != InteractionResult.PASS) {
+                        return@ThrowableProjectileTickCallback result
+                    }
                 }
+                InteractionResult.PASS
             }
-            })
+        }
     }
 
     fun tick(projectile: ThrowableProjectile): InteractionResult

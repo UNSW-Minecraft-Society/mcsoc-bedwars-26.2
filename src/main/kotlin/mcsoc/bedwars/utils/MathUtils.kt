@@ -1,6 +1,8 @@
 package mcsoc.bedwars.utils
 
 import net.minecraft.core.BlockPos
+import net.minecraft.core.Vec3i
+import net.minecraft.world.phys.Vec3
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -18,4 +20,12 @@ data class CylindricalBlockPos(val origin: BlockPos, var radius: Float, var angl
     fun toBlockPos(): BlockPos {
         return origin.offset((radius * sin(angle)).roundToInt(), height, (radius * cos(angle)).roundToInt())
     }
+}
+
+fun roundVec(vector: Vec3): Vec3i {
+    return Vec3i(vector.x.roundToInt(), vector.y.roundToInt(), vector.z.roundToInt())
+}
+
+fun vecToBlockPos(vector: Vec3): BlockPos {
+    return BlockPos(roundVec(vector))
 }

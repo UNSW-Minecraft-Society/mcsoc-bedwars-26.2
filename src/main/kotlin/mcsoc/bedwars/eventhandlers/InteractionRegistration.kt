@@ -16,18 +16,13 @@ import net.minecraft.world.entity.projectile.ThrowableProjectile
 fun registerItemCallbacks() {
     // Alive UseItemCallbacks
     UseItemCallback.EVENT.register {player, level, hand ->
-        BedwarsPlugin.LOGGER.info("UseItem called")
         return@register CustomItemInteraction.triggerCustomItemEffect(player, level, hand)
     }
     UseBlockCallback.EVENT.register { player, level, hand, hitResult ->
-        BedwarsPlugin.LOGGER.info("UseBlock called")
         return@register CustomItemInteraction.triggerCustomItemEffect(player, level, hand)
     }
-    ThrowableProjectileTickCallback.EVENT.register(object : ThrowableProjectileTickCallback {
-        override fun tick(projectile: ThrowableProjectile): InteractionResult {
-            BedwarsPlugin.LOGGER.info("Projectile ticked")
-            return CustomItemInteraction.triggerCustomThrowableProjectileEffect(projectile)
-        }
-    })
+    ThrowableProjectileTickCallback.EVENT.register { projectile ->
+        return@register CustomItemInteraction.triggerCustomThrowableProjectileEffect(projectile)
+    }
 }
 

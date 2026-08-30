@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(net.minecraft.world.entity.projectile.ThrowableProjectile.class)
 public class ThrowableProjectileMixin {
-    @Inject(at = @At("TAIL"), method = "tick")
+    @Inject(at = @At("HEAD"), method = "tick")
     private void onTick(CallbackInfo ci) {
         InteractionResult result = ThrowableProjectileTickCallback.Companion.getEVENT().invoker()
                 .tick((ThrowableProjectile) (Object) this);
