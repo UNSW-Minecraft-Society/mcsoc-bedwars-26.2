@@ -9,10 +9,16 @@ const val NUM_TEAMS = 2 // If we want to change number of teams later store this
 
 class GameManager {
     companion object {
-        fun startGame(world: ServerLevel) {
-            setup(world)
-            // countdown from 10
+        fun setupGame(world: ServerLevel) {
+            if (ModDataTracker.getGamePhase() != GamePhase.INACTIVE) {
+                endGame(world)
+            }
 
+            ModDataTracker.initialiseTeams(NUM_TEAMS)
+
+            // set active players -> take from list of players considered "ready"
+
+            ModDataTracker.setGamePhase(GamePhase.STARTING)
         }
 
         fun endGame(world: ServerLevel) {
@@ -26,22 +32,18 @@ class GameManager {
             }
         }
 
-        private fun setup(world: ServerLevel) {
-            if (ModDataTracker.getGamePhase() != GamePhase.INACTIVE) {
-                endGame(world)
-            }
+        private fun start(world: ServerLevel) {
+            // tp players to spawn points
+            // start generators
 
-            ModDataTracker.initialiseTeams(NUM_TEAMS)
-
-            // set active players -> take from list of players considered "ready"
-
-            ModDataTracker.setGamePhase(GamePhase.STARTING)
+            ModDataTracker.setGamePhase(GamePhase.ACTIVE)
         }
 
         fun tick(world: ServerLevel) {
-            // some catch to start start the game
-
-            ModDataTracker.setGamePhase(GamePhase.ACTIVE)
+            // some catch to start start the game -> start + wait for timer to reach 10 seconds
+            if (ModDataTracker.getGamePhase() == GamePhase.STARTING) {
+                start(world)
+            }
 
             // Add deathmatch later
         }
