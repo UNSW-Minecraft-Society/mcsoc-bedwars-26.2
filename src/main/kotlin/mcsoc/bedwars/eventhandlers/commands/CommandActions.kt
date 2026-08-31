@@ -84,7 +84,15 @@ object CommandActions {
 
     fun giveBridgeEgg(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.player
-        if (player is ServerPlayer && player.addItem(BedwarsItems.bridgeEggStack())) {
+        if (player is ServerPlayer && player.addItem(BedwarsItems.bridgeEggItemStack())) {
+            return 0
+        }
+        return 1
+    }
+
+    fun giveInstantTNT(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player
+        if (player is ServerPlayer && player.addItem(BedwarsItems.primedTNTItemStack())) {
             return 0
         }
         return 1

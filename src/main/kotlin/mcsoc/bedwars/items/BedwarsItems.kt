@@ -19,12 +19,21 @@ object BedwarsItems {
         return stack
     }
 
-    fun bridgeEggStack(): ItemStack {
+    fun bridgeEggItemStack(): ItemStack {
         val stack = Items.EGG.defaultInstance
         applyTag(stack, BEDWARS_ITEM_TAG, CUSTOM_BRIDGE_EGG_VAL)
         applyTag(stack, CUSTOM_ITEM_TAG, CUSTOM_BRIDGE_EGG_VAL)
         renameItem(stack, "Bridge Egg")
         addItemLore(stack, "Right click to throw the egg, creating a bridge in it's wake.")
+        return stack
+    }
+
+    fun primedTNTItemStack(): ItemStack {
+        val stack = Items.TNT.defaultInstance
+        applyTag(stack, BEDWARS_ITEM_TAG, CUSTOM_INSTANT_TNT)
+        applyTag(stack, CUSTOM_ITEM_TAG, CUSTOM_INSTANT_TNT)
+        renameItem(stack, "Instant TNT")
+        addItemLore(stack, "Right click on a block to place down instantly primed TNT.")
         return stack
     }
 }

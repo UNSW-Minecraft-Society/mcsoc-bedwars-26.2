@@ -19,7 +19,7 @@ fun registerItemCallbacks() {
         return@register CustomItemInteraction.triggerCustomItemEffect(player, level, hand)
     }
     UseBlockCallback.EVENT.register { player, level, hand, hitResult ->
-        return@register CustomItemInteraction.triggerCustomItemEffect(player, level, hand)
+        return@register CustomItemInteraction.triggerCustomItemEffect(player, level, hand, hitResult)
     }
     ThrowableProjectileTickCallback.EVENT.register { projectile ->
         return@register CustomItemInteraction.triggerCustomThrowableProjectileEffect(projectile)

@@ -11,6 +11,7 @@ import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.LightningBolt
+import net.minecraft.world.entity.item.PrimedTnt
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.entity.projectile.ThrowableProjectile
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball
@@ -18,6 +19,7 @@ import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableIt
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.Blocks
+import net.minecraft.world.level.block.TntBlock
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.phys.HitResult
 import net.minecraft.world.phys.Vec3
@@ -26,25 +28,26 @@ import kotlin.uuid.toKotlinUuid
 
 const val CUSTOM_FIREBALL_VAL = "fireball"
 const val CUSTOM_BRIDGE_EGG_VAL = "bridge_egg"
+const val CUSTOM_INSTANT_TNT = "instant_tnt"
+const val CUSTOM_BALL_OF_BUGS = "ball_of_bugs"
 const val CUSTOM_POPUP_TOWER_VAL = "popup_tower"
 const val CUSTOM_PLAYER_TRACKER_VAL = "player_tracker"
 
 const val FIREBALL_SPEED = 1.0
-const val BRIDGE_EGG_OFFSET = -1.8
+const val BRIDGE_EGG_OFFSET = -0.5
 
 object CustomItemInteraction {
     fun triggerCustomItemEffect(player: Player, level: Level, hand: InteractionHand, hitResult: HitResult? = null): InteractionResult {
         val item = player.getItemInHand(hand)
-        if (!ModDataTracker.isPlayerAlive(player))
-            return InteractionResult.PASS
-        if (!(item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.contains(CUSTOM_ITEM_TAG) ?: false))
-            return InteractionResult.PASS
         if (level.isClientSide)
             return InteractionResult.PASS
-        val type = item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.get()
+        if (!ModDataTracker.isPlayerAlive(player))
+            return InteractionResult.PASS
+        val type = item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
         BedwarsPlugin.LOGGER.info("Item has $CUSTOM_ITEM_TAG $type")
         when (type) {
             CUSTOM_FIREBALL_VAL -> return useFireballEffect(player, level, item)
+            CUSTOM_INSTANT_TNT -> return useInstantTNTEffect(player, level, item, hitResult)
             CUSTOM_PLAYER_TRACKER_VAL -> {}
         }
         return InteractionResult.PASS
@@ -53,11 +56,21 @@ object CustomItemInteraction {
     private fun useFireballEffect(player: Player, level: Level, item: ItemStack): InteractionResult {
         BedwarsPlugin.LOGGER.info("Doing fireball thing")
         val directionVector = player.getViewVector(1.0f)
-        var fireball = LargeFireball(EntityTypes.FIREBALL, level)
+        val fireball = LargeFireball(EntityTypes.FIREBALL, level)
         fireball.setPos(player.eyePosition.add(directionVector.scale(0.5)))
         fireball.owner = player
         fireball.deltaMovement = directionVector.scale(FIREBALL_SPEED)
         level.addFreshEntity(fireball)
+        if (!player.isCreative) item.count -= 1
+        return InteractionResult.SUCCESS
+    }
+
+    private fun useInstantTNTEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?): InteractionResult {
+        if (hitResult !is HitResult)
+            return InteractionResult.PASS
+        val pos = hitResult.location
+        val tnt = PrimedTnt(level, pos.x, pos.y, pos.z, player)
+        level.addFreshEntity(tnt)
         if (!player.isCreative) item.count -= 1
         return InteractionResult.SUCCESS
     }
