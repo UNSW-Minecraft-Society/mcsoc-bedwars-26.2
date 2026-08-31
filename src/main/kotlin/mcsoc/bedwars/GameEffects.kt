@@ -27,4 +27,16 @@ object TeamEffects {
         ModDataTracker.setBedAlive(team, false)
         // other things related to bed destruction like title and sound
     }
+
+    fun triggerDeathmatch() {
+        // destroy remaining beds
+        ModDataTracker.getActiveTeams().forEach { team ->
+            if (!ModDataTracker.getBedDestroyed(team)) {
+                destroyBed(team)
+            }
+        }
+        // close border
+        // spawn dragons
+
+    }
 }
