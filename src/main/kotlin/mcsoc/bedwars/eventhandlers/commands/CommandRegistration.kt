@@ -49,6 +49,9 @@ fun registerCommands() {
                 .then(Commands.literal("give_instant_tnt")
                     .requires {it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)}
                     .executes(CommandActions::giveInstantTNT))
+                .then(Commands.literal("give_ball_of_bugs")
+                    .requires {it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)}
+                    .executes(CommandActions::giveBallOfBugs))
         )
     }
 }

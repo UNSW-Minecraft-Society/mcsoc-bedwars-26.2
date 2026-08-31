@@ -97,5 +97,13 @@ object CommandActions {
         }
         return 1
     }
+
+    fun giveBallOfBugs(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player
+        if (player is ServerPlayer && player.addItem(BedwarsItems.ballOfBugsItemStack())) {
+            return 0
+        }
+        return 1
+    }
 }
 

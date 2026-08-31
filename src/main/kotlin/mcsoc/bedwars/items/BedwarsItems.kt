@@ -36,4 +36,13 @@ object BedwarsItems {
         addItemLore(stack, "Right click on a block to place down instantly primed TNT.")
         return stack
     }
+
+    fun ballOfBugsItemStack(): ItemStack {
+        val stack = Items.ENDER_PEARL.defaultInstance
+        applyTag(stack, BEDWARS_ITEM_TAG, CUSTOM_BALL_OF_BUGS)
+        applyTag(stack, CUSTOM_ITEM_TAG, CUSTOM_BALL_OF_BUGS)
+        renameItem(stack, "Ball of Bugs")
+        addItemLore(stack, "Right click to throw a ball, spawning an endermite when it lands.")
+        return stack
+    }
 }
