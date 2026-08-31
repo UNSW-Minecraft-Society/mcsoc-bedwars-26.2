@@ -1,10 +1,8 @@
 package mcsoc.bedwars.datatrackers
 
+import mcsoc.bedwars.generators.BaseGenerator
 import mcsoc.bedwars.generators.Generator
 import mcsoc.bedwars.utils.Team
-import net.minecraft.resources.ResourceKey
-import net.minecraft.server.level.ServerLevel
-import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
 import java.util.UUID
 
@@ -12,12 +10,12 @@ internal interface TeamStateRecord {
     fun getPlayers(): List<UUID>
     fun getBedAlive(): Boolean
     fun getSpawn(): Vec3
-    fun getGenerators(): List<Generator>
+    fun getGenerator(): BaseGenerator?
 
     fun setBedAlive(bedAlive: Boolean)
     fun addPlayer(player: UUID)
-    fun upgradeGenerators()
-    fun addGenerator(gen: Generator)
+    fun upgradeGenerator()
+    fun setGenerator(gen: BaseGenerator)
 }
 
 internal interface PlayerTeamState {

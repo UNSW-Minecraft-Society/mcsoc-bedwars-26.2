@@ -78,24 +78,22 @@ object CommandActions {
     }
 
     fun addGeneratorAtPlayer(ctx: CommandContext<CommandSourceStack>): Int {
-        val player = ctx.source.playerOrException
         val genArg = StringArgumentType.getString(ctx, GEN_TYPE_ARG)
-        return addGenerator(player, genArg, player.blockPosition())
+        return addGenerator(ctx.source, genArg, ctx.source.position)
     }
 
     fun addGenerator(ctx: CommandContext<CommandSourceStack>): Int {
-        val player = ctx.source.playerOrException
         val genArg = StringArgumentType.getString(ctx, GEN_TYPE_ARG)
-        val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above()        
-        return addGenerator(player, genArg, pos)
+        val bpos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above()
+        val pos = Vec3.atBottomCenterOf(bpos)
+        return addGenerator(ctx.source, genArg, pos)
     }
     
     fun addGeneratorForTeam(ctx: CommandContext<CommandSourceStack>): Int {
-        val player = ctx.source.playerOrException
-        val genArg = StringArgumentType.getString(ctx, GEN_TYPE_ARG)
         val teamArg = StringArgumentType.getString(ctx, GEN_TEAM_ARG)
-        val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above()        
-        return addGeneratorTeam(player, genArg, pos, teamArg)
+        val bpos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above() 
+        val pos = Vec3.atBottomCenterOf(bpos)
+        return addGeneratorTeam(ctx.source, pos, teamArg)
     }
 
     fun removeGenerator(ctx: CommandContext<CommandSourceStack>): Int {
@@ -111,7 +109,15 @@ object CommandActions {
     }
 
     fun upgradeGeneratorTier(ctx: CommandContext<CommandSourceStack>): Int {
-        ModDataTracker.upgradeGeneratorTier()
+        val type = StringArgumentType.getString(ctx, GEN_TYPE_ARG)
+        val genType = try {
+            GeneratorType.valueOf(type.uppercase())
+        } catch (e: IllegalArgumentException) {
+            ctx.source.sendFailure(Component.literal("$type is not a valid generator type"))
+            return 0
+        }
+        
+        ModDataTracker.upgradeGeneratorTier(genType)
         return 1
     }
     
@@ -119,45 +125,38 @@ object CommandActions {
         val teamArg = StringArgumentType.getString(ctx, GEN_TEAM_ARG)
         val team = ModDataTracker.getActiveTeams().find { it.getName() == teamArg }
         if (team == null) {
-            ctx.source.sendSystemMessage(Component.literal("$teamArg is not a valid team"))
+            ctx.source.sendFailure(Component.literal("$teamArg is not a valid team"))
             return 0
         }
         
-        ModDataTracker.upgradeTeamGenerators(team)
+        ModDataTracker.upgradeTeamGenerator(team)
         return 1
     }
 }
 
 
-private fun addGenerator(player: ServerPlayer, type: String, block: BlockPos): Int {
-    val position = Vec3.atBottomCenterOf(block)
+private fun addGenerator(src: CommandSourceStack, type: String, pos: Vec3): Int {
     val genType = try {
         GeneratorType.valueOf(type.uppercase())
     } catch (e: IllegalArgumentException) {
-        player.sendSystemMessage(Component.literal("$type is not a valid generator type"))
+        src.sendFailure(Component.literal("$type is not a valid generator type"))
         return 0
     }
     
-    val id = ModDataTracker.addGenerator(genType, position, player.level())
-    player.sendSystemMessage(Component.literal("added $type generator at ${position.format} (Id: $id)"))
+    val id = ModDataTracker.addGenerator(genType, pos, src.level)
+    src.sendSystemMessage(Component.literal("added $type generator at ${pos.format} (Id: $id)"))
     return 1
 }
 
-private fun addGeneratorTeam(player: ServerPlayer, type: String, block: BlockPos, teamStr: String): Int {
-    val position = Vec3.atBottomCenterOf(block)        
-    val genType = try {
-        GeneratorType.valueOf(type)
-    } catch (e: IllegalArgumentException) {
-        player.sendSystemMessage(Component.literal("$type is not a valid generator type"))
-        return 0
-    }
+private fun addGeneratorTeam(src: CommandSourceStack, pos: Vec3, teamStr: String): Int {
+    val genType = GeneratorType.BASE
     
     val team = ModDataTracker.getActiveTeams().find { it.getName() == teamStr } ?: run {
-        player.sendSystemMessage(Component.literal("$teamStr is not a valid team"))
+        src.sendFailure(Component.literal("$teamStr is not a valid team"))
         return 0
     }
     
-    val id = ModDataTracker.addGenerator(genType, position, player.level(), team)
-    player.sendSystemMessage(Component.literal("added $type generator at ${position.format} (Id: $id)"))
+    val id = ModDataTracker.addGenerator(pos, src.level, team)
+    src.sendSystemMessage(Component.literal("added base generator for team $teamStr at ${pos.format} (Id: $id)"))
     return 1
 }

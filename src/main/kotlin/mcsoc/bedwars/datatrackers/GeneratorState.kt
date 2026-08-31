@@ -10,38 +10,43 @@ import net.minecraft.world.phys.Vec3
 
 internal interface GeneratorsExposer {
     fun addGenerator(type: GeneratorType, location: Vec3, level: ServerLevel): Int
-    fun addGenerator(type: GeneratorType, location: Vec3, level: ServerLevel, team: Team): Int
-    fun upgradeTeamGenerators(team: Team)
+    fun addGenerator(location: Vec3, level: ServerLevel, team: Team): Int
+    fun upgradeTeamGenerator(team: Team)
     fun removeGenerator(location: Vec3)
     fun removeGenerator(id: Int)
-    fun upgradeGeneratorTier()
+    fun upgradeGeneratorTier(type: GeneratorType)
 }
 
 internal interface GeneratorsHolder : GeneratorsExposer {
     fun getGenerators(): List<Generator>
-    fun addGenerator(gen: Generator)
-    fun removeGenerator(gen: Generator)
+    fun getGenerators(type: GeneratorType): List<Generator>
+    fun addGenerator(gen: Generator, type: GeneratorType)
+    fun removeGenerator(gen: Generator, type: GeneratorType)
 
     override fun addGenerator(type: GeneratorType, location: Vec3, level: ServerLevel): Int {
         val gen = GeneratorFactory.createGenerator(type.getConfig(), location, level)
-        addGenerator(gen)
+        addGenerator(gen, type)
         return gen.id
     }
 
     override fun removeGenerator(location: Vec3) {
-        getGenerators()
-            .filter { it.place.location == location }
-            .forEach { removeGenerator(it) }
+        GeneratorType.entries.forEach { type ->
+            getGenerators(type)
+                .filter { it.place.location == location }
+                .forEach { removeGenerator(it, type) }
+        }
     }
 
     override fun removeGenerator(id: Int) {
-        getGenerators()
-            .filter { it.id == id }
-            .forEach { removeGenerator(it) }
+        GeneratorType.entries.forEach { type ->
+            getGenerators(type)
+                .filter { it.id == id }
+                .forEach { removeGenerator(it, type) }
+        }
     }
 
-    override fun upgradeGeneratorTier() {
-        getGenerators()
+    override fun upgradeGeneratorTier(type: GeneratorType) {
+        getGenerators(type)
             .filterIsInstance<TieredGenerator>()
             .forEach(TieredGenerator::upgrade)
     }

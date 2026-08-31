@@ -55,7 +55,6 @@ private class TeamDataRecord(
     private val players: MutableList<UUID> = mutableListOf(),
     private var bedAlive: Boolean = true,
     private val spawn: Vec3 = Vec3(0.0, 0.0, 0.0),
-    private val generators: MutableList<Generator> = mutableListOf()
 ) : TeamStateRecord {
     companion object {
         val CODEC: Codec<TeamDataRecord> = RecordCodecBuilder.create { it.group(
@@ -64,11 +63,13 @@ private class TeamDataRecord(
             Vec3.CODEC.fieldOf("spawn").forGetter(TeamDataRecord::spawn),
         ).apply(it, ::TeamDataRecord)}
     }
-
+    
+    private lateinit var generator: BaseGenerator
+    
     override fun getBedAlive(): Boolean = bedAlive
     override fun getSpawn(): Vec3 = spawn
     override fun getPlayers(): MutableList<UUID> = players
-    override fun getGenerators(): List<Generator> = generators
+    override fun getGenerator() = generator
 
     override fun setBedAlive(bedAlive: Boolean) {
        this.bedAlive = bedAlive
@@ -78,12 +79,12 @@ private class TeamDataRecord(
         players.add(player)
     }
 
-    override fun addGenerator(gen: Generator) {
-        generators.add(gen)    
+    override fun setGenerator(gen: BaseGenerator) {
+        generator = gen    
     }
 
-    override fun upgradeGenerators() {
-        generators.filterIsInstance<BaseGenerator>().forEach(BaseGenerator::upgrade)
+    override fun upgradeGenerator() {
+        if (::generator.isInitialized) generator.upgrade()
     }
 }
 
@@ -107,7 +108,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     
     private val player_data_map = HashMap<UUID, PlayerDataRecord>()
     private val teams_map = HashMap<Team, TeamDataRecord>()
-    private val generators = ArrayList<Generator>()
+    private val generators = HashMap<GeneratorType, MutableList<Generator>>()
     private val active_players = mutableSetOf<UUID>()
     private var prev_tick_time = TimeSource.Monotonic.markNow()
     private var tick_delta = Duration.ZERO
@@ -152,25 +153,28 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         return getPlayerData(player)
     }
 
-    override fun addGenerator(gen: Generator) {
-        generators.add(gen)
+    override fun addGenerator(gen: Generator, type: GeneratorType) {
+        generators.getOrPut(type) { mutableListOf<Generator>() }.add(gen)
     }
     
-    override fun addGenerator(type: GeneratorType, location: Vec3, level: ServerLevel, team: Team): Int {
-        val gen = GeneratorFactory.createGenerator(type.getConfig(), location, level)
-        addGenerator(gen)
-        getTeam(team).addGenerator(gen)
+    override fun addGenerator(location: Vec3, level: ServerLevel, team: Team): Int {
+        val teamGenType = GeneratorType.BASE
+        val gen = GeneratorFactory.createGenerator(teamGenType.getConfig(), location, level)
+        if (gen !is BaseGenerator) throw Exception("generator is not base generator")
+        addGenerator(gen, teamGenType)
+        getTeam(team).setGenerator(gen)
         return gen.id
     }
     
-    override fun getGenerators(): List<Generator> = generators
+    override fun getGenerators(): List<Generator> = generators.flatMap { it.value }
+    override fun getGenerators(type: GeneratorType) = generators[type] ?: throw Exception("Invalid generator type")
 
-    override fun removeGenerator(gen: Generator) {
-        generators.remove(gen)
+    override fun removeGenerator(gen: Generator, type: GeneratorType) {
+        generators[type]?.remove(gen)
     }
     
-    override fun upgradeTeamGenerators(team: Team) {
-        getTeam(team).upgradeGenerators()
+    override fun upgradeTeamGenerator(team: Team) {
+        getTeam(team).upgradeGenerator()
     }
 
     override fun getTeam(team: Team): TeamDataRecord {
@@ -227,9 +231,9 @@ object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Gener
     override fun removeActivePlayer(uuid: UUID) = mod_data.removeActivePlayer(uuid)
 
     override fun addGenerator(type: GeneratorType, location: Vec3, level: ServerLevel) = mod_data.addGenerator(type, location, level)
-    override fun addGenerator(type: GeneratorType, location: Vec3, level: ServerLevel, team: Team) = mod_data.addGenerator(type, location, level, team)
+    override fun addGenerator(location: Vec3, level: ServerLevel, team: Team) = mod_data.addGenerator(location, level, team)
     override fun removeGenerator(location: Vec3) = mod_data.removeGenerator(location)
     override fun removeGenerator(id: Int) = mod_data.removeGenerator(id)
-    override fun upgradeGeneratorTier() = mod_data.upgradeGeneratorTier()
-    override fun upgradeTeamGenerators(team: Team) = mod_data.upgradeTeamGenerators(team)
+    override fun upgradeGeneratorTier(type: GeneratorType) = mod_data.upgradeGeneratorTier(type)
+    override fun upgradeTeamGenerator(team: Team) = mod_data.upgradeTeamGenerator(team)
 }
