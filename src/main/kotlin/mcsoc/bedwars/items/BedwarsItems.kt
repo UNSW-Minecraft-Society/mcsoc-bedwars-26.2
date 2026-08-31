@@ -3,6 +3,7 @@ package mcsoc.bedwars.items
 import mcsoc.bedwars.utils.addItemLore
 import mcsoc.bedwars.utils.applyTag
 import mcsoc.bedwars.utils.renameItem
+import net.minecraft.core.component.DataComponents
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 
@@ -39,6 +40,7 @@ object BedwarsItems {
 
     fun ballOfBugsItemStack(): ItemStack {
         val stack = Items.ENDER_PEARL.defaultInstance
+        stack.remove(DataComponents.USE_COOLDOWN)
         applyTag(stack, BEDWARS_ITEM_TAG, CUSTOM_BALL_OF_BUGS)
         applyTag(stack, CUSTOM_ITEM_TAG, CUSTOM_BALL_OF_BUGS)
         renameItem(stack, "Ball of Bugs")

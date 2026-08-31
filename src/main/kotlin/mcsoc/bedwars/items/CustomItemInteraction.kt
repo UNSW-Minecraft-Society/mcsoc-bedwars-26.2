@@ -134,6 +134,7 @@ object CustomItemInteraction {
         bug.setPos(pos)
         // DO THE TEAM THING SO IT'S FRIENDLY TO OWNER
         level.addFreshEntity(bug)
+        ball.owner = null
         return InteractionResult.SUCCESS
     }
 }
