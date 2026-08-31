@@ -6,15 +6,16 @@ import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import com.mojang.brigadier.arguments.StringArgumentType
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.commands.Commands
-import net.minecraft.server.permissions.PermissionLevel
-import mcsoc.bedwars.eventhandlers.commands.CommandActions
-import net.minecraft.server.permissions.Permission
 import net.minecraft.server.permissions.Permissions
 
 
 const val ROOT_NODE = "bedwars"
 
 const val SOME_ARGUMENT = "some"
+const val GEN_TYPE_ARG = "type"
+const val GEN_POS_ARG = "pos"
+const val GEN_TEAM_ARG = "team"
+const val GEN_ID_ARG = "id"
 
 /**
  * Function to register commands for the plugin
@@ -43,12 +44,12 @@ fun registerCommands() {
                 .then(Commands.literal("generator")
                     .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR) }
                     .then(Commands.literal("add")
-                        .then(Commands.argument("type", StringArgumentType.word())
+                        .then(Commands.argument(GEN_TYPE_ARG, StringArgumentType.word())
                             .suggests(GeneratorSuggestionProvider())
                             .executes(CommandActions::addGeneratorAtPlayer)
-                            .then(Commands.argument("pos", BlockPosArgument.blockPos())
+                            .then(Commands.argument(GEN_POS_ARG, BlockPosArgument.blockPos())
                                 .executes(CommandActions::addGenerator)
-                                .then(Commands.argument("team", StringArgumentType.word())
+                                .then(Commands.argument(GEN_TEAM_ARG, StringArgumentType.word())
                                     .suggests(TeamSuggestionProvider())
                                     .executes(CommandActions::addGeneratorForTeam)
                                 )
@@ -56,13 +57,18 @@ fun registerCommands() {
                         )
                     )
                     .then(Commands.literal("remove")
-                        .then(Commands.argument("pos", BlockPosArgument.blockPos())
+                        .then(Commands.argument(GEN_POS_ARG, BlockPosArgument.blockPos())
                             .executes(CommandActions::removeGenerator)
+                        )
+                        .then(Commands.literal("id")
+                            .then(Commands.argument(GEN_ID_ARG, IntegerArgumentType.integer())
+                                .executes(CommandActions::removeGeneratorById)
+                            )
                         )
                     )
                     .then(Commands.literal("upgradeTiers").executes(CommandActions::upgradeGeneratorTier))
                     .then(Commands.literal("upgradeTeamGen")
-                        .then(Commands.argument("team", StringArgumentType.word())
+                        .then(Commands.argument(GEN_TEAM_ARG, StringArgumentType.word())
                             .suggests(TeamSuggestionProvider())
                             .executes(CommandActions::upgradeTeamGen)
                         )

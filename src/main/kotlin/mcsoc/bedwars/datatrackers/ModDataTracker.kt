@@ -3,22 +3,17 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import kotlinx.serialization.Serializable
-import mcsoc.bedwars.generators.DefaultGeneratorTypes
+import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.inWholeTicks
-import mcsoc.bedwars.utils.ticks
 import kotlin.time.Duration
 import kotlin.time.TimeSource
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
-import net.minecraft.server.level.ServerPlayer
 import mcsoc.bedwars.generators.Generator
 import mcsoc.bedwars.generators.GeneratorFactory
-import mcsoc.bedwars.generators.IslandGenerator
-import net.minecraft.resources.ResourceKey
-import net.minecraft.server.MinecraftServer
+import mcsoc.bedwars.generators.BaseGenerator
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.player.Player
-import net.minecraft.world.level.Level
 import net.minecraft.world.level.saveddata.SavedData
 import java.util.UUID
 import net.minecraft.world.phys.Vec3
@@ -67,7 +62,6 @@ private class TeamDataRecord(
             UUIDUtil.CODEC.listOf().fieldOf("players").forGetter(TeamDataRecord::players),
             Codec.BOOL.fieldOf("bed_alive").forGetter(TeamDataRecord::bedAlive),
             Vec3.CODEC.fieldOf("spawn").forGetter(TeamDataRecord::spawn),
-            Generator.CODEC.listOf().fieldOf("generators").forGetter(TeamDataRecord::generators)
         ).apply(it, ::TeamDataRecord)}
     }
 
@@ -89,7 +83,7 @@ private class TeamDataRecord(
     }
 
     override fun upgradeGenerators() {
-        generators.filterIsInstance<IslandGenerator>().forEach(IslandGenerator::upgrade)
+        generators.filterIsInstance<BaseGenerator>().forEach(BaseGenerator::upgrade)
     }
 }
 
@@ -108,10 +102,6 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
             Codec.STRING.xmap(Duration::parseIsoString, Duration::toIsoString)
                 .fieldOf("game_timer")
                 .forGetter(ModDataStore::game_timer),
-
-            Codec.list(Generator.CODEC)
-                .fieldOf("generators")
-                .forGetter(ModDataStore::generators)
         ).apply(it, ::ModDataStore)}
     }    
     
@@ -129,23 +119,21 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         playerMap: Map<UUID, PlayerDataRecord>,
         teamMap: Map<Team, TeamDataRecord>,
         timer: Duration,
-        gens: List<Generator>
     ) : this() {
         this.player_data_map.putAll(playerMap)
         this.teams_map.putAll(teamMap)
         this.game_timer = timer
-        this.generators.addAll(gens)
     }
     
     
-    override fun tick(server: MinecraftServer) {
+    override fun tick() {
         tick_delta = prev_tick_time.elapsedNow()
         prev_tick_time = TimeSource.Monotonic.markNow()
         
         timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
         game_timer += tick_delta
         
-        getGenerators().forEach { it.tick(server) }
+        getGenerators().forEach { it.tick() }
     }
 
     override fun getGameTime() = game_timer
@@ -168,12 +156,11 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         generators.add(gen)
     }
     
-    override fun addGenerator(type: String, location: Vec3, dim: ResourceKey<Level>, team: Team): Boolean {
-        val config = DefaultGeneratorTypes.generators[type] ?: return false
-        val gen = GeneratorFactory.createGenerator(config, location, dim)
+    override fun addGenerator(type: GeneratorType, location: Vec3, level: ServerLevel, team: Team): Int {
+        val gen = GeneratorFactory.createGenerator(type.getConfig(), location, level)
         addGenerator(gen)
         getTeam(team).addGenerator(gen)
-        return true
+        return gen.id
     }
     
     override fun getGenerators(): List<Generator> = generators
@@ -218,7 +205,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, GeneratorsExposer {
     private val mod_data = ModDataStore()
 
-    override fun tick(server: MinecraftServer) = mod_data.tick(server)
+    override fun tick() = mod_data.tick()
     override fun getGameTime(): Duration = mod_data.getGameTime()
     override fun getTimerTick(): Boolean = mod_data.getTimerTick()
 
@@ -239,9 +226,10 @@ object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Gener
     override fun addActivePlayer(uuid: UUID) = mod_data.addActivePlayer(uuid)
     override fun removeActivePlayer(uuid: UUID) = mod_data.removeActivePlayer(uuid)
 
-    override fun addGenerator(type: String, location: Vec3, dim: ResourceKey<Level>) = mod_data.addGenerator(type, location, dim)
-    override fun addGenerator(type: String, location: Vec3, dim: ResourceKey<Level>, team: Team) = mod_data.addGenerator(type, location, dim, team)
+    override fun addGenerator(type: GeneratorType, location: Vec3, level: ServerLevel) = mod_data.addGenerator(type, location, level)
+    override fun addGenerator(type: GeneratorType, location: Vec3, level: ServerLevel, team: Team) = mod_data.addGenerator(type, location, level, team)
     override fun removeGenerator(location: Vec3) = mod_data.removeGenerator(location)
+    override fun removeGenerator(id: Int) = mod_data.removeGenerator(id)
     override fun upgradeGeneratorTier() = mod_data.upgradeGeneratorTier()
     override fun upgradeTeamGenerators(team: Team) = mod_data.upgradeTeamGenerators(team)
 }

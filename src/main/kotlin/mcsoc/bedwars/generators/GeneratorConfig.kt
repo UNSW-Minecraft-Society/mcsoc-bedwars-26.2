@@ -12,44 +12,41 @@ data class GeneratorConfig(val kind: GeneratorKind, val items: List<GeneratorIte
 
 sealed interface GeneratorKind {
     data object Default : GeneratorKind
-    data class Upgradable(val upgradeMultipliers: List<Double>) : GeneratorKind
+    data class Base(val upgradeMultipliers: List<Double>) : GeneratorKind
     data class Tiered(val tierMultipliers: List<Double>) : GeneratorKind
 }
 
-data class GeneratorItem(val item: Item, val itemsPerCycle: Int, val maxItems: Int) {
-    companion object {
-        val CODEC: Codec<GeneratorItem> = RecordCodecBuilder.create {
-            it.group(
-                BuiltInRegistries.ITEM.byNameCodec().fieldOf("item").forGetter(GeneratorItem::item),
-                Codec.INT.fieldOf("generation_time").forGetter(GeneratorItem::itemsPerCycle),
-                Codec.INT.fieldOf("maxItems").forGetter(GeneratorItem::maxItems)
-            ).apply(it, ::GeneratorItem)
-        }
-    }
-}
+data class GeneratorItem(val item: Item, val itemsPerCycle: Int, val maxItems: Int)
 
-// can be made to be loaded from a default json file and deserialised
-object DefaultGeneratorTypes {
-    val generators = mapOf<String, GeneratorConfig>(
-        "base" to GeneratorConfig(
-            GeneratorKind.Upgradable(listOf(1.0, 1.5, 2.5, 2.5, 4.5)),
-            listOf(
-                GeneratorItem(Items.IRON_INGOT, 4 * 80, 48),
-                GeneratorItem(Items.GOLD_INGOT, 1 * 80, 16)
-            ),
-            4 * 80 * 20 // 80 scale factor to ensure emerald upgrade generation is slow
-        ),
-        "diamond" to GeneratorConfig(
-            GeneratorKind.Tiered(listOf(1.0, 1.25, 2.5)),
-            listOf(GeneratorItem(Items.DIAMOND, 1, 8)),
-            30 * 20
-        ),
-        "emerald" to GeneratorConfig(
-            GeneratorKind.Tiered(listOf(1.0, 1.3, 1.85)),
-            listOf(GeneratorItem(Items.EMERALD, 1, 4)),
-            65 * 20
-        )
-    )
-    
-    fun getCurrentGenerators() = generators.keys
+
+enum class GeneratorType {
+    BASE,
+    DIAMOND,
+    EMERALD;
+
+    fun getConfig(): GeneratorConfig {
+        return when (this) {
+            BASE -> GeneratorConfig(
+                GeneratorKind.Base(listOf(1.0, 1.5, 2.5, 2.5, 4.5)),
+                listOf(
+                    GeneratorItem(Items.IRON_INGOT, 4 * 80, 48),
+                    GeneratorItem(Items.GOLD_INGOT, 1 * 80, 16)
+                ),
+                4 * 80 * 20 // 80 scale factor to ensure emerald upgrade generation is slow
+            )
+
+            DIAMOND -> GeneratorConfig(
+                GeneratorKind.Tiered(listOf(1.0, 1.25, 2.5)),
+                listOf(GeneratorItem(Items.DIAMOND, 1, 8)),
+                30 * 20
+            )
+
+            EMERALD -> GeneratorConfig(
+                GeneratorKind.Tiered(listOf(1.0, 1.3, 1.85)),
+                listOf(GeneratorItem(Items.EMERALD, 1, 4)),
+                65 * 20
+            )
+        }
+
+    }
 }

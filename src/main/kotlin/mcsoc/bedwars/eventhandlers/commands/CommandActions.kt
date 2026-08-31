@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.format
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
@@ -78,28 +79,34 @@ object CommandActions {
 
     fun addGeneratorAtPlayer(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.playerOrException
-        val genArg = StringArgumentType.getString(ctx, "type")
+        val genArg = StringArgumentType.getString(ctx, GEN_TYPE_ARG)
         return addGenerator(player, genArg, player.blockPosition())
     }
 
     fun addGenerator(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.playerOrException
-        val genArg = StringArgumentType.getString(ctx, "type")
-        val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, "pos").above()        
+        val genArg = StringArgumentType.getString(ctx, GEN_TYPE_ARG)
+        val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above()        
         return addGenerator(player, genArg, pos)
     }
     
     fun addGeneratorForTeam(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.playerOrException
-        val genArg = StringArgumentType.getString(ctx, "type")
-        val teamArg = StringArgumentType.getString(ctx, "team")
-        val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, "pos").above()        
+        val genArg = StringArgumentType.getString(ctx, GEN_TYPE_ARG)
+        val teamArg = StringArgumentType.getString(ctx, GEN_TEAM_ARG)
+        val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above()        
         return addGeneratorTeam(player, genArg, pos, teamArg)
     }
 
     fun removeGenerator(ctx: CommandContext<CommandSourceStack>): Int {
-        val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, "pos").above()
+        val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above()
         ModDataTracker.removeGenerator(Vec3.atBottomCenterOf(pos))
+        return 1
+    }
+    
+    fun removeGeneratorById(ctx: CommandContext<CommandSourceStack>): Int {
+        val id: Int = IntegerArgumentType.getInteger(ctx, GEN_ID_ARG)
+        ModDataTracker.removeGenerator(id)
         return 1
     }
 
@@ -109,7 +116,7 @@ object CommandActions {
     }
     
     fun upgradeTeamGen(ctx: CommandContext<CommandSourceStack>): Int {
-        val teamArg = StringArgumentType.getString(ctx, "team")
+        val teamArg = StringArgumentType.getString(ctx, GEN_TEAM_ARG)
         val team = ModDataTracker.getActiveTeams().find { it.getName() == teamArg }
         if (team == null) {
             ctx.source.sendSystemMessage(Component.literal("$teamArg is not a valid team"))
@@ -119,37 +126,38 @@ object CommandActions {
         ModDataTracker.upgradeTeamGenerators(team)
         return 1
     }
-
-
-    private fun addGenerator(player: ServerPlayer, type: String, block: BlockPos): Int {
-        val position = Vec3.atBottomCenterOf(block)
-        val success = ModDataTracker.addGenerator(type, position, player.level().dimension())
-
-        if (!success) {
-            player.sendSystemMessage(Component.literal("$type is not a valid generator"))
-            return 0
-        }
-
-        player.sendSystemMessage(Component.literal("added $type generator at ${position.format}"))
-        return 1
-    }
-    
-    private fun addGeneratorTeam(player: ServerPlayer, type: String, block: BlockPos, teamStr: String): Int {
-        val team = ModDataTracker.getActiveTeams().find { it.getName() == teamStr }
-        if (team == null) {
-            player.sendSystemMessage(Component.literal("$teamStr is not a valid team"))
-            return 0
-        }
-        
-        val position = Vec3.atBottomCenterOf(block)
-        val success = ModDataTracker.addGenerator(type, position, player.level().dimension(), team)
-        if (!success) {
-            player.sendSystemMessage(Component.literal("$type is not a valid generator"))
-            return 0
-        }
-
-        player.sendSystemMessage(Component.literal("added $type generator at ${position.format}"))
-        return 1
-    }
 }
 
+
+private fun addGenerator(player: ServerPlayer, type: String, block: BlockPos): Int {
+    val position = Vec3.atBottomCenterOf(block)
+    val genType = try {
+        GeneratorType.valueOf(type.uppercase())
+    } catch (e: IllegalArgumentException) {
+        player.sendSystemMessage(Component.literal("$type is not a valid generator type"))
+        return 0
+    }
+    
+    val id = ModDataTracker.addGenerator(genType, position, player.level())
+    player.sendSystemMessage(Component.literal("added $type generator at ${position.format} (Id: $id)"))
+    return 1
+}
+
+private fun addGeneratorTeam(player: ServerPlayer, type: String, block: BlockPos, teamStr: String): Int {
+    val position = Vec3.atBottomCenterOf(block)        
+    val genType = try {
+        GeneratorType.valueOf(type)
+    } catch (e: IllegalArgumentException) {
+        player.sendSystemMessage(Component.literal("$type is not a valid generator type"))
+        return 0
+    }
+    
+    val team = ModDataTracker.getActiveTeams().find { it.getName() == teamStr } ?: run {
+        player.sendSystemMessage(Component.literal("$teamStr is not a valid team"))
+        return 0
+    }
+    
+    val id = ModDataTracker.addGenerator(genType, position, player.level(), team)
+    player.sendSystemMessage(Component.literal("added $type generator at ${position.format} (Id: $id)"))
+    return 1
+}

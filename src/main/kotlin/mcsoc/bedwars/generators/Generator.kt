@@ -1,74 +1,52 @@
 package mcsoc.bedwars.generators
 
-import com.mojang.serialization.Codec
-import com.mojang.serialization.codecs.RecordCodecBuilder
-import net.minecraft.core.registries.Registries
-import net.minecraft.resources.ResourceKey
-import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.item.ItemEntity
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
-import net.minecraft.world.level.Level
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
 
 // todo show time remaining until next gen (depending on generator type)
+private const val PLAYER_RANGE = 15
 
 internal object GeneratorFactory {
-    fun createGenerator(config: GeneratorConfig, loc: Vec3, dim: ResourceKey<Level>): Generator {
-        val place = GenPlace(loc, dim)
+    fun createGenerator(config: GeneratorConfig, loc: Vec3, level: ServerLevel): Generator {
+        val place = GenPlace(loc, level)
         return when (config.kind) {
             is GeneratorKind.Default -> Generator(place, config.cycleTime, config.items.toMutableList())
-            is GeneratorKind.Upgradable -> IslandGenerator(place, config.cycleTime, config.items.toMutableList(), config.kind.upgradeMultipliers)
+            is GeneratorKind.Base -> BaseGenerator(place, config.cycleTime, config.items.toMutableList(), config.kind.upgradeMultipliers)
             is GeneratorKind.Tiered -> TieredGenerator(place, config.cycleTime, config.items.toMutableList(), config.kind.tierMultipliers)
         }
     }
 }
 
-
-internal data class GenPlace(val location: Vec3, val dim: ResourceKey<Level>) {
-    companion object {
-        val CODEC: Codec<GenPlace> = RecordCodecBuilder.create { it.group(
-            Vec3.CODEC.fieldOf("location").forGetter(GenPlace::location),
-            ResourceKey.codec(Registries.DIMENSION).fieldOf("dimension").forGetter(GenPlace::dim)
-        ).apply(it, ::GenPlace)}
-    }
-}
+internal data class GenPlace(val location: Vec3, val level: ServerLevel)
 
 // cycle time in ticks
 internal open class Generator(val place: GenPlace, val cycleTime: Int, val items: MutableList<GeneratorItem>) {
-    companion object {
-        val CODEC: Codec<Generator> = RecordCodecBuilder.create {it.group(
-                GenPlace.CODEC.fieldOf("location").forGetter(Generator::place),
-                Codec.INT.fieldOf("ticks_per_cycle").forGetter(Generator::cycleTime),
-                GeneratorItem.CODEC.listOf().fieldOf("items").forGetter(Generator::items)
-            ).apply(it, ::Generator)
-        }
-    }
-
     private var rateMultiplier: Double = 1.0
-    private var playerRange = 15 // can move to config
     
     private var currentTick = 0
     private val curCycleItems: HashMap<GeneratorItem, Int> = HashMap()
+    var id = -1
     
+    companion object { private var curId = 0 }
+    init { 
+        id = curId
+        curId++
+    }
 
     fun setRateMultiplier(rate: Double) {
         rateMultiplier = rate
     }
 
-    fun setPlayerRange(range: Int) {
-        playerRange = range
-    }
-    
     fun addItem(item: GeneratorItem) {
         items.add(item)
     }
 
-    fun tick(server: MinecraftServer) {
-        val level = server.getLevel(place.dim) ?: return
+    fun tick() {
         currentTick++
         val cycle = cycleTime / rateMultiplier
 
@@ -78,12 +56,12 @@ internal open class Generator(val place: GenPlace, val cycleTime: Int, val items
 
             if (generated >= expected) continue
             
-            if (!hasSpace(level, item.maxItems, item.item)) {
+            if (!hasSpace(place.level, item.maxItems, item.item) || !playersInRange()) {
                 curCycleItems[item] = expected
                 continue
             }
 
-            generateItem(level, item.item)
+            generateItem(place.level, item.item)
             curCycleItems[item] = generated + 1
         }
 
@@ -101,6 +79,10 @@ internal open class Generator(val place: GenPlace, val cycleTime: Int, val items
 
         return nearby.filter { it.item.item == item }.sumOf { it.item.count } < max
     }
+    
+    private fun playersInRange(): Boolean {
+        return place.level.getPlayers { it.position().distanceTo(place.location) < PLAYER_RANGE }.isNotEmpty()
+    }
 
     private fun generateItem(level: ServerLevel, item: Item) {
         val itemstack = ItemStack(item, 1)
@@ -113,17 +95,8 @@ internal open class Generator(val place: GenPlace, val cycleTime: Int, val items
 }
 
 
-internal class IslandGenerator(place: GenPlace, cycleTime: Int, items: MutableList<GeneratorItem>, val upgrades: List<Double>) :
+internal class BaseGenerator(place: GenPlace, cycleTime: Int, items: MutableList<GeneratorItem>, val upgrades: List<Double>) :
     Generator(place, cycleTime, items) {
-    companion object {
-        val CODEC: Codec<IslandGenerator> = RecordCodecBuilder.create {it.group(
-                GenPlace.CODEC.fieldOf("location").forGetter(IslandGenerator::place),
-                Codec.INT.fieldOf("ticks_per_cycle").forGetter(IslandGenerator::cycleTime),
-                GeneratorItem.CODEC.listOf().fieldOf("items").forGetter(IslandGenerator::items),
-                Codec.DOUBLE.listOf().fieldOf("upgrades").forGetter(IslandGenerator::upgrades)
-            ).apply(it, ::IslandGenerator)
-        }
-    }
     
     private var currentUpgrade = 0
 
@@ -139,15 +112,6 @@ internal class IslandGenerator(place: GenPlace, cycleTime: Int, items: MutableLi
 
 internal class TieredGenerator(place: GenPlace, cycleTime: Int, items: MutableList<GeneratorItem>, val tiers: List<Double>) :
     Generator(place, cycleTime, items) {
-    companion object {
-        val CODEC: Codec<TieredGenerator> = RecordCodecBuilder.create {it.group(
-                GenPlace.CODEC.fieldOf("location").forGetter(TieredGenerator::place),
-                Codec.INT.fieldOf("ticks_per_cycle").forGetter(TieredGenerator::cycleTime),
-                GeneratorItem.CODEC.listOf().fieldOf("items").forGetter(TieredGenerator::items),
-                Codec.DOUBLE.listOf().fieldOf("upgrades").forGetter(TieredGenerator::tiers)
-            ).apply(it, ::TieredGenerator)
-        }
-    }
     
     private var currentTier = 0
 

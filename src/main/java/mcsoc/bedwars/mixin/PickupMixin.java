@@ -17,11 +17,9 @@ public class PickupMixin {
 
     @Inject(method = "playerTouch", at = @At("TAIL"))
     private void afterPickup(Player player, CallbackInfo ci) {
-        if (!(player instanceof ServerPlayer serverPlayer)) {
-            return;
+        if (player instanceof ServerPlayer serverPlayer) {
+            onPickup((ItemEntity) (Object) this, serverPlayer);
         }
-
-        onPickup((ItemEntity) (Object) this, serverPlayer);
     }
 
     private static void onPickup(ItemEntity item, ServerPlayer player) {

@@ -5,7 +5,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import mcsoc.bedwars.datatrackers.ModDataTracker
-import mcsoc.bedwars.generators.DefaultGeneratorTypes
+import mcsoc.bedwars.generators.GeneratorType
 import net.minecraft.commands.CommandSourceStack
 import java.util.concurrent.CompletableFuture
 
@@ -19,7 +19,7 @@ internal class ExampleSuggestionProvider: SuggestionProvider<CommandSourceStack>
 
 internal class GeneratorSuggestionProvider: SuggestionProvider<CommandSourceStack> {
     override fun getSuggestions(context: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
-        DefaultGeneratorTypes.getCurrentGenerators().forEach { builder.suggest(it) }
+        GeneratorType.entries.forEach { builder.suggest(it.name.lowercase()) }
 		return builder.buildFuture()
     }
 }
