@@ -199,10 +199,11 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     }
     
     override fun getPlayersTeam(player: Uuid): Team = getPlayerData(player).getTeamName()
-    
+
     override fun addActivePlayer(uuid: UUID) = active_players.add(uuid)
     override fun removeActivePlayer(uuid: UUID) = active_players.remove(uuid)
     override fun getActivePlayers() = active_players
+    override fun clearActivePlayers() = active_players.clear()
 }
 
 
@@ -234,4 +235,5 @@ object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer {
     override fun getActivePlayers() = mod_data.getActivePlayers()
     override fun addActivePlayer(uuid: UUID) = mod_data.addActivePlayer(uuid)
     override fun removeActivePlayer(uuid: UUID) = mod_data.removeActivePlayer(uuid)
+    override fun clearActivePlayers() = mod_data.clearActivePlayers()
 }
