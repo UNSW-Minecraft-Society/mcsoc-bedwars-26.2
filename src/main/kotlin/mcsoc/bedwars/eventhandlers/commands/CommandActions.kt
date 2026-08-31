@@ -74,7 +74,7 @@ object CommandActions {
     }
 
     fun start(ctx: CommandContext<CommandSourceStack>): Int {
-        GameManager.setupGame(ctx.source.level)
+        GameManager.setupGame(ctx.source.position, ctx.source.level)
         return 1
     }
 

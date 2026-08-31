@@ -122,6 +122,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     private var tick_delta = Duration.ZERO
     private var game_timer = Duration.ZERO
     private var timer_tick = false
+    private var timer_second = false
     private var game_phase = GamePhase.INACTIVE
     private var game_period = GamePeriod.INACTIVE
     
@@ -141,12 +142,17 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         prev_tick_time = TimeSource.Monotonic.markNow()
         
         timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
+        timer_second = game_timer.inWholeSeconds != (game_timer + tick_delta).inWholeSeconds
         game_timer += tick_delta
     }
 
     override fun getGameTime() = game_timer
+
+    override fun resetGameTime() {game_timer = Duration.ZERO}
         
     override fun getTimerTick() = timer_tick
+
+    override fun getTimerSecond() = timer_second
 
     fun getGamePhase(): GamePhase {
         return game_phase
@@ -212,7 +218,9 @@ object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer {
 
     override fun tick() = mod_data.tick()
     override fun getGameTime(): Duration = mod_data.getGameTime()
+    override fun resetGameTime() = mod_data.resetGameTime()
     override fun getTimerTick(): Boolean = mod_data.getTimerTick()
+    override fun getTimerSecond(): Boolean = mod_data.getTimerSecond()
 
     fun getGamePhase(): GamePhase = mod_data.getGamePhase()
     fun setGamePhase(phase: GamePhase) = mod_data.setGamePhase(phase)
