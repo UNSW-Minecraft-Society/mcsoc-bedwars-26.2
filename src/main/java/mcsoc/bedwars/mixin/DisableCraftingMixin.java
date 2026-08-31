@@ -2,6 +2,7 @@ package mcsoc.bedwars.mixin;
 
 import net.minecraft.recipe.RecipeInput;
 import net.minecraft.recipe.RecipeManager;
+import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeEntry;
 import net.minecraft.recipe.RecipeType;
 import net.minecraft.world.World;
@@ -14,7 +15,7 @@ import java.util.Optional;
 @Mixin(RecipeManager.class)
 public class DisableCraftingMixin {
     @Inject(at = @At("HEAD"), method = "getFirstMatch", cancellable = true)
-    private <I extends RecipeInput, T extends net.minecraft.recipe.Recipe<I>> void blockCrafting(RecipeType<T> type, I input, World world, CallbackInfoReturnable<Optional<ReciptEntry<T>>> cir) {
+    private <I extends RecipeInput, T extends Recipe<I>> void blockCrafting(RecipeType<T> type, I input, World world, CallbackInfoReturnable<Optional<RecipeEntry<T>>> cir) {
             if (type == RecipeType.CRAFTING) {
                 cir.setReturnValue(Optional.empty());
             }
