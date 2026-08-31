@@ -167,9 +167,10 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     }
     
     override fun getGenerators(): List<Generator> = generators.flatMap { it.value }
-    override fun getGenerators(type: GeneratorType) = generators[type] ?: throw Exception("Invalid generator type")
+    override fun getGenerators(type: GeneratorType) = generators.getOrPut(type) { mutableListOf<Generator>() }
 
     override fun removeGenerator(gen: Generator, type: GeneratorType) {
+        gen.remove()
         generators[type]?.remove(gen)
     }
     
