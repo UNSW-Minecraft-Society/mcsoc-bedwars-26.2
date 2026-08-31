@@ -1,7 +1,7 @@
 package mcsoc.bedwars
 
-import mcsoc.bedwars.eventhandlers.EventRegistration
-import mcsoc.bedwars.eventhandlers.commands.CommandRegistration
+import mcsoc.bedwars.eventhandlers.commands.registerCommands
+import mcsoc.bedwars.eventhandlers.registerEventHandlers
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
@@ -18,8 +18,8 @@ object BedwarsPlugin : ModInitializer {
 
 		LOGGER.info("Hello Fabric world!")
 
-		CommandRegistration.registerCommands()
-		EventRegistration.registerEventHandlers()
+		registerCommands()
+		registerEventHandlers()
 	}
 
 	fun id(path: String): Identifier
