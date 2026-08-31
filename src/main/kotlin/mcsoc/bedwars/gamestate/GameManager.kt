@@ -66,6 +66,7 @@ class GameManager {
         fun endGame(world: ServerLevel) {
             // Triggered by command or on win condition, clean up stuff
             ModDataTracker.clearActivePlayers()
+            // clear teams - todo
 
             ModDataTracker.setGamePhase(GamePhase.INACTIVE)
             ModDataTracker.setGamePeriod(GamePeriod.INACTIVE)
@@ -73,6 +74,9 @@ class GameManager {
 //                p.teleportTo(x, y, z) tp to lobby coordinates... figure out later
                 p.setGameMode(GameType.ADVENTURE)
             }
+
+            world.worldBorder.size = 59999968.0;
+            world.worldBorder.setCenter(0.0, 0.0);
         }
 
         private fun start(world: ServerLevel) {
