@@ -1,6 +1,7 @@
 package mcsoc.bedwars.gamestate
 
 import com.jcraft.jorbis.Block
+import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.utils.inWholeTicks
@@ -67,6 +68,7 @@ class GameManager {
             ModDataTracker.clearActivePlayers()
 
             ModDataTracker.setGamePhase(GamePhase.INACTIVE)
+            ModDataTracker.setGamePeriod(GamePeriod.INACTIVE)
             world.players().forEach { p ->
 //                p.teleportTo(x, y, z) tp to lobby coordinates... figure out later
                 p.setGameMode(GameType.ADVENTURE)
@@ -92,6 +94,7 @@ class GameManager {
             // maybe a little tooltip in the bottom left
             ModDataTracker.resetGameTime()
             ModDataTracker.setGamePhase(GamePhase.ACTIVE)
+            ModDataTracker.setGamePeriod(GamePeriod.ACTIVE)
         }
 
         fun tick(world: ServerLevel) {
@@ -117,8 +120,13 @@ class GameManager {
                     }
                 } else if (ModDataTracker.getGamePhase() == GamePhase.ACTIVE) {
                     // periodic things to hit when game active
-                    if (time == DEATHMATCH_TIME) {
-                        // trigger deathmatch
+                    if (time >= DEATHMATCH_TIME && ModDataTracker.getGamePeriod() == GamePeriod.ACTIVE) {
+                        // trigger deathmatch, you can mess with the deathmatch time constant
+                        ModDataTracker.setGamePeriod(GamePeriod.DEATHMATCH)
+
+                        // Hi gabs im dumb and forgot how code works
+                        // you'll probably want to trigger your deathmatch stuff elsewhere under the condition
+                        // gameperiod is deathmatch
                     }
                 }
             }
