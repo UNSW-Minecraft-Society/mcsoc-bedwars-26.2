@@ -17,6 +17,7 @@ public class DisableCraftingMixin {
     @Inject(at = @At("HEAD"), method = "getRecipeFor(Lnet/minecraft/world/item/crafting/RecipeType;Lnet/minecraft/world/item/crafting/RecipeInput;Lnet/minecraft/world/level/Level;)Ljava/util/Optional;", cancellable = true)
     private <I extends RecipeInput, T extends Recipe<I>> void blockCrafting(
         RecipeType<T> type, I input, Level level, CallbackInfoReturnable<Optional<RecipeHolder<T>>> cir) {
+            // handles players placing items in the crafting menu
             if (type == RecipeType.CRAFTING) {
                 cir.setReturnValue(Optional.empty());
             }

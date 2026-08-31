@@ -4,7 +4,8 @@
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
 		"ExampleMixin",
-		"DisableCraftingMixin"
+		"DisableCraftingMixin",
+		"DisableRecipeBookMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
