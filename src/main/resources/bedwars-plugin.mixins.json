@@ -3,7 +3,9 @@
 	"package": "mcsoc.bedwars.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"ExampleMixin"
+		"ExampleMixin",
+		"DisableCraftingMixin",
+		"DisableRecipeBookMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
