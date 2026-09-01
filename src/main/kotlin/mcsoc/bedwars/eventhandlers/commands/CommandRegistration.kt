@@ -11,6 +11,7 @@ import net.minecraft.server.permissions.Permissions
 const val ROOT_NODE = "bedwars"
 
 const val SOME_ARGUMENT = "some"
+const val UPGRADE_TYPE_ARG = "type"
 
 /**
  * Function to register commands for the plugin
@@ -41,6 +42,17 @@ fun registerCommands() {
                             Commands.argument("number_of_teams", IntegerArgumentType.integer())
                                 .executes(CommandActions::assignTeams)
                         )
+                )
+                .then(Commands.literal("upgrade")
+                    .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
+                    .then(Commands.argument(UPGRADE_TYPE_ARG, StringArgumentType.word())
+                        .suggests(UpgradeItemsSuggestionProvider())
+                        .executes(CommandActions::upgradeItem)
+                    )
+                )
+                .then(Commands.literal("reset_upgrades")
+                    .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
+                    .executes(CommandActions::resetUpgrades)
                 )
         )
     }

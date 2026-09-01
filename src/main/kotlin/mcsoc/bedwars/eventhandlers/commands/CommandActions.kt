@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.TextColor
@@ -30,9 +31,7 @@ object CommandActions {
         }
 
         ModDataTracker.addActivePlayer(player.uuid)
-        player.sendSystemMessage(
-            Component.literal("You have joined the bedwars lobby").withColor(TextColor.GREEN)
-        )
+        player.sendSystemMessage(Component.literal("You have joined the bedwars lobby").withColor(TextColor.GREEN))
 
         return 1
     }
@@ -44,10 +43,7 @@ object CommandActions {
         }
 
         ModDataTracker.removeActivePlayer(player.uuid)
-        // todo add other things when a player leaves
-        player.sendSystemMessage(
-            Component.literal("You have left the bedwars lobby").withColor(TextColor.RED)
-        )
+        player.sendSystemMessage(Component.literal("You have left the bedwars lobby").withColor(TextColor.RED))
 
         return 1
     }
@@ -65,11 +61,37 @@ object CommandActions {
         }
 
         val team = ModDataTracker.getPlayersTeam(player.uuid.toKotlinUuid())
-        player.sendSystemMessage(
-            Component.literal("Your team is ${team.name}").withColor(TextColor.GREEN)
-        )
+        player.sendSystemMessage(Component.literal("Your team is ${team.name}").withColor(TextColor.GREEN))
 
         return 1
     }
+
+    fun upgradeItem(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player ?: run {
+            ctx.source.sendFailure(Component.literal("Command must be run by a player"))
+            return 0
+        }
+        val input = StringArgumentType.getString(ctx, UPGRADE_TYPE_ARG)
+        val type = try {
+            UpgradeItemType.valueOf(input)
+        } catch (e: IllegalArgumentException) {
+            player.sendSystemMessage(Component.literal("$input is not a valid upgrade"))
+            return 0
+        }
+
+        ModDataTracker.upgradeItem(player, type)
+        return 1
+    }
+
+    fun resetUpgrades(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player ?: run {
+            ctx.source.sendFailure(Component.literal("Command must be run by a player"))
+            return 0
+        }
+        ModDataTracker.clearItems(player)
+        return 1
+    }
+
+
 }
 
