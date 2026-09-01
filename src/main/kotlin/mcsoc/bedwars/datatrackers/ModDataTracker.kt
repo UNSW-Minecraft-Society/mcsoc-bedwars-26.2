@@ -2,7 +2,6 @@ package mcsoc.bedwars.datatrackers
 
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import kotlinx.serialization.Serializable
 import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.inWholeTicks
 import kotlin.time.Duration
@@ -13,30 +12,46 @@ import mcsoc.bedwars.generators.Generator
 import mcsoc.bedwars.generators.GeneratorFactory
 import mcsoc.bedwars.generators.BaseGenerator
 import net.minecraft.server.level.ServerLevel
+import mcsoc.bedwars.upgrades.UpgradableItem
+import mcsoc.bedwars.upgrades.UpgradeItemType
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.saveddata.SavedData
 import java.util.UUID
 import net.minecraft.world.phys.Vec3
 
 
-@Serializable
-private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState {
+private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord {
     companion object {
+        val TOOL_UPGRADES_CODEC: Codec<HashMap<UpgradeItemType, UpgradableItem>> =
+            Codec.unboundedMap(UpgradeItemType.CODEC, Codec.STRING).xmap(
+                    { HashMap(it.mapValues { (type, tier) -> type.fromName(tier) }) },
+                    { it.mapValues { (_, item) -> (item as Enum<*>).name } }
+                )
+    
         val CODEC: Codec<PlayerDataRecord> = RecordCodecBuilder.create{it.group(
             LifeState.CODEC.fieldOf("life_state").forGetter(PlayerDataRecord::life_state),
-            Team.CODEC.fieldOf("team").forGetter(PlayerDataRecord::team)
+            Team.CODEC.fieldOf("team").forGetter(PlayerDataRecord::team),
+            TOOL_UPGRADES_CODEC
+                .fieldOf("player_upgrades")
+                .forGetter(PlayerDataRecord::toolUpgrades)
         ).apply(it, ::PlayerDataRecord)}
     }
 
     private var life_state: LifeState = LifeState.ALIVE
     private var team: Team = Team.NONE
 
+    private var toolUpgrades = HashMap<UpgradeItemType, UpgradableItem>()
+
     private constructor(
         life_state: LifeState,
-        team: Team
+        team: Team,
+        toolUpgrades: Map<UpgradeItemType, UpgradableItem>
     ) : this() {
         this.life_state = life_state
         this.team = Team.NONE
+        this.toolUpgrades.putAll(toolUpgrades)
     }
 
     override fun getLifeState(): LifeState {
@@ -47,6 +62,18 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState {
 
     override fun setTeamName(team: Team) {
         this.team = team
+    }
+
+    override fun getItem(item: UpgradeItemType): UpgradableItem {
+        return toolUpgrades.getOrPut(item) { item.default }
+    }
+
+    override fun setItem(item: UpgradableItem) {
+        toolUpgrades[item.type] = item
+    }
+
+    override fun removeItem(item: UpgradeItemType) {
+        toolUpgrades.remove(item)
     }
 }
 
@@ -89,7 +116,7 @@ private class TeamDataRecord(
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, GeneratorsHolder {
+private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder, GeneratorsHolder {
     companion object {
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
             Codec.unboundedMap(UUIDUtil.CODEC, PlayerDataRecord.CODEC)
@@ -153,6 +180,10 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         return getPlayerData(player)
     }
 
+    override fun getItemUpgradeState(player: Player): PlayerUpgradesRecord {
+        return getPlayerData(player)
+    }
+
     override fun addGenerator(gen: Generator, type: GeneratorType) {
         generators.getOrPut(type) { mutableListOf<Generator>() }.add(gen)
     }
@@ -202,12 +233,12 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     override fun getPlayersTeam(player: UUID): Team = getPlayerData(player).getTeamName()
     
     override fun addActivePlayer(uuid: UUID) = active_players.add(uuid)
-    override fun removeActivePlayer(uuid: UUID) = active_players.remove(uuid)
+    override fun removeActivePlayer(uuid: UUID) = active_players.remove(uuid) // there could be other things to do when removing player
     override fun getActivePlayers() = active_players
 }
 
 
-object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, GeneratorsExposer {
+object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer, GeneratorsExposer {
     private val mod_data = ModDataStore()
 
     override fun tick() = mod_data.tick()
@@ -230,6 +261,13 @@ object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Gener
     override fun getActivePlayers() = mod_data.getActivePlayers()
     override fun addActivePlayer(uuid: UUID) = mod_data.addActivePlayer(uuid)
     override fun removeActivePlayer(uuid: UUID) = mod_data.removeActivePlayer(uuid)
+
+    override fun upgradeItem(player: ServerPlayer, item: UpgradeItemType) = mod_data.upgradeItem(player, item)
+    override fun downgradeItems(player: ServerPlayer) = mod_data.downgradeItems(player)
+    override fun clearItems(player: ServerPlayer) = mod_data.clearItems(player)
+
+    override fun getNextItemStack(player: ServerPlayer, item: UpgradeItemType) = mod_data.getNextItemStack(player, item)
+    override fun getTier(player: ServerPlayer, item: UpgradeItemType) = mod_data.getTier(player, item)
 
     override fun addGenerator(type: GeneratorType, location: Vec3, level: ServerLevel) = mod_data.addGenerator(type, location, level)
     override fun addGenerator(location: Vec3, level: ServerLevel, team: Team) = mod_data.addGenerator(location, level, team)
