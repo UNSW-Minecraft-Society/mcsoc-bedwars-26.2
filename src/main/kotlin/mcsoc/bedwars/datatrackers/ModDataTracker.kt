@@ -11,9 +11,11 @@ import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
+import net.minecraft.resources.ResourceKey
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.level.Level
 import net.minecraft.world.level.saveddata.SavedData
 import net.minecraft.world.phys.Vec3
 import java.util.UUID
@@ -243,7 +245,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 }
 
 
-object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer {
+class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer {
     private val mod_data = ModDataStore()
 
     override fun tick() = mod_data.tick()
@@ -282,3 +284,7 @@ object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Playe
     override fun getNextItemStack(player: ServerPlayer, item: UpgradeItemType) = mod_data.getNextItemStack(player, item)
     override fun getTier(player: ServerPlayer, item: UpgradeItemType) = mod_data.getTier(player, item)
 }
+
+
+private val level_mod_data_map: MutableMap<ResourceKey<Level>, ModDataTracker> = mutableMapOf()
+fun ServerLevel.getModData() = level_mod_data_map.getOrPut(this.dimension()){ModDataTracker()}
