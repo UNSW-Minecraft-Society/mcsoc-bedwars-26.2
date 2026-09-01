@@ -2,6 +2,7 @@ package mcsoc.bedwars.eventhandlers.commands
 
 
 import com.mojang.brigadier.arguments.IntegerArgumentType
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import com.mojang.brigadier.arguments.StringArgumentType
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.commands.Commands
