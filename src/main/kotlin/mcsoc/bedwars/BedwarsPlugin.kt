@@ -1,9 +1,7 @@
 package mcsoc.bedwars
 
 import mcsoc.bedwars.eventhandlers.commands.registerCommands
-import mcsoc.bedwars.eventhandlers.AfterRespawnEvent
-import mcsoc.bedwars.eventhandlers.registerItemCallbacks
-import mcsoc.bedwars.eventhandlers.registerPlayerJoinEvent
+import mcsoc.bedwars.eventhandlers.registerEventHandlers
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
@@ -18,14 +16,10 @@ object BedwarsPlugin : ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-		LOGGER.info("Bedwars plugin started")
-		
-		// register eventhandlers
-        AfterRespawnEvent.registerEvent()
-        
-        registerCommands()
-		registerItemCallbacks()
-        registerPlayerJoinEvent()
+		LOGGER.info("Hello Fabric world!")
+
+		registerCommands()
+		registerEventHandlers()
 	}
 
 	fun id(path: String): Identifier
