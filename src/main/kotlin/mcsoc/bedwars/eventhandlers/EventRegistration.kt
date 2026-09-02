@@ -10,4 +10,6 @@ fun registerEventHandlers() {
     }
     registerItemCallbacks()
     registerPlayerJoinEvent()
+    AfterDeathEvent()
+    AfterRespawnEvent()
 }

@@ -10,16 +10,22 @@ import net.minecraft.core.BlockPos
 import net.minecraft.core.Holder
 import net.minecraft.core.Position
 import net.minecraft.core.component.DataComponents
+import net.minecraft.core.registries.Registries
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
 import net.minecraft.network.protocol.game.ClientboundSoundPacket
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
+import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects
+import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
+import net.minecraft.world.item.enchantment.EnchantmentHelper
+import net.minecraft.world.item.enchantment.Enchantments
 import net.minecraft.world.level.GameType
 import net.minecraft.world.level.levelgen.Heightmap
 import kotlin.collections.set
@@ -102,6 +108,67 @@ class GameManager {
             level_mod_data.resetGameTime()
             level_mod_data.setGamePhase(GamePhase.ACTIVE)
             level_mod_data.setGamePeriod(GamePeriod.ACTIVE)
+        }
+
+        fun handlePlayerDeath(player: ServerPlayer, death_source: DamageSource) {
+            val level_mod_data = player.level().getModData()
+            if (level_mod_data.getGamePhase() != GamePhase.ACTIVE) return
+
+            // check if bed intact - TODO
+//            val should_respawn = shouldPlayerRespawn(player)
+
+            // bedhunt code for kill tracking, to be updated
+//            if (death_source.entity is ServerPlayer) {
+//                val killer = death_source.entity as ServerPlayer
+//                level_mod_data.setPlayerKills(killer.uuid, level_mod_data.getPlayerKills(killer.uuid) + 1)
+//
+//                if (!should_respawn) {
+//                    level_mod_data.setPlayerFinalKills(killer.uuid, level_mod_data.getPlayerFinalKills(killer.uuid) + 1)
+//                }
+//            }
+
+            // used in bedhunt to drop player inventory on death - can probably be removed here, although, maybe this should ensure if player died to void
+            // maybe money (gold, iron diamonds emeralds) transfer to killer?
+//            if (!should_respawn) {
+//                player.inventory.forEachIndexed { i, stack ->
+//                    if (!stack.isEmpty) {
+//                        val vanishingCurse = player.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.VANISHING_CURSE)
+//
+//                        // Check if the item stack contains the Curse of Vanishing
+//                        if (EnchantmentHelper.getItemEnchantmentLevel(vanishingCurse, stack) > 0) {
+//                            player.inventory.setItem(i, ItemStack.EMPTY);
+//                        } else {
+//                            player.drop(stack, true, false);
+//                            player.inventory.setItem(i, ItemStack.EMPTY);
+//                        }
+//                    }
+//                }
+//            }
+
+            // store player's death position to summon lightning later
+//            SavedModData.setPlayerDead(player.uuid, player.position())
+        }
+
+        fun handlePlayerRespawn(player: ServerPlayer) {
+            val level_mod_data = player.level().getModData()
+            if (level_mod_data.getGamePhase() != GamePhase.ACTIVE) return
+
+                // bedhunt code, i'll fix later
+//            level_mod_data.downgradeItems(newPlayer)
+//
+//            player.setGameMode(GameType.SPECTATOR)
+//            val base_position = SavedModData.getTeamBasePosition(SavedModData.getPlayerTeam(player.uuid))
+//            if (shouldPlayerRespawn(player)) {
+//                player.teleportTo(base_position.x.toDouble(), base_position.y.toDouble(), base_position.z.toDouble())
+//                SavedModData.setPlayerRespawning(player.uuid)
+//                player.connection.send(
+//                    ClientboundSetTitleTextPacket(
+//                        Component.literal((SavedModData.getRespawnTime().toString()))
+//                    )
+//                )
+//            } else {
+//                eliminatePlayer(player)
+//            }
         }
 
         fun tick(world: ServerLevel) {
