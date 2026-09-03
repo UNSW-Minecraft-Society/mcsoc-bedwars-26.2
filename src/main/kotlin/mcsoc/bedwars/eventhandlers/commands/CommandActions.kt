@@ -5,7 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.ModDataTracker
-import mcsoc.bedwars.datatrackers.getModData
+import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.commands.CommandSourceStack
@@ -31,7 +31,7 @@ object CommandActions {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
             return 0
         }
-        ctx.source.level.getModData().addActivePlayer(player.uuid)
+        ctx.source.level.gameState.addActivePlayer(player.uuid)
         player.sendSystemMessage(Component.literal("You have joined the bedwars lobby").withColor(TextColor.GREEN))
 
         return 1
@@ -43,7 +43,7 @@ object CommandActions {
             return 0
         }
 
-        ctx.source.level.getModData().removeActivePlayer(player.uuid)
+        ctx.source.level.gameState.removeActivePlayer(player.uuid)
         player.sendSystemMessage(Component.literal("You have left the bedwars lobby").withColor(TextColor.RED))
 
         return 1
@@ -61,7 +61,7 @@ object CommandActions {
             return 0
         }
 
-        val team = ctx.source.level.getModData().getPlayersTeam(player.uuid.toKotlinUuid())
+        val team = ctx.source.level.gameState.getPlayersTeam(player.uuid.toKotlinUuid())
         player.sendSystemMessage(Component.literal("Your team is ${team.name}").withColor(TextColor.GREEN))
 
         return 1
@@ -90,7 +90,7 @@ object CommandActions {
             return 0
         }
 
-        ctx.source.level.getModData().upgradeItem(player, type)
+        ctx.source.level.gameState.upgradeItem(player, type)
         return 1
     }
 
@@ -99,7 +99,7 @@ object CommandActions {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
             return 0
         }
-        ctx.source.level.getModData().clearItems(player)
+        ctx.source.level.gameState.clearItems(player)
         return 1
     }
 

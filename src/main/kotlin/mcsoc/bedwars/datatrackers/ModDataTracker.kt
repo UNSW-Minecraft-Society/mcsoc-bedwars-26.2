@@ -284,7 +284,3 @@ class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Player
     override fun getNextItemStack(player: ServerPlayer, item: UpgradeItemType) = mod_data.getNextItemStack(player, item)
     override fun getTier(player: ServerPlayer, item: UpgradeItemType) = mod_data.getTier(player, item)
 }
-
-
-private val level_mod_data_map: MutableMap<ResourceKey<Level>, ModDataTracker> = mutableMapOf()
-fun ServerLevel.getModData() = level_mod_data_map.getOrPut(this.dimension()){ModDataTracker()}
