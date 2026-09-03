@@ -5,6 +5,8 @@ import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.network.chat.Component
@@ -29,8 +31,7 @@ object CommandActions {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
             return 0
         }
-
-        ModDataTracker.addActivePlayer(player.uuid)
+        ctx.source.level.gameState.addActivePlayer(player.uuid)
         player.sendSystemMessage(Component.literal("You have joined the bedwars lobby").withColor(TextColor.GREEN))
 
         return 1
@@ -42,7 +43,7 @@ object CommandActions {
             return 0
         }
 
-        ModDataTracker.removeActivePlayer(player.uuid)
+        ctx.source.level.gameState.removeActivePlayer(player.uuid)
         player.sendSystemMessage(Component.literal("You have left the bedwars lobby").withColor(TextColor.RED))
 
         return 1
@@ -50,7 +51,7 @@ object CommandActions {
 
     fun assignTeams(ctx: CommandContext<CommandSourceStack>): Int {
         val input = IntegerArgumentType.getInteger(ctx, "number_of_teams")
-        TeamEffects.createTeamsWithPlayers(input)
+        TeamEffects.createTeamsWithPlayers(ctx.source.level, input)
         return 1
     }
 
@@ -60,12 +61,22 @@ object CommandActions {
             return 0
         }
 
-        val team = ModDataTracker.getPlayersTeam(player.uuid.toKotlinUuid())
+        val team = ctx.source.level.gameState.getPlayersTeam(player.uuid.toKotlinUuid())
         player.sendSystemMessage(Component.literal("Your team is ${team.name}").withColor(TextColor.GREEN))
 
         return 1
     }
 
+    fun start(ctx: CommandContext<CommandSourceStack>): Int {
+        IntegerArgumentType.getInteger(ctx, "num_teams")
+        GameManager.setupGame(ctx.source.level, ctx.source.position)
+        return 1
+    }
+
+    fun end(ctx: CommandContext<CommandSourceStack>): Int {
+        GameManager.endGame(ctx.source.level)
+        return 1
+    }
     fun upgradeItem(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.player ?: run {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
@@ -79,7 +90,7 @@ object CommandActions {
             return 0
         }
 
-        ModDataTracker.upgradeItem(player, type)
+        ctx.source.level.gameState.upgradeItem(player, type)
         return 1
     }
 
@@ -88,7 +99,7 @@ object CommandActions {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
             return 0
         }
-        ModDataTracker.clearItems(player)
+        ctx.source.level.gameState.clearItems(player)
         return 1
     }
 
