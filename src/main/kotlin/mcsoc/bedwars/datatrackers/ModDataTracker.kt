@@ -12,10 +12,7 @@ import kotlin.time.TimeSource
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
-import mcsoc.bedwars.upgrades.UpgradableItem
-import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.resources.ResourceKey
-import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
@@ -60,8 +57,6 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
     private var team: Team = Team.NONE
     private var toolUpgrades = HashMap<UpgradeItemType, UpgradableItem>()
 
-    private var toolUpgrades = HashMap<UpgradeItemType, UpgradableItem>()
-
     private constructor(
         life_state: LifeState,
         team: Team,
@@ -85,15 +80,6 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
     override fun getItem(item: UpgradeItemType): UpgradableItem {
         return toolUpgrades.getOrPut(item) { item.default }
     }
-
-    override fun setItem(item: UpgradableItem) {
-        toolUpgrades[item.type] = item
-    }
-
-    override fun removeItem(item: UpgradeItemType) {
-        toolUpgrades.remove(item)
-    }
-}
 
     override fun setItem(item: UpgradableItem) {
         toolUpgrades[item.type] = item
@@ -254,10 +240,6 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     override fun removeActivePlayer(uuid: UUID) = active_players.remove(uuid) // there could be other things to do when removing player
     override fun getActivePlayers() = active_players
     override fun clearActivePlayers() = active_players.clear()
-
-    override fun getItemUpgradeState(player: Player): PlayerUpgradesRecord {
-        return getPlayerData(player)
-    }
 }
 
 

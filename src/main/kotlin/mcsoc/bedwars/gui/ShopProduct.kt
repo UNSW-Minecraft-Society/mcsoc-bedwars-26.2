@@ -4,6 +4,7 @@ import eu.pb4.sgui.api.ClickType
 import eu.pb4.sgui.api.elements.GuiElement
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.utils.Team
 import net.minecraft.network.chat.Component
@@ -140,7 +141,8 @@ class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
         items.mapValues { ItemStackTemplate(it.value, count) },currency, price)
 
     override fun setPlayer(player: ServerPlayer) {
-        val team = ModDataTracker.getPlayersTeam(player.uuid.toKotlinUuid())
+        val gameState = player.level().gameState
+        val team = gameState.getPlayersTeam(player.uuid.toKotlinUuid())
         setItemStack(templates.getValue(team))
     }
 }
@@ -161,21 +163,24 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
     }
 
     override fun getItemStack(): ItemStack {
-        return ModDataTracker.getNextItemStack(player, playerUpgrade) ?: Items.STAINED_GLASS_PANE.lightGray.defaultInstance
+        val gameState = player.level().gameState
+        return gameState.getNextItemStack(player, playerUpgrade) ?: Items.STAINED_GLASS_PANE.lightGray.defaultInstance
     }
 
     override fun getClickCallback(): GuiElement.ClickCallback {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player ?: return@ClickCallback
+            val gameState = player.level().gameState
             purchaseUnit(player, fun(): Boolean {
-                ModDataTracker.upgradeItem(player, playerUpgrade)
+                gameState.upgradeItem(player, playerUpgrade)
                 return true
             })
         }
     }
 
     override fun getItemCost(): ItemStack {
-        val tier = ModDataTracker.getTier(player, playerUpgrade)
+        val gameState = player.level().gameState
+        val tier = gameState.getTier(player, playerUpgrade)
         if (tier >= currencies.size) return ItemStack(Items.BARRIER, 999)
         return ItemStack(currencies[tier], prices[tier])
     }

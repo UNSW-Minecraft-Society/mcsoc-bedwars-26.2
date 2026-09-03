@@ -4,11 +4,13 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import mcsoc.bedwars.TeamEffects
-import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.entities.CustomEntityType
+import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.commands.CommandSourceStack
+import net.minecraft.commands.arguments.coordinates.Vec3Argument
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.TextColor
 import kotlin.uuid.toKotlinUuid
@@ -103,6 +105,24 @@ object CommandActions {
         return 1
     }
 
-
+    fun summonShopkeeper(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player ?: run {
+            ctx.source.sendFailure(Component.literal("Command must be run by a player"))
+            return 0
+        }
+        val posInput = Vec3Argument.getVec3(ctx, POSITION_ARG)
+        val typeInput = StringArgumentType.getString(ctx, ENTITY_TYPE_ARG)
+        val type = try {
+            CustomEntityType.valueOf(typeInput.uppercase())
+        } catch (e: IllegalArgumentException) {
+            player.sendSystemMessage(Component.literal("$typeInput is not a valid entity"))
+            return 0
+        }
+        when (type) {
+            CustomEntityType.PLAYER_SHOPKEEPER -> spawnShopkeeper(player.level(), posInput, type)
+            CustomEntityType.TEAM_SHOPKEEPER -> spawnShopkeeper(player.level(), posInput, type)
+        }
+        return 1
+    }
 }
 

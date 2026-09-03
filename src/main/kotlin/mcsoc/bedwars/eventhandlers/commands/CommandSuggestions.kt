@@ -4,6 +4,7 @@ import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.SuggestionProvider
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
+import mcsoc.bedwars.entities.CustomEntityType
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.commands.CommandSourceStack
 import java.util.concurrent.CompletableFuture
@@ -17,21 +18,19 @@ internal class ExampleSuggestionProvider: SuggestionProvider<CommandSourceStack>
 	}
 }
 
-
-object UpgradeItemsSuggestionProvider : SuggestionProvider<CommandSourceStack> {
-	override fun getSuggestions(
-		context: CommandContext<CommandSourceStack>,
-		builder: SuggestionsBuilder
-	): CompletableFuture<Suggestions> {
-		UpgradeItemType.entries.forEach { builder.suggest(it.name.lowercase()) }
-		return builder.buildFuture()
-	}
-}
-
-
 internal class UpgradeItemsSuggestionProvider : SuggestionProvider<CommandSourceStack> {
     override fun getSuggestions(ctx: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
         UpgradeItemType.entries.forEach { builder.suggest(it.name.lowercase()) }
         return builder.buildFuture()
     }
+}
+
+internal class EntityTypeSuggestionProvider: SuggestionProvider<CommandSourceStack> {
+	override fun getSuggestions(
+		context: CommandContext<CommandSourceStack>,
+		builder: SuggestionsBuilder
+	): CompletableFuture<Suggestions?>? {
+		CustomEntityType.entries.forEach { builder.suggest(it.name.lowercase()) }
+		return builder.buildFuture()
+	}
 }
