@@ -53,7 +53,6 @@ internal interface Single : UpgradableItem {
 
     override fun applyTo(player: ServerPlayer) {
         val stack = createStack(player)
-        stack.addSharp(player)
         for (slot in 0 until player.inventory.containerSize) {
             if (hasTag(player.inventory.getItem(slot), "bedwars_item", type.name)) {
                 player.inventory.setItem(slot, stack)
@@ -64,12 +63,6 @@ internal interface Single : UpgradableItem {
         player.inventory.add(stack)
     }
     
-    private fun ItemStack.addSharp(player: ServerPlayer) {
-        val team = ModDataTracker.getPlayersTeam(player.uuid.toKotlinUuid())
-        if (ModDataTracker.hasSharpess(team)) {
-            applyEnchant(this, Enchantments.SHARPNESS, 1, player.level())
-        }
-    }
 }
 
 internal interface EnchantableItem : Single {
@@ -174,6 +167,19 @@ enum class Sword(override val material: Item) : Single, Resettable {
 
     override fun base() = WOODEN
     override val type = UpgradeItemType.SWORD
+
+    override fun createStack(player: ServerPlayer): ItemStack {
+        val item = super.createStack(player)
+        item.addSharp(player)
+        return item
+    }
+    
+    private fun ItemStack.addSharp(player: ServerPlayer) {
+        val team = ModDataTracker.getPlayersTeam(player.uuid.toKotlinUuid())
+        if (ModDataTracker.getUpgrade(team, TeamUpgradeType.SHARPNESS)) {
+            applyEnchant(this, Enchantments.SHARPNESS, 1, player.level())
+        }
+    }
 }
 
 enum class Armour(val boots: Item, val leggings: Item, val chestplate: Item) : UpgradableItem {
@@ -214,18 +220,14 @@ enum class Armour(val boots: Item, val leggings: Item, val chestplate: Item) : U
     
     private fun ItemStack.addProt(player: ServerPlayer) {
         val team = ModDataTracker.getPlayersTeam(player.uuid.toKotlinUuid())
-        val level = ModDataTracker.getArmourProt(team)
-        if (level != null) {
-            applyEnchant(this, Enchantments.PROTECTION, level, player.level())
-        }
+        val level = ModDataTracker.getUpgrade(team, TeamUpgradeType.PROTECTION)
+        applyEnchant(this, Enchantments.PROTECTION, level, player.level())
     }
     
     private fun ItemStack.addFeatherFalling(player: ServerPlayer) {
         val team = ModDataTracker.getPlayersTeam(player.uuid.toKotlinUuid())
-        val level = ModDataTracker.getFeatherFalling(team)
-        if (level != null) {
-            applyEnchant(this, Enchantments.FEATHER_FALLING, level, player.level())
-        }
+        val level = ModDataTracker.getUpgrade(team, TeamUpgradeType.FEATHER_FALLING)   
+        applyEnchant(this, Enchantments.FEATHER_FALLING, level, player.level())
     }
     
     override fun createStack(player: ServerPlayer): ItemStack {

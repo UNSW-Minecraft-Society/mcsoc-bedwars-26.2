@@ -2,6 +2,8 @@ package mcsoc.bedwars.datatrackers
 
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+import mcsoc.bedwars.upgrades.TeamUpgrade
+import mcsoc.bedwars.upgrades.TeamUpgradeType
 import mcsoc.bedwars.upgrades.TrapUpgrade
 import mcsoc.bedwars.utils.inWholeTicks
 import kotlin.time.Duration
@@ -106,44 +108,24 @@ private class TeamDataRecord(
         players.add(player)
     }
     
-    private var armourProt: Int? = null
-    private var featherFalling: Int? = null
-    private var hasteLevel: Int? = null
-    private var sharpess: Boolean = false
-    private var healPool = false
+    private val upgrades = mutableMapOf<TeamUpgradeType<*>, TeamUpgrade<*>>()
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T> getUpgrade(type: TeamUpgradeType<T>): T {
+        val upgrade = upgrades.getOrPut(type) { type.default() } 
+        return (upgrade as TeamUpgrade<T>).value
+    }
+
+    override fun <T> upgrade(type: TeamUpgradeType<T>) {
+        val upgrade = upgrades.getOrPut(type) { type.default() } 
+        upgrade.upgrade()
+    }
+    
     private var traps = mutableListOf<TrapUpgrade>()
     
-    override fun getArmourProt() = armourProt
-    override fun getFeatherFalling() = featherFalling
-    override fun getHasteLevel() = hasteLevel
-    override fun hasSharpess() = sharpess
-    override fun hasHealPool() = healPool
     override fun getTraps(): List<TrapUpgrade> = traps
     override fun popTrap(): TrapUpgrade? = traps.removeFirstOrNull()
     
-    override fun upgradeArmourProt() {
-        if (armourProt != null && armourProt!! >= 4) return
-        armourProt = (armourProt ?: 0) + 1
-    }
-
-    override fun upgradeFeatherFalling() {
-        if (featherFalling != null && featherFalling!! >= 2) return
-        featherFalling = (featherFalling ?: 0) + 1
-    }
-
-    override fun upgradeHasteLevel() {
-        if (hasteLevel != null && hasteLevel!! >= 2) return
-        hasteLevel = (hasteLevel ?: 0) + 1
-    }
-    
-    override fun getSharpness() {
-        sharpess = true
-    }
-
-    override fun getHealPool() {
-        healPool = true
-    }
-
     override fun addTrap(type: TrapUpgrade) {
         traps.add(type)
     }
@@ -277,19 +259,10 @@ object ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Playe
 
     override fun getNextItemStack(player: ServerPlayer, item: UpgradeItemType) = mod_data.getNextItemStack(player, item)
     override fun getTier(player: ServerPlayer, item: UpgradeItemType) = mod_data.getTier(player, item)
-    
-    override fun getArmourProt(team: Team) = mod_data.getArmourProt(team)
-    override fun getFeatherFalling(team: Team) = mod_data.getFeatherFalling(team)
-    override fun getHasteLevel(team: Team) = mod_data.getHasteLevel(team)
-    override fun hasSharpess(team: Team) = mod_data.hasSharpess(team)
-    override fun hasHealPool(team: Team) = mod_data.hasHealPool(team)
+
+    override fun <T> getUpgrade(team: Team, type: TeamUpgradeType<T>) = mod_data.getUpgrade(team, type)
+    override fun <T> upgrade(team: Team, type: TeamUpgradeType<T>) = mod_data.upgrade(team, type)
     override fun popTrap(team: Team) = mod_data.popTrap(team)
     override fun getTraps(team: Team) = mod_data.getTraps(team)
-
-    override fun upgradeArmourProt(team: Team) = mod_data.upgradeArmourProt(team)
-    override fun upgradeFeatherFalling(team: Team) = mod_data.upgradeFeatherFalling(team)
-    override fun upgradeHasteLevel(team: Team) = mod_data.upgradeHasteLevel(team)
-    override fun getSharpness(team: Team) = mod_data.getSharpness(team)
-    override fun getHealPool(team: Team) = mod_data.getHealPool(team)
     override fun addTrap(team: Team, type: TrapUpgrade) = mod_data.addTrap(team, type)
 }
