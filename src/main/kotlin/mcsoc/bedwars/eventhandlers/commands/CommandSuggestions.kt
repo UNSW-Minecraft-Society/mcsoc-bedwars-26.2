@@ -27,3 +27,11 @@ object UpgradeItemsSuggestionProvider : SuggestionProvider<CommandSourceStack> {
 		return builder.buildFuture()
 	}
 }
+
+
+internal class UpgradeItemsSuggestionProvider : SuggestionProvider<CommandSourceStack> {
+    override fun getSuggestions(ctx: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
+        UpgradeItemType.entries.forEach { builder.suggest(it.name.lowercase()) }
+        return builder.buildFuture()
+    }
+}

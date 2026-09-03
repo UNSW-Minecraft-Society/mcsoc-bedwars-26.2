@@ -27,15 +27,8 @@ enum class UpgradeItemType(val defaultStr: String, val fromName: (String) -> Upg
     }
 }
 
-class ItemCost(val iron: Int = 0, val gold: Int = 0, val emeralds: Int = 0) {
-    fun canBuy(balance: ItemCost): Boolean {
-        return balance.iron >= iron && balance.gold >= gold && balance.emeralds >= emeralds
-    }
-}
-
-sealed interface UpgradableItem {
+interface UpgradableItem {
     val type: UpgradeItemType
-    val cost: ItemCost
 
     fun next(): UpgradableItem?
     fun prev(): UpgradableItem = this
@@ -53,7 +46,7 @@ sealed interface UpgradableItem {
     }
 }
 
-sealed interface Single : UpgradableItem {
+internal interface Single : UpgradableItem {
     val material: Item
 
     override fun createStack(player: ServerPlayer): ItemStack {
@@ -77,7 +70,7 @@ sealed interface Single : UpgradableItem {
     }
 }
 
-sealed interface EnchantableItem : Single {
+internal interface EnchantableItem : Single {
     val efficiency: Int
 
     override fun createStack(player: ServerPlayer): ItemStack {
@@ -91,7 +84,7 @@ sealed interface EnchantableItem : Single {
     }
 }
 
-sealed interface Resettable : UpgradableItem {
+internal interface Resettable : UpgradableItem {
     fun base(): UpgradableItem
     override fun prev() = base()
 }
@@ -102,31 +95,26 @@ enum class Pickaxe(override val material: Item, override val efficiency: Int) : 
         override fun next() = WOODEN
         override fun prev() = NONE
         override fun tier() = 0
-        override val cost = ItemCost(iron = 0)
     },
     WOODEN(Items.WOODEN_PICKAXE, 1) {
         override fun next() = IRON
         override fun prev() = WOODEN
         override fun tier() = 1
-        override val cost = ItemCost(iron = 0)
     },
     IRON(Items.IRON_PICKAXE, 2) {
         override fun next() = GOLDEN
         override fun prev() = WOODEN
         override fun tier() = 2
-        override val cost = ItemCost(iron = 0)
     },
     GOLDEN(Items.GOLDEN_PICKAXE, 3) {
         override fun next() = DIAMOND
         override fun prev() = IRON
         override fun tier() = 3
-        override val cost = ItemCost(iron = 0)
     },
     DIAMOND(Items.DIAMOND_PICKAXE, 3) {
         override fun next() = null
         override fun prev() = GOLDEN
         override fun tier() = 4
-        override val cost = ItemCost(iron = 0)
     };
 
     override val type = UpgradeItemType.PICKAXE
@@ -137,31 +125,26 @@ enum class Axe(override val material: Item, override val efficiency: Int) : Ench
         override fun next() = WOODEN
         override fun prev() = NONE
         override fun tier() = 0
-        override val cost = ItemCost(iron = 0)
     },
     WOODEN(Items.WOODEN_AXE, 1) {
         override fun next() = STONE
         override fun prev() = WOODEN
         override fun tier() = 1
-        override val cost = ItemCost(iron = 0)
     },
     STONE(Items.STONE_AXE, 1) {
         override fun next() = IRON
         override fun prev() = WOODEN
         override fun tier() = 2
-        override val cost = ItemCost(iron = 0)
     },
     IRON(Items.IRON_AXE, 2) {
         override fun next() = DIAMOND
         override fun prev() = STONE
         override fun tier() = 3
-        override val cost = ItemCost(iron = 0)
     },
     DIAMOND(Items.DIAMOND_AXE, 3) {
         override fun next() = null
         override fun prev() = IRON
         override fun tier() = 4
-        override val cost = ItemCost(iron = 0)
     };
 
     override val type = UpgradeItemType.AXE
@@ -171,25 +154,21 @@ enum class Sword(override val material: Item) : Single, Resettable {
     WOODEN(Items.WOODEN_SWORD) {
         override fun next() = STONE
         override fun tier() = 0
-        override val cost = ItemCost(iron = 0)
 
     },
     STONE(Items.STONE_SWORD) {
         override fun next() = IRON
         override fun tier() = 1
-        override val cost = ItemCost(iron = 0)
 
     },
     IRON(Items.IRON_SWORD) {
         override fun next() = DIAMOND
         override fun tier() = 2
-        override val cost = ItemCost(iron = 0)
 
     },
     DIAMOND(Items.DIAMOND_SWORD) {
         override fun next() = null
         override fun tier() = 3
-        override val cost = ItemCost(iron = 0)
 
     };
 
@@ -201,25 +180,21 @@ enum class Armour(val boots: Item, val leggings: Item, val chestplate: Item) : U
     LEATHER(Items.LEATHER_BOOTS, Items.LEATHER_LEGGINGS, Items.LEATHER_CHESTPLATE) {
         override fun next() = CHAINMAIL
         override fun tier() = 0
-        override val cost = ItemCost(iron = 0)
 
     },
     CHAINMAIL(Items.CHAINMAIL_BOOTS, Items.CHAINMAIL_LEGGINGS, Items.CHAINMAIL_CHESTPLATE) {
         override fun next() = IRON
         override fun tier() = 1
-        override val cost = ItemCost(iron = 0)
 
     },
     IRON(Items.IRON_BOOTS, Items.IRON_LEGGINGS, Items.IRON_CHESTPLATE) {
         override fun next() = DIAMOND
         override fun tier() = 2
-        override val cost = ItemCost(iron = 0)
 
     },
     DIAMOND(Items.DIAMOND_BOOTS, Items.DIAMOND_LEGGINGS, Items.DIAMOND_CHESTPLATE) {
         override fun next() = null
         override fun tier() = 3
-        override val cost = ItemCost(iron = 0)
     };
 
     override val type = UpgradeItemType.ARMOUR
