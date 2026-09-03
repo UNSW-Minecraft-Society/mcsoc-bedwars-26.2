@@ -235,7 +235,10 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         getTeam(team).addPlayer(player)
         getPlayerData(player).setTeamName(team)
     }
-    
+
+    // To be updated to track actual bed state
+    override fun getBedDestroyed(team: Team): Boolean = false
+
     override fun getPlayersTeam(player: Uuid): Team = getPlayerData(player).getTeamName()
 
     override fun addActivePlayer(uuid: UUID) = active_players.add(uuid)
@@ -284,7 +287,3 @@ class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Player
     override fun getNextItemStack(player: ServerPlayer, item: UpgradeItemType) = mod_data.getNextItemStack(player, item)
     override fun getTier(player: ServerPlayer, item: UpgradeItemType) = mod_data.getTier(player, item)
 }
-
-
-private val level_mod_data_map: MutableMap<ResourceKey<Level>, ModDataTracker> = mutableMapOf()
-fun ServerLevel.getModData() = level_mod_data_map.getOrPut(this.dimension()){ModDataTracker()}

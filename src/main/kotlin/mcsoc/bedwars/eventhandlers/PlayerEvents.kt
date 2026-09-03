@@ -1,6 +1,5 @@
 package mcsoc.bedwars.eventhandlers
 
-import mcsoc.bedwars.datatrackers.getModData
 import mcsoc.bedwars.gamestate.GameManager
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents

@@ -1,18 +1,12 @@
 package mcsoc.bedwars.gamestate
 
-import com.jcraft.jorbis.Block
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
-import mcsoc.bedwars.datatrackers.ModDataTracker
-import mcsoc.bedwars.datatrackers.getModData
-import mcsoc.bedwars.utils.inWholeTicks
+import mcsoc.bedwars.datatrackers.gameState
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Holder
 import net.minecraft.core.Position
-import net.minecraft.core.component.DataComponents
-import net.minecraft.core.registries.Registries
 import net.minecraft.network.chat.Component
-import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
 import net.minecraft.network.protocol.game.ClientboundSoundPacket
 import net.minecraft.server.level.ServerLevel
@@ -20,31 +14,18 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.damagesource.DamageSource
-import net.minecraft.world.effect.MobEffectInstance
-import net.minecraft.world.effect.MobEffects
-import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.Items
-import net.minecraft.world.item.enchantment.EnchantmentHelper
-import net.minecraft.world.item.enchantment.Enchantments
 import net.minecraft.world.level.GameType
-import net.minecraft.world.level.levelgen.Heightmap
-import kotlin.collections.set
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.DurationUnit
 
 val DEATHMATCH_TIME = 10.minutes // change if i'm wrong
 const val BORDER_SIZE: Double = 300.0 // change if needed
 
 class GameManager {
     companion object {
-        fun setupGame(world: ServerLevel, start_pos: Position) {
-            val level_mod_data = world.getModData()
+        fun setupGame(level: ServerLevel, start_pos: Position) {
+            val level_mod_data = level.gameState
             if (level_mod_data.getGamePhase() != GamePhase.INACTIVE) {
-                endGame(world)
+                endGame(level)
             }
 
             val start_block_pos = BlockPos.containing(start_pos)
@@ -54,7 +35,7 @@ class GameManager {
             // set difficulty to peaceful/easy maybe?
             // maybe disable mob spawning
 
-            val worldborder = world.worldBorder
+            val worldborder = level.worldBorder
             worldborder.setCenter(start_block_pos.x.toDouble(), start_block_pos.z.toDouble())
             worldborder.size = BORDER_SIZE
 
@@ -68,7 +49,7 @@ class GameManager {
 
         fun endGame(world: ServerLevel) {
             // Triggered by command or on win condition, clean up stuff
-            val level_mod_data = world.getModData()
+            val level_mod_data = world.gameState
             level_mod_data.clearActivePlayers()
             // clear teams - todo
 
@@ -85,7 +66,7 @@ class GameManager {
 
         private fun start(world: ServerLevel) {
             val player_manager = world.server.playerList
-            val level_mod_data = world.getModData()
+            val level_mod_data = world.gameState
             for (player_uuid in level_mod_data.getActivePlayers()) {
                 val player = player_manager.getPlayer(player_uuid) ?: continue
                 player.connection.send(
@@ -111,11 +92,11 @@ class GameManager {
         }
 
         fun handlePlayerDeath(player: ServerPlayer, death_source: DamageSource) {
-            val level_mod_data = player.level().getModData()
+            val level_mod_data = player.level().gameState
             if (level_mod_data.getGamePhase() != GamePhase.ACTIVE) return
 
-            // check if bed intact - TODO
-//            val should_respawn = shouldPlayerRespawn(player)
+            val player_team = level_mod_data.getPlayersTeam(player.uuid)
+            val bed_destroyed = level_mod_data.getBedDestroyed(player_team)
 
             // bedhunt code for kill tracking, to be updated
 //            if (death_source.entity is ServerPlayer) {
@@ -150,7 +131,7 @@ class GameManager {
         }
 
         fun handlePlayerRespawn(player: ServerPlayer) {
-            val level_mod_data = player.level().getModData()
+            val level_mod_data = player.level().gameState
             if (level_mod_data.getGamePhase() != GamePhase.ACTIVE) return
 
                 // bedhunt code, i'll fix later
@@ -173,7 +154,7 @@ class GameManager {
 
         fun tick(world: ServerLevel) {
             val player_manager = world.server.playerList
-            val level_mod_data = world.getModData()
+            val level_mod_data = world.gameState
             level_mod_data.tick()
             val time = level_mod_data.getGameTime()
             if (level_mod_data.getTimerSecond()) {

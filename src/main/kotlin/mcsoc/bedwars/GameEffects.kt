@@ -1,7 +1,7 @@
 package mcsoc.bedwars
 
 import mcsoc.bedwars.datatrackers.ModDataTracker
-import mcsoc.bedwars.datatrackers.getModData
+import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.Team
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
@@ -14,7 +14,7 @@ const val MAX_TEAM_PLAYERS = 4
 object TeamEffects {
     // On start of game run this to add players (probably just active)
     fun createTeamsWithPlayers(level: ServerLevel, numTeams: Int) {
-        val mod_level_data = level.getModData()
+        val mod_level_data = level.gameState
         val players = mod_level_data.getActivePlayers()
         mod_level_data.initialiseTeams(numTeams)
         val teams = mod_level_data.getActiveTeams()
@@ -27,7 +27,7 @@ object TeamEffects {
 
 
     fun destroyBed(level: ServerLevel, team: Team) {
-        val mod_level_data = level.getModData()
+        val mod_level_data = level.gameState
         mod_level_data.setBedAlive(team, false)
         for (player in mod_level_data.getPlayersInTeam(team)) {
             TODO()
