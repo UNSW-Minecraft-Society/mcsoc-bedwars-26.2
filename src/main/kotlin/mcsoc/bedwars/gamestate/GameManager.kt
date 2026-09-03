@@ -3,10 +3,12 @@ package mcsoc.bedwars.gamestate
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.gameState
+import net.minecraft.ChatFormatting
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Holder
 import net.minecraft.core.Position
 import net.minecraft.network.chat.Component
+import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
 import net.minecraft.network.protocol.game.ClientboundSoundPacket
 import net.minecraft.server.level.ServerLevel
@@ -14,8 +16,12 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.damagesource.DamageSource
+import net.minecraft.world.entity.EntityType
+import net.minecraft.world.entity.EntityTypes
+import net.minecraft.world.entity.LightningBolt
 import net.minecraft.world.level.GameType
 import kotlin.time.Duration.Companion.minutes
+import kotlin.uuid.toKotlinUuid
 
 val DEATHMATCH_TIME = 10.minutes // change if i'm wrong
 const val BORDER_SIZE: Double = 300.0 // change if needed
@@ -95,7 +101,7 @@ class GameManager {
             val level_mod_data = player.level().gameState
             if (level_mod_data.getGamePhase() != GamePhase.ACTIVE) return
 
-            val player_team = level_mod_data.getPlayersTeam(player.uuid)
+            val player_team = level_mod_data.getPlayersTeam(player.uuid.toKotlinUuid())
             val bed_destroyed = level_mod_data.getBedDestroyed(player_team)
 
             // bedhunt code for kill tracking, to be updated
@@ -109,7 +115,9 @@ class GameManager {
 //            }
 
             // used in bedhunt to drop player inventory on death - can probably be removed here, although, maybe this should ensure if player died to void
-            // maybe money (gold, iron diamonds emeralds) transfer to killer?
+            // maybe money (gold, iron diamonds emeralds) transfer to killer? I'm leaving this code here for reference in case we need to index
+            // over a player's inventory to do something like this. Note this could probably be moved into the eliminate player function as
+            // it was only originally here to make the player drop items at death location
 //            if (!should_respawn) {
 //                player.inventory.forEachIndexed { i, stack ->
 //                    if (!stack.isEmpty) {
@@ -126,30 +134,64 @@ class GameManager {
 //                }
 //            }
 
-            // store player's death position to summon lightning later
-//            SavedModData.setPlayerDead(player.uuid, player.position())
+            // store player's death position to summon lightning later. Due to the nature of this event handler,
+            // all players are forced to enter "DEAD" state upon death.
+            level_mod_data.setPlayerDead(player, player.position())
         }
 
         fun handlePlayerRespawn(player: ServerPlayer) {
             val level_mod_data = player.level().gameState
             if (level_mod_data.getGamePhase() != GamePhase.ACTIVE) return
 
-                // bedhunt code, i'll fix later
-//            level_mod_data.downgradeItems(newPlayer)
-//
-//            player.setGameMode(GameType.SPECTATOR)
-//            val base_position = SavedModData.getTeamBasePosition(SavedModData.getPlayerTeam(player.uuid))
-//            if (shouldPlayerRespawn(player)) {
+            level_mod_data.downgradeItems(player)
+
+            player.setGameMode(GameType.SPECTATOR)
+
+            if (!level_mod_data.getBedDestroyed(level_mod_data.getPlayersTeam(player.uuid.toKotlinUuid()))) {
+                // tp above map
 //                player.teleportTo(base_position.x.toDouble(), base_position.y.toDouble(), base_position.z.toDouble())
-//                SavedModData.setPlayerRespawning(player.uuid)
+
+                level_mod_data.setPlayerRespawning(player)
+                // notify player how much time left in respawn maybe? either that or just display a fat ass word RESPAWNING
+                // i need to check hypixel bedwars again...
+                // todo
 //                player.connection.send(
 //                    ClientboundSetTitleTextPacket(
-//                        Component.literal((SavedModData.getRespawnTime().toString()))
+//                        Component.literal((level_mod_data.getRespawnTime().toString()))
 //                    )
 //                )
-//            } else {
-//                eliminatePlayer(player)
-//            }
+            } else {
+                eliminatePlayer(player)
+            }
+        }
+
+        fun eliminatePlayer(player: ServerPlayer) {
+            val level_mod_data = player.level().gameState
+            val player_death_position = level_mod_data.getPlayerDeathPosition(player)
+
+            level_mod_data.setPlayerEliminated(player)
+            player.connection.send(
+                ClientboundClearTitlesPacket(true)
+            )
+            player.connection.send(
+                ClientboundSetTitleTextPacket(
+                    Component.literal(ChatFormatting.RED.toString() + "ELIMINATED")
+                )
+            )
+            val world = player.level()
+            val lightning = LightningBolt(EntityTypes.LIGHTNING_BOLT, world)
+            lightning.setVisualOnly(true)
+            lightning.setPos(player_death_position)
+            world.addFreshEntity(lightning)
+            world.players().forEach { p ->
+                p.sendSystemMessage(Component.literal(player.scoreboardName + " has been eliminated!"))
+            }
+            // notify eliminate player of their kill stats - TODO
+//            player.sendSystemMessage(Component.literal("Kills: " + level_mod_data.getPlayerKills(player.uuid) + " Final Kills: " + level_mod_data.getPlayerFinalKills(player.uuid)))
+
+            // check if a team has won - urgent todo
+//            val winning_team = checkPlayersLeftOnTeam(world,world.players(), SavedModData.getPlayerTeam(player.uuid)) ?: return
+//            winGame(world, winning_team)
         }
 
         fun tick(world: ServerLevel) {

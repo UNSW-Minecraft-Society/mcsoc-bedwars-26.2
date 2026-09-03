@@ -72,6 +72,15 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
         return this.life_state
     }
 
+    override fun setLifeState(new_state: LifeState) {
+        this.life_state = new_state
+    }
+
+    override fun getDeathPosition(): Vec3 {
+        if (this.life_state is LifeState.DEAD) return (this.life_state as LifeState.DEAD).death_position
+        return Vec3.ZERO
+    }
+
     override fun getTeamName(): Team = team
 
     override fun setTeamName(team: Team) {
@@ -236,9 +245,6 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         getPlayerData(player).setTeamName(team)
     }
 
-    // To be updated to track actual bed state
-    override fun getBedDestroyed(team: Team): Boolean = false
-
     override fun getPlayersTeam(player: Uuid): Team = getPlayerData(player).getTeamName()
 
     override fun addActivePlayer(uuid: UUID) = active_players.add(uuid)
@@ -264,7 +270,13 @@ class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Player
 
     override fun isPlayerAlive(player: Player) = mod_data.isPlayerAlive(player)
     override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
-    override fun isPlayerDead(player: Player) = mod_data.isPlayerDead(player)
+    override fun getPlayerDeathPosition(player: Player): Vec3 = mod_data.getPlayerDeathPosition(player)
+    override fun isPlayerEliminated(player: Player): Boolean = mod_data.isPlayerEliminated(player)
+
+    override fun setPlayerAlive(player: Player) = mod_data.setPlayerAlive(player)
+    override fun setPlayerRespawning(player: Player) = mod_data.setPlayerRespawning(player)
+    override fun setPlayerDead(player: Player, position: Vec3) = mod_data.setPlayerDead(player, position)
+    override fun setPlayerEliminated(player: Player) = mod_data.setPlayerEliminated(player)
 
     override fun getBedDestroyed(team: Team): Boolean = mod_data.getBedDestroyed(team)
     override fun getPlayersInTeam(team: Team): List<Uuid> = mod_data.getPlayersInTeam(team)
