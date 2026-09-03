@@ -246,7 +246,16 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 
 
 class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer {
-    private val mod_data = ModDataStore()
+    companion object {
+        val CODEC: Codec<ModDataTracker> = RecordCodecBuilder.create { it.group(
+            ModDataStore.CODEC.fieldOf("mod_data").forGetter(ModDataTracker::mod_data),
+        ).apply(it, ::ModDataTracker)}
+    }
+    private val mod_data: ModDataStore
+    private constructor(mod_data: ModDataStore) {
+        this.mod_data = mod_data
+    }
+    internal constructor() : this(ModDataStore())
 
     override fun tick() = mod_data.tick()
     override fun getGameTime(): Duration = mod_data.getGameTime()
