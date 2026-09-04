@@ -1,4 +1,4 @@
-package mcsoc.bedwars.datatrackers.generatorData
+package mcsoc.bedwars.datatrackers.generatordata
 
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.generators.BaseGenerator
