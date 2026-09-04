@@ -1,5 +1,7 @@
-package mcsoc.bedwars.datatrackers
+package mcsoc.bedwars.datatrackers.generatorData
 
+import mcsoc.bedwars.datatrackers.TeamStateRecord
+import mcsoc.bedwars.generators.BaseGenerator
 import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.generators.Generator
 import mcsoc.bedwars.generators.GeneratorFactory
@@ -8,10 +10,31 @@ import mcsoc.bedwars.utils.Team
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.phys.Vec3
 
+// mod data or team related
+internal interface TeamGeneratorState {
+    fun getGenerator(): BaseGenerator?
+    fun setGenerator(gen: BaseGenerator)
+    fun upgradeGenerator()
+}
+
+internal interface TeamGeneratorExposer {
+    fun getGenerator(team: Team): BaseGenerator?
+    fun setGenerator(team: Team, gen: BaseGenerator)
+    fun upgradeGenerator(team: Team)
+}
+
+internal interface TeamGeneratorHolder : TeamGeneratorExposer {
+    fun getTeam(team: Team): TeamGeneratorState
+    override fun getGenerator(team: Team) = getTeam(team).getGenerator()
+    override fun setGenerator(team: Team, gen: BaseGenerator) = getTeam(team).setGenerator(gen)
+    override fun upgradeGenerator(team: Team) = getTeam(team).upgradeGenerator()
+}
+
+// generator related
 internal interface GeneratorsExposer {
     fun addGenerator(type: GeneratorType, location: Vec3, level: ServerLevel): Int
     fun addGenerator(location: Vec3, level: ServerLevel, team: Team): Int
-    fun upgradeTeamGenerator(team: Team)
+    fun upgradeTeamGenerator(team: Team, level: ServerLevel)
     fun removeGenerator(location: Vec3)
     fun removeGenerator(id: Int)
     fun upgradeGeneratorTier(type: GeneratorType)

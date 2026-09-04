@@ -10,12 +10,9 @@ internal interface TeamStateRecord {
     fun getPlayers(): List<UUID>
     fun getBedAlive(): Boolean
     fun getSpawn(): Vec3
-    fun getGenerator(): BaseGenerator?
 
     fun setBedAlive(bedAlive: Boolean)
     fun addPlayer(player: UUID)
-    fun upgradeGenerator()
-    fun setGenerator(gen: BaseGenerator)
 }
 
 internal interface PlayerTeamState {
