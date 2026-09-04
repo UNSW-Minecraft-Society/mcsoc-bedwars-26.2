@@ -5,6 +5,8 @@ import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.format
@@ -34,8 +36,7 @@ object CommandActions {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
             return 0
         }
-
-        ModDataTracker.addActivePlayer(player.uuid)
+        ctx.source.level.gameState.addActivePlayer(player.uuid)
         player.sendSystemMessage(Component.literal("You have joined the bedwars lobby").withColor(TextColor.GREEN))
 
         return 1
@@ -47,7 +48,7 @@ object CommandActions {
             return 0
         }
 
-        ModDataTracker.removeActivePlayer(player.uuid)
+        ctx.source.level.gameState.removeActivePlayer(player.uuid)
         player.sendSystemMessage(Component.literal("You have left the bedwars lobby").withColor(TextColor.RED))
 
         return 1
@@ -55,7 +56,7 @@ object CommandActions {
 
     fun assignTeams(ctx: CommandContext<CommandSourceStack>): Int {
         val input = IntegerArgumentType.getInteger(ctx, "number_of_teams")
-        TeamEffects.createTeamsWithPlayers(input)
+        TeamEffects.createTeamsWithPlayers(ctx.source.level, input)
         return 1
     }
 
@@ -65,12 +66,22 @@ object CommandActions {
             return 0
         }
 
-        val team = ModDataTracker.getPlayersTeam(player.uuid)
+        val team = ctx.source.level.gameState.getPlayersTeam(player.uuid)
         player.sendSystemMessage(Component.literal("Your team is ${team.name}").withColor(TextColor.GREEN))
 
         return 1
     }
 
+    fun start(ctx: CommandContext<CommandSourceStack>): Int {
+        IntegerArgumentType.getInteger(ctx, "num_teams")
+        GameManager.setupGame(ctx.source.level, ctx.source.position)
+        return 1
+    }
+
+    fun end(ctx: CommandContext<CommandSourceStack>): Int {
+        GameManager.endGame(ctx.source.level)
+        return 1
+    }
     fun upgradeItem(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.player ?: run {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
@@ -84,7 +95,7 @@ object CommandActions {
             return 0
         }
 
-        ModDataTracker.upgradeItem(player, type)
+        ctx.source.level.gameState.upgradeItem(player, type)
         return 1
     }
 
@@ -93,7 +104,7 @@ object CommandActions {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
             return 0
         }
-        ModDataTracker.clearItems(player)
+        ctx.source.level.gameState.clearItems(player)
         return 1
     }
 
@@ -118,13 +129,13 @@ object CommandActions {
 
     fun removeGenerator(ctx: CommandContext<CommandSourceStack>): Int {
         val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above()
-        ModDataTracker.removeGenerator(Vec3.atBottomCenterOf(pos))
+        ctx.source.level.gameState.removeGenerator(Vec3.atBottomCenterOf(pos))
         return 1
     }
     
     fun removeGeneratorById(ctx: CommandContext<CommandSourceStack>): Int {
         val id: Int = IntegerArgumentType.getInteger(ctx, GEN_ID_ARG)
-        ModDataTracker.removeGenerator(id)
+        ctx.source.level.gameState.removeGenerator(id)
         return 1
     }
 
@@ -137,19 +148,19 @@ object CommandActions {
             return 0
         }
         
-        ModDataTracker.upgradeGeneratorTier(genType)
+        ctx.source.level.gameState.upgradeGeneratorTier(genType)
         return 1
     }
     
     fun upgradeTeamGen(ctx: CommandContext<CommandSourceStack>): Int {
         val teamArg = StringArgumentType.getString(ctx, GEN_TEAM_ARG)
-        val team = ModDataTracker.getActiveTeams().find { it.getName() == teamArg }
+        val team = ctx.source.level.gameState.getActiveTeams().find { it.getName() == teamArg }
         if (team == null) {
             ctx.source.sendFailure(Component.literal("$teamArg is not a valid team"))
             return 0
         }
         
-        ModDataTracker.upgradeTeamGenerator(team)
+        ctx.source.level.gameState.upgradeTeamGenerator(team)
         return 1
     }
 }
@@ -163,7 +174,7 @@ private fun addGenerator(src: CommandSourceStack, type: String, pos: Vec3): Int 
         return 0
     }
     
-    val id = ModDataTracker.addGenerator(genType, pos, src.level)
+    val id = src.level.gameState.addGenerator(genType, pos, src.level)
     src.sendSystemMessage(Component.literal("added $type generator at ${pos.format} (Id: $id)"))
     return 1
 }
@@ -171,12 +182,12 @@ private fun addGenerator(src: CommandSourceStack, type: String, pos: Vec3): Int 
 private fun addGeneratorTeam(src: CommandSourceStack, pos: Vec3, teamStr: String): Int {
     val genType = GeneratorType.BASE
     
-    val team = ModDataTracker.getActiveTeams().find { it.getName() == teamStr } ?: run {
+    val team = src.level.gameState.getActiveTeams().find { it.getName() == teamStr } ?: run {
         src.sendFailure(Component.literal("$teamStr is not a valid team"))
         return 0
     }
     
-    val id = ModDataTracker.addGenerator(pos, src.level, team)
+    val id = src.level.gameState.addGenerator(pos, src.level, team)
     src.sendSystemMessage(Component.literal("added base generator for team $teamStr at ${pos.format} (Id: $id)"))
     return 1
 }

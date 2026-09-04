@@ -38,6 +38,7 @@ internal interface TeamStateExposer {
     fun getActivePlayers(): Set<UUID>
     fun addActivePlayer(uuid: UUID): Boolean
     fun removeActivePlayer(uuid: UUID): Boolean
+    fun clearActivePlayers()
 }
 
 internal interface TeamStateHolder : TeamStateExposer {
