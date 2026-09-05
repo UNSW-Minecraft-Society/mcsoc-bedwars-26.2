@@ -7,6 +7,7 @@ import mcsoc.bedwars.items.BedwarsItems
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.gamestate.GameManager
+import mcsoc.bedwars.items.CustomItemTypes
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.network.chat.Component
@@ -96,37 +97,70 @@ object CommandActions {
         return 1
     }
 
+    fun giveCustomItem(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player ?: run {
+            ctx.source.sendFailure(Component.literal("Command must be run by a player"))
+            return 0
+        }
+        val input = StringArgumentType.getString(ctx, CUSTOM_ITEM_ARG)
+        val type = try {
+            CustomItemTypes.valueOf(input.uppercase())
+        } catch (e: IllegalArgumentException) {
+            player.sendSystemMessage(Component.literal("$input is not a valid custom item"))
+            return 0
+        }
+        when (type) {
+            CustomItemTypes.BALL_OF_BUGS -> return giveBallOfBugs(ctx)
+            CustomItemTypes.BRIDGE_EGG -> return giveBridgeEgg(ctx)
+            CustomItemTypes.FIREBALL -> return giveFireball(ctx)
+            CustomItemTypes.INSTANT_TNT -> return giveInstantTNT(ctx)
+            CustomItemTypes.PLAYER_TRACKER -> return givePlayerTracker(ctx)
+            CustomItemTypes.POPUP_TOWER -> return givePopupTower(ctx)
+        }
+    }
+
     fun giveFireball(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.player
         if (player is ServerPlayer && player.addItem(BedwarsItems.fireballItemStack())) {
-            return 0
+            return 1
         }
-        return 1
+        return 0
     }
 
     fun giveBridgeEgg(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.player
         if (player is ServerPlayer && player.addItem(BedwarsItems.bridgeEggItemStack())) {
-            return 0
+            return 1
         }
-        return 1
+        return 0
     }
 
     fun giveInstantTNT(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.player
         if (player is ServerPlayer && player.addItem(BedwarsItems.primedTNTItemStack())) {
-            return 0
+            return 1
         }
-        return 1
+        return 0
     }
 
     fun giveBallOfBugs(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.player
         if (player is ServerPlayer && player.addItem(BedwarsItems.ballOfBugsItemStack())) {
-            return 0
+            return 1
         }
-        return 1
+        return 0
     }
+
+    fun givePlayerTracker(ctx: CommandContext<CommandSourceStack>): Int {
+        // IMPLEMENT
+        return 0
+    }
+
+    fun givePopupTower(ctx: CommandContext<CommandSourceStack>): Int {
+        // IMPLEMENT
+        return 0
+    }
+
     fun resetUpgrades(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.player ?: run {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))

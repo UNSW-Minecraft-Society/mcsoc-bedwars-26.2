@@ -1,7 +1,6 @@
 package mcsoc.bedwars.items
 
 import mcsoc.bedwars.BedwarsPlugin
-import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.vecToBlockPos
@@ -23,16 +22,8 @@ import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.phys.HitResult
-import net.minecraft.world.phys.Vec3
 import kotlin.jvm.optionals.getOrNull
 import kotlin.uuid.toKotlinUuid
-
-const val CUSTOM_FIREBALL_VAL = "fireball"
-const val CUSTOM_BRIDGE_EGG_VAL = "bridge_egg"
-const val CUSTOM_INSTANT_TNT = "instant_tnt"
-const val CUSTOM_BALL_OF_BUGS = "ball_of_bugs"
-const val CUSTOM_POPUP_TOWER_VAL = "popup_tower"
-const val CUSTOM_PLAYER_TRACKER_VAL = "player_tracker"
 
 const val FIREBALL_SPEED = 1.0
 const val BRIDGE_EGG_OFFSET = -0.5
@@ -48,9 +39,10 @@ object CustomItemInteraction {
         val type = item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
         BedwarsPlugin.LOGGER.info("Item has $CUSTOM_ITEM_TAG $type")
         when (type) {
-            CUSTOM_FIREBALL_VAL -> return useFireballEffect(player, level, item)
-            CUSTOM_INSTANT_TNT -> return useInstantTNTEffect(player, level, item, hitResult)
-            CUSTOM_PLAYER_TRACKER_VAL -> {}
+            CustomItemTypes.FIREBALL.value -> return useFireballEffect(player, level, item)
+            CustomItemTypes.INSTANT_TNT.value -> return useInstantTNTEffect(player, level, item, hitResult)
+            CustomItemTypes.POPUP_TOWER.value -> {}
+            CustomItemTypes.PLAYER_TRACKER.value -> {}
         }
         return InteractionResult.PASS
     }
@@ -70,7 +62,7 @@ object CustomItemInteraction {
         BedwarsPlugin.LOGGER.info("Entity has $CUSTOM_ITEM_TAG $type")
         val team = gameState.getPlayersTeam(owner.uuid.toKotlinUuid())
         when (type) {
-            CUSTOM_BRIDGE_EGG_VAL -> return tickBridgeEggEffect(level, projectile, team)
+            CustomItemTypes.BRIDGE_EGG.value -> return tickBridgeEggEffect(level, projectile, team)
         }
         return InteractionResult.PASS
     }
@@ -90,8 +82,7 @@ object CustomItemInteraction {
         BedwarsPlugin.LOGGER.info("Entity has $CUSTOM_ITEM_TAG $type")
         val team = gameState.getPlayersTeam(owner.uuid.toKotlinUuid())
         when (type) {
-            CUSTOM_BALL_OF_BUGS -> return doBallOfBugsEffect(level, projectile, team, hitResult)
-            CUSTOM_POPUP_TOWER_VAL -> {}
+            CustomItemTypes.BALL_OF_BUGS.value -> return doBallOfBugsEffect(level, projectile, team, hitResult)
         }
         return InteractionResult.PASS
     }

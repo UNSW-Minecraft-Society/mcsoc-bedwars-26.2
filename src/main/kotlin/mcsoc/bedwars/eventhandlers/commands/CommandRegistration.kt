@@ -12,6 +12,7 @@ const val ROOT_NODE = "bedwars"
 
 const val SOME_ARGUMENT = "some"
 const val UPGRADE_TYPE_ARG = "type"
+const val CUSTOM_ITEM_ARG = "custom_item"
 
 /**
  * Function to register commands for the plugin
@@ -60,18 +61,13 @@ fun registerCommands() {
                     .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
                     .executes(CommandActions::resetUpgrades)
                 )
-                .then(Commands.literal("give_fireball")
+                .then(Commands.literal("give_custom_item")
                     .requires {it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)}
-                    .executes(CommandActions::giveFireball))
-                .then(Commands.literal("give_bridge_egg")
-                    .requires {it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)}
-                    .executes(CommandActions::giveBridgeEgg))
-                .then(Commands.literal("give_instant_tnt")
-                    .requires {it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)}
-                    .executes(CommandActions::giveInstantTNT))
-                .then(Commands.literal("give_ball_of_bugs")
-                    .requires {it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)}
-                    .executes(CommandActions::giveBallOfBugs))
+                    .then(Commands.argument(CUSTOM_ITEM_ARG, StringArgumentType.word())
+                        .suggests(CustomItemsSuggestionsProvider())
+                        .executes(CommandActions::giveCustomItem)
+                    )
+                )
         )
     }
 }
