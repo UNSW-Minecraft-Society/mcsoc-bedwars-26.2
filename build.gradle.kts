@@ -15,6 +15,10 @@ repositories {
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
 	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
 	// for more information about repositories.
+	mavenCentral()
+	maven("https://maven.nucleoid.xyz/") {
+		name = "Nucleoid"
+	}
 }
 
 loom {
@@ -42,6 +46,9 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation("net.fabricmc.fabric-api:fabric-api:${providers.gradleProperty("fabric_api_version").get()}")
     implementation("net.fabricmc:fabric-language-kotlin:${providers.gradleProperty("fabric_kotlin_version").get()}")
+
+	implementation("eu.pb4:sgui:2.1.0+26.2")
+	include("eu.pb4:sgui:2.1.0+26.2")
 }
 
 tasks.processResources {

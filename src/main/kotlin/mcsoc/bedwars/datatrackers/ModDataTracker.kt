@@ -2,17 +2,17 @@ package mcsoc.bedwars.datatrackers
 
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+import kotlinx.serialization.Serializable
+import mcsoc.bedwars.upgrades.UpgradableItem
+import mcsoc.bedwars.upgrades.UpgradeItemType
+import net.minecraft.server.level.ServerPlayer
 import mcsoc.bedwars.utils.inWholeTicks
-import mcsoc.bedwars.utils.ticks
 import kotlin.time.Duration
 import kotlin.time.TimeSource
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
-import mcsoc.bedwars.upgrades.UpgradableItem
-import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.resources.ResourceKey
-import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
@@ -43,7 +43,7 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
                     { HashMap(it.mapValues { (type, tier) -> type.fromName(tier) }) },
                     { it.mapValues { (_, item) -> (item as Enum<*>).name } }
                 )
-    
+
         val CODEC: Codec<PlayerDataRecord> = RecordCodecBuilder.create{it.group(
             LifeState.CODEC.fieldOf("life_state").forGetter(PlayerDataRecord::life_state),
             Team.CODEC.fieldOf("team").forGetter(PlayerDataRecord::team),
@@ -55,7 +55,6 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
 
     private var life_state: LifeState = LifeState.ALIVE
     private var team: Team = Team.NONE
-
     private var toolUpgrades = HashMap<UpgradeItemType, UpgradableItem>()
 
     private constructor(
@@ -91,7 +90,6 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
     }
 }
 
-
 private class TeamDataRecord(
     private val players: MutableList<Uuid> = mutableListOf(),
     private var bedAlive: Boolean = true,
@@ -102,7 +100,7 @@ private class TeamDataRecord(
             { it.map(UUID::toKotlinUuid).toMutableList() },
             { it.map(Uuid::toJavaUuid) }
         )
-        
+
         val CODEC: Codec<TeamDataRecord> = RecordCodecBuilder.create { it.group(
             UUID_LIST_CODEC.fieldOf("players").forGetter(TeamDataRecord::players),
             Codec.BOOL.fieldOf("bed_alive").forGetter(TeamDataRecord::bedAlive),
@@ -127,12 +125,12 @@ private class TeamDataRecord(
 private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder {
     companion object {
         val UUIDCodec: Codec<Uuid> = Codec.STRING.xmap(Uuid::parse, Uuid::toString)
-        
+
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
             Codec.unboundedMap(UUIDCodec, PlayerDataRecord.CODEC)
                 .fieldOf("player_data_map")
                 .forGetter(ModDataStore::player_data_map),
-                    
+
             Codec.unboundedMap(Team.CODEC, TeamDataRecord.CODEC)
                 .fieldOf("teams_map")
                 .forGetter(ModDataStore::teams_map),
@@ -163,12 +161,12 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         this.teams_map.putAll(teamMap)
         this.game_timer = timer
     }
-    
-    
+
+
     override fun tick() {
         tick_delta = prev_tick_time.elapsedNow()
         prev_tick_time = TimeSource.Monotonic.markNow()
-        
+
         timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
         timer_second = game_timer.inWholeSeconds != (game_timer + tick_delta).inWholeSeconds
         game_timer += tick_delta
@@ -177,7 +175,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     override fun getGameTime() = game_timer
 
     override fun resetGameTime() {game_timer = Duration.ZERO}
-        
+
     override fun getTimerTick() = timer_tick
 
     override fun getTimerSecond() = timer_second
@@ -226,7 +224,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     override fun initialiseTeams(numTeams: Int) {
         assert(numTeams < Team.entries.size) { "More teams specified than can be handled" }
         teams_map.clear()
-        
+
         val teams = Team.entries.take(numTeams)
         teams.forEach { teams_map[it] = TeamDataRecord() }
     }
@@ -235,7 +233,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         getTeam(team).addPlayer(player)
         getPlayerData(player).setTeamName(team)
     }
-    
+
     override fun getPlayersTeam(player: Uuid): Team = getPlayerData(player).getTeamName()
 
     override fun addActivePlayer(uuid: UUID) = active_players.add(uuid)
@@ -270,7 +268,7 @@ class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Player
     override fun setBedAlive(team: Team, state: Boolean) = mod_data.setBedAlive(team, state)
     override fun initialiseTeams(numTeams: Int) = mod_data.initialiseTeams(numTeams)
     override fun addPlayer(player: Uuid, team: Team) = mod_data.addPlayer(player, team)
-    
+
     override fun getPlayersTeam(player: Uuid): Team = mod_data.getPlayersTeam(player)
     override fun getActivePlayers() = mod_data.getActivePlayers()
     override fun addActivePlayer(uuid: UUID) = mod_data.addActivePlayer(uuid)
