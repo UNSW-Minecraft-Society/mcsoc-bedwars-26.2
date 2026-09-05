@@ -2,6 +2,7 @@ package mcsoc.bedwars.upgrades
 
 import com.mojang.serialization.Codec
 import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.applyTag
 import mcsoc.bedwars.utils.hasTag
 import net.minecraft.core.registries.Registries
@@ -175,8 +176,9 @@ enum class Sword(override val material: Item) : Single, Resettable {
     }
     
     private fun ItemStack.addSharp(player: ServerPlayer) {
-        val team = ModDataTracker.getPlayersTeam(player.uuid.toKotlinUuid())
-        if (ModDataTracker.getUpgrade(team, TeamUpgradeType.SHARPNESS)) {
+        val gameState = player.level().gameState
+        val team = gameState.getPlayersTeam(player.uuid.toKotlinUuid())
+        if (gameState.getUpgrade(team, TeamUpgradeType.SHARPNESS)) {
             applyEnchant(this, Enchantments.SHARPNESS, 1, player.level())
         }
     }
@@ -219,14 +221,16 @@ enum class Armour(val boots: Item, val leggings: Item, val chestplate: Item) : U
     }
     
     private fun ItemStack.addProt(player: ServerPlayer) {
-        val team = ModDataTracker.getPlayersTeam(player.uuid.toKotlinUuid())
-        val level = ModDataTracker.getUpgrade(team, TeamUpgradeType.PROTECTION)
+        val gameState = player.level().gameState
+        val team = gameState.getPlayersTeam(player.uuid.toKotlinUuid())
+        val level = gameState.getUpgrade(team, TeamUpgradeType.PROTECTION)
         applyEnchant(this, Enchantments.PROTECTION, level, player.level())
     }
     
     private fun ItemStack.addFeatherFalling(player: ServerPlayer) {
-        val team = ModDataTracker.getPlayersTeam(player.uuid.toKotlinUuid())
-        val level = ModDataTracker.getUpgrade(team, TeamUpgradeType.FEATHER_FALLING)   
+        val gameState = player.level().gameState
+        val team = gameState.getPlayersTeam(player.uuid.toKotlinUuid())
+        val level = gameState.getUpgrade(team, TeamUpgradeType.FEATHER_FALLING)
         applyEnchant(this, Enchantments.FEATHER_FALLING, level, player.level())
     }
     
