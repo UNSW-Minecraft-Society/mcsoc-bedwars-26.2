@@ -9,5 +9,6 @@ fun registerEventHandlers() {
         GameManager.tick(level)
     }
     registerItemCallbacks()
+    registerEntityCallbacks()
     registerPlayerJoinEvent()
 }
