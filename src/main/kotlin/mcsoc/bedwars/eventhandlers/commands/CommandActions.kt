@@ -3,11 +3,14 @@ package mcsoc.bedwars.eventhandlers.commands
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
+import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.entities.CustomEntityType
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.gamestate.GameManager
+import mcsoc.bedwars.gui.ShopGui.displayShop
+import mcsoc.bedwars.gui.ShopType
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.arguments.coordinates.Vec3Argument
@@ -123,6 +126,28 @@ object CommandActions {
             CustomEntityType.TEAM_SHOPKEEPER -> spawnShopkeeper(player.level(), posInput, type)
         }
         return 1
+    }
+
+    fun openShop(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player ?: run {
+            ctx.source.sendFailure(Component.literal("Command must be run by a player"))
+            return 0
+        }
+        val input = StringArgumentType.getString(ctx, SHOP_TYPE_ARG)
+        val type = try {
+            ShopType.valueOf(input.uppercase())
+        } catch (e: IllegalArgumentException) {
+            player.sendSystemMessage(Component.literal("$input is not a valid shop"))
+            return 0
+        }
+        try {
+            displayShop(player, type)
+            return 1
+        } catch (e: Exception) {
+            BedwarsPlugin.LOGGER.error(e.stackTraceToString())
+            e.printStackTrace()
+            return 0
+        }
     }
 }
 

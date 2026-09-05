@@ -3,6 +3,7 @@ package mcsoc.bedwars.entities
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.gui.ShopGui
+import mcsoc.bedwars.gui.ShopType
 import mcsoc.bedwars.upgrades.UpgradableItem
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
@@ -27,8 +28,8 @@ object CustomEntityInteractions {
             return InteractionResult.PASS
         val type = level.customEntityData[entity.uuid]!!
         when (type) {
-            CustomEntityType.PLAYER_SHOPKEEPER -> ShopGui.displayShop(player)
-            CustomEntityType.TEAM_SHOPKEEPER -> ShopGui.displayShop(player)
+            CustomEntityType.PLAYER_SHOPKEEPER -> ShopGui.displayShop(player, ShopType.PLAYER_SHOP)
+            CustomEntityType.TEAM_SHOPKEEPER -> ShopGui.displayShop(player, ShopType.TEAM_SHOP)
         }
         return InteractionResult.SUCCESS
     }

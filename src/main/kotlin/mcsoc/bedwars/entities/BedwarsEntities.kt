@@ -12,7 +12,7 @@ const val CUSTOM_SHOPKEEPER_VAL = "shopkeeper"
 fun spawnShopkeeper(level: ServerLevel, position: Vec3, type: CustomEntityType) {
     val shopkeeper = Villager(EntityTypes.VILLAGER, level)
     shopkeeper.setPos(position)
-    shopkeeper.isNoAi = false
+    shopkeeper.isNoAi = true
     shopkeeper.isInvulnerable = true
     level.customEntityData[shopkeeper.uuid] = type
     level.addFreshEntity(shopkeeper)

@@ -5,6 +5,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import mcsoc.bedwars.entities.CustomEntityType
+import mcsoc.bedwars.gui.ShopType
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.commands.CommandSourceStack
 import java.util.concurrent.CompletableFuture
@@ -31,6 +32,16 @@ internal class EntityTypeSuggestionProvider: SuggestionProvider<CommandSourceSta
 		builder: SuggestionsBuilder
 	): CompletableFuture<Suggestions?>? {
 		CustomEntityType.entries.forEach { builder.suggest(it.name.lowercase()) }
+		return builder.buildFuture()
+	}
+}
+
+internal class ShopTypeSuggestionProvider: SuggestionProvider<CommandSourceStack> {
+	override fun getSuggestions(
+		context: CommandContext<CommandSourceStack?>,
+		builder: SuggestionsBuilder
+	): CompletableFuture<Suggestions> {
+		ShopType.entries.forEach { builder.suggest(it.name.lowercase()) }
 		return builder.buildFuture()
 	}
 }

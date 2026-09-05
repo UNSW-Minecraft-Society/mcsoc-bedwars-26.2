@@ -23,6 +23,11 @@ import net.minecraft.world.item.Items
 import net.minecraft.world.item.enchantment.Enchantments
 import java.util.UUID
 
+enum class ShopType {
+    PLAYER_SHOP,
+    TEAM_SHOP
+}
+
 /**
  * Object containing logic pertaining to storing and displaying (via a GUI) items in the shop.
  */
@@ -39,77 +44,116 @@ object ShopGui {
         6, 15, 24, 33,
         7, 16, 25, 34)
 
-    private val PRODUCTS: Array<ShopProduct> = getProducts()
+    private val PRODUCTS: Map<ShopType,Array<ShopProduct>> = getProducts()
 
     /**
      * Fetches a list of the ShopProducts.
      */
-    private fun getProducts(): Array<ShopProduct> {
+    private fun getProducts(): Map<ShopType,Array<ShopProduct>> {
         // At some point put this into a config file to be read, instead of hard-coded
-        return arrayOf(
-            // These are ShopPlayerUpgrades
-            ShopPlayerUpgrade(UpgradeItemType.ARMOUR,
-                arrayOf(Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
-                arrayOf(3, 4, 5)),
-            ShopPlayerUpgrade(UpgradeItemType.SWORD,
-                arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND),
-                arrayOf(3, 4, 5)),
-            ShopPlayerUpgrade(UpgradeItemType.PICKAXE,
-                arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
-                arrayOf(1, 2, 3, 4)),
-            ShopPlayerUpgrade(UpgradeItemType.AXE,
-                arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
-                arrayOf(1, 2, 3, 4)),
+        return mapOf(
+             ShopType.PLAYER_SHOP to arrayOf(
+                // These are ShopPlayerUpgrades
+                ShopPlayerUpgrade(UpgradeItemType.ARMOUR,
+                    arrayOf(Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
+                    arrayOf(3, 4, 5)),
+                ShopPlayerUpgrade(UpgradeItemType.SWORD,
+                    arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND),
+                    arrayOf(3, 4, 5)),
+                ShopPlayerUpgrade(UpgradeItemType.PICKAXE,
+                    arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
+                    arrayOf(1, 2, 3, 4)),
+                ShopPlayerUpgrade(UpgradeItemType.AXE,
+                    arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
+                    arrayOf(1, 2, 3, 4)),
 
 
-            // These are ShopItems
-            ShopItem(Items.SHEARS, 1, Items.IRON_INGOT, 30),
-            ShopItem(Items.STICK, 1, Items.GOLD_INGOT, 10),
-            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
-            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                // These are ShopItems
+                ShopItem(Items.SHEARS, 1, Items.IRON_INGOT, 30),
+                ShopItem(Items.STICK, 1, Items.GOLD_INGOT, 10),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
 
-            ShopItem(Items.ARROW, 16, Items.GOLD_INGOT, 2),
-            ShopItem(Items.BOW, 1, Items.GOLD_INGOT, 12),
-            ShopItem(Items.BOW, 1, Items.GOLD_INGOT, 24),
-            ShopItem(Items.BOW, 1, Items.EMERALD, 6),
+                ShopItem(Items.ARROW, 16, Items.GOLD_INGOT, 2),
+                ShopItem(Items.BOW, 1, Items.GOLD_INGOT, 12),
+                ShopItem(Items.BOW, 1, Items.GOLD_INGOT, 24),
+                ShopItem(Items.BOW, 1, Items.EMERALD, 6),
 
-            ShopTeamItem(Team.entries.associateWith { Items.WOOL.pick(it.dyeColour) },
-                16, Items.IRON_INGOT, 4),
-            ShopItem(Items.SANDSTONE, 16, Items.IRON_INGOT, 16),
-            ShopItem(Items.END_STONE, 12, Items.IRON_INGOT, 24),
-            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopTeamItem(Team.entries.associateWith { Items.WOOL.pick(it.dyeColour) },
+                    16, Items.IRON_INGOT, 4),
+                ShopItem(Items.SANDSTONE, 16, Items.IRON_INGOT, 16),
+                ShopItem(Items.END_STONE, 12, Items.IRON_INGOT, 24),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
 
-            ShopItem(Items.OBSIDIAN, 4, Items.EMERALD, 4),
-            ShopItem(Items.LADDER, 16, Items.IRON_INGOT, 16),
-            ShopItem(Items.OAK_PLANKS, 16, Items.GOLD_INGOT, 6),
-            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.OBSIDIAN, 4, Items.EMERALD, 4),
+                ShopItem(Items.LADDER, 16, Items.IRON_INGOT, 16),
+                ShopItem(Items.OAK_PLANKS, 16, Items.GOLD_INGOT, 6),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
 
-            ShopItem(Items.GOLDEN_APPLE, 1, Items.GOLD_INGOT, 3),
-            ShopItem(Items.IRON_GOLEM_SPAWN_EGG, 2, Items.IRON_INGOT, 150),
-            ShopItem(Items.ENDER_PEARL, 1, Items.EMERALD, 4),
-            ShopItem(Items.WATER_BUCKET, 1, Items.EMERALD, 2),
+                ShopItem(Items.GOLDEN_APPLE, 1, Items.GOLD_INGOT, 3),
+                ShopItem(Items.IRON_GOLEM_SPAWN_EGG, 2, Items.IRON_INGOT, 150),
+                ShopItem(Items.ENDER_PEARL, 1, Items.EMERALD, 4),
+                ShopItem(Items.WATER_BUCKET, 1, Items.EMERALD, 2),
 
-            ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
-            ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
-            ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
-            ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
+                ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
+                ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+            ),
+            ShopType.TEAM_SHOP to arrayOf(
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                ShopItem(Items.STAINED_GLASS_PANE.lightGray, 1, Items.BARRIER, 999),
+                )
         )
     }
 
     /**
-     * Displays the shop GUI to the provided player. Returns 0 if succeeded.
+     * Displays the shop GUI to the provided player. Returns 1 if succeeded.
      */
-    fun displayShop(player: ServerPlayer): Int {
+    fun displayShop(player: ServerPlayer, shopType: ShopType) {
         try {
             LOGGER.info("Displaying shop gui")
-
             /**
              * Update items within the shop gui.
              */
             fun updateItems(gui: SimpleGui) {
-                for ((slot_index, product) in PRODUCT_SLOT_INDEX zip PRODUCTS) {
+                val products = PRODUCTS[shopType]
+                if (products !is Array<ShopProduct>) return
+                for ((slotIndex, product) in PRODUCT_SLOT_INDEX zip products) {
                     if (product is PlayerSpecificShopProduct) product.setPlayer(player)
-                    gui.setSlot(slot_index, GuiElementBuilder(product.getItemStack())
+                    gui.setSlot(slotIndex, GuiElementBuilder(product.getItemStack())
                         .addLoreLine(Component.literal("Cost: ${product.getItemCost()}"))
                         .setCallback(product.getClickCallback()))
                 }
@@ -134,20 +178,6 @@ object ShopGui {
         } catch (e: Exception) {
             LOGGER.error(e.stackTraceToString())
             e.printStackTrace()
-        }
-        return 0
-    }
-
-    /**
-     * Displays the shop GUI to the provided player. Returns 0 if succeeded.
-     */
-    fun displayShop(objectCommandContext: CommandContext<CommandSourceStack>): Int {
-        try {
-            return displayShop(objectCommandContext.source.playerOrException)
-        } catch (e: Exception) {
-            LOGGER.error(e.stackTraceToString())
-            e.printStackTrace()
-            return 1
         }
     }
 
@@ -278,7 +308,7 @@ object ShopGui {
             LOGGER.error(e.stackTraceToString())
             e.printStackTrace()
         }
-        return 0
+        return 1
     }
     fun testSimpleGui4(objectCommandContext: CommandContext<CommandSourceStack>): Int {
         try {
@@ -308,6 +338,6 @@ object ShopGui {
             LOGGER.error(e.stackTraceToString())
             e.printStackTrace()
         }
-        return 0
+        return 1
     }
 }
