@@ -4,6 +4,7 @@ import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.SuggestionProvider
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
+import mcsoc.bedwars.items.CustomItemTypes
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.commands.CommandSourceStack
 import java.util.concurrent.CompletableFuture
@@ -20,6 +21,16 @@ internal class ExampleSuggestionProvider: SuggestionProvider<CommandSourceStack>
 internal class UpgradeItemsSuggestionProvider : SuggestionProvider<CommandSourceStack> {
     override fun getSuggestions(ctx: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
         UpgradeItemType.entries.forEach { builder.suggest(it.name.lowercase()) }
+        return builder.buildFuture()
+    }
+}
+
+internal class CustomItemsSuggestionsProvider : SuggestionProvider<CommandSourceStack> {
+    override fun getSuggestions(
+        context: CommandContext<CommandSourceStack>,
+        builder: SuggestionsBuilder
+    ): CompletableFuture<Suggestions> {
+        CustomItemTypes.entries.forEach { builder.suggest(it.name.lowercase()) }
         return builder.buildFuture()
     }
 }

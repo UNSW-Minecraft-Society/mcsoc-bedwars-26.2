@@ -12,6 +12,7 @@ const val ROOT_NODE = "bedwars"
 
 const val SOME_ARGUMENT = "some"
 const val UPGRADE_TYPE_ARG = "type"
+const val CUSTOM_ITEM_ARG = "custom_item"
 
 /**
  * Function to register commands for the plugin
@@ -59,6 +60,13 @@ fun registerCommands() {
                 .then(Commands.literal("reset_upgrades")
                     .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
                     .executes(CommandActions::resetUpgrades)
+                )
+                .then(Commands.literal("give_custom_item")
+                    .requires {it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)}
+                    .then(Commands.argument(CUSTOM_ITEM_ARG, StringArgumentType.word())
+                        .suggests(CustomItemsSuggestionsProvider())
+                        .executes(CommandActions::giveCustomItem)
+                    )
                 )
         )
     }

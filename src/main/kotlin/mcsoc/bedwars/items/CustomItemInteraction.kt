@@ -1,0 +1,209 @@
+package mcsoc.bedwars.items
+
+import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.utils.Team
+import mcsoc.bedwars.utils.getCardinalDirection
+import mcsoc.bedwars.utils.rotateVec
+import mcsoc.bedwars.utils.vecToBlockPos
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.core.Vec3i
+import net.minecraft.core.component.DataComponents
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.sounds.SoundEvents
+import net.minecraft.world.InteractionHand
+import net.minecraft.world.InteractionResult
+import net.minecraft.world.entity.EntityTypes
+import net.minecraft.world.entity.item.PrimedTnt
+import net.minecraft.world.entity.monster.Endermite
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.entity.projectile.Projectile
+import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.level.Level
+import net.minecraft.world.level.block.Blocks
+import net.minecraft.world.level.block.Rotation
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.phys.HitResult
+import net.minecraft.world.phys.Vec3
+import org.lwjgl.system.MathUtil
+import kotlin.jvm.optionals.getOrNull
+import kotlin.uuid.toKotlinUuid
+
+const val FIREBALL_SPEED = 1.0
+const val BRIDGE_EGG_OFFSET = -0.5
+const val POPUP_TOWER_HEIGHT = 6 // needs to be >5
+val POPUP_TOWER_WOOL_OFFSETS = buildList {
+    for (y in 0..POPUP_TOWER_HEIGHT-3) {
+        add(Vec3i(-1, y, -1))
+        add(Vec3i(-1, y, +1))
+        add(Vec3i(0, y, -2))
+        add(Vec3i(0, y, +2))
+        add(Vec3i(+1, y, -2))
+        add(Vec3i(+1, y, +2))
+        add(Vec3i(+2, y, -1))
+        add(Vec3i(+2, y, 0))
+        add(Vec3i(+2, y, +1))
+    }
+    for (y in 2..POPUP_TOWER_HEIGHT-3) add(Vec3i(-1, y, 0))
+    for (x in -1..2) for (z in -2..2) {
+        if (x != 1 || z != 0)
+            add(Vec3i(x, POPUP_TOWER_HEIGHT-2, z))
+    }
+    for (x in intArrayOf(-2, 3)) for (z in -2..2) {
+        add(Vec3i(x, POPUP_TOWER_HEIGHT-1, z))
+        if (z % 2 == 0) {
+            add(Vec3i(x, POPUP_TOWER_HEIGHT-2, z))
+            add(Vec3i(x, POPUP_TOWER_HEIGHT, z))
+        }
+    }
+    for (x in -1..2) for (z in intArrayOf(-3, 3)) {
+        add(Vec3i(x, POPUP_TOWER_HEIGHT-1, z))
+        if (x == -1 || x == 2) {
+            add(Vec3i(x, POPUP_TOWER_HEIGHT-2, z))
+            add(Vec3i(x, POPUP_TOWER_HEIGHT, z))
+        }
+    }
+}
+val POPUP_TOWER_LADDER_OFFSETS = buildList { for (y in 0..POPUP_TOWER_HEIGHT-2) add(Vec3i(1,y,0))}
+
+object CustomItemInteraction {
+    fun triggerCustomItemEffect(player: Player, level: Level, hand: InteractionHand, hitResult: HitResult? = null): InteractionResult {
+        val item = player.getItemInHand(hand)
+        if (level.isClientSide || level !is ServerLevel)
+            return InteractionResult.PASS
+        val gameState = level.gameState
+        if (!gameState.isPlayerAlive(player))
+            return InteractionResult.PASS
+        val type = item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
+        val team = gameState.getPlayersTeam(player.uuid.toKotlinUuid())
+        BedwarsPlugin.LOGGER.info("Item has $CUSTOM_ITEM_TAG $type")
+        when (type) {
+            CustomItemTypes.FIREBALL.value -> return useFireballEffect(player, level, item)
+            CustomItemTypes.INSTANT_TNT.value -> return useInstantTNTEffect(player, level, item, hitResult)
+            CustomItemTypes.POPUP_TOWER.value -> return usePopupTowerEffect(player, level, item, hitResult, team)
+            CustomItemTypes.PLAYER_TRACKER.value -> {}
+        }
+        return InteractionResult.PASS
+    }
+
+    fun triggerCustomProjectileTickEffect(projectile: Projectile): InteractionResult {
+        val level = projectile.level()
+        val owner = projectile.owner
+        if (level.isClientSide || level !is ServerLevel)
+            return InteractionResult.PASS
+        val gameState = level.gameState
+        if (owner !is Player)
+            return InteractionResult.PASS
+        if (projectile !is ThrowableItemProjectile) // required for casting to ThrowableItemProjectile to grab item data (which all custom projectiles are)
+            return InteractionResult.PASS
+
+        val type = projectile.item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
+        BedwarsPlugin.LOGGER.info("Entity has $CUSTOM_ITEM_TAG $type")
+        val team = gameState.getPlayersTeam(owner.uuid.toKotlinUuid())
+        when (type) {
+            CustomItemTypes.BRIDGE_EGG.value -> return tickBridgeEggEffect(level, projectile, team)
+        }
+        return InteractionResult.PASS
+    }
+
+    fun triggerCustomProjectileHitEffect(projectile: Projectile, hitResult: HitResult): InteractionResult {
+        val level = projectile.level()
+        val owner = projectile.owner
+        if (level.isClientSide || level !is ServerLevel)
+            return InteractionResult.PASS
+        val gameState = level.gameState
+        if (owner !is Player)
+            return InteractionResult.PASS
+        if (projectile !is ThrowableItemProjectile) // required for casting to ThrowableItemProjectile to grab item data (which all custom projectiles are)
+            return InteractionResult.PASS
+
+        val type = projectile.item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
+        BedwarsPlugin.LOGGER.info("Entity has $CUSTOM_ITEM_TAG $type")
+        val team = gameState.getPlayersTeam(owner.uuid.toKotlinUuid())
+        when (type) {
+            CustomItemTypes.BALL_OF_BUGS.value -> return doBallOfBugsEffect(level, projectile, team, hitResult)
+        }
+        return InteractionResult.PASS
+    }
+
+    private fun useFireballEffect(player: Player, level: Level, item: ItemStack): InteractionResult {
+        BedwarsPlugin.LOGGER.info("Doing fireball thing")
+        val directionVector = player.getViewVector(1.0f)
+        val fireball = LargeFireball(EntityTypes.FIREBALL, level)
+        fireball.setPos(player.eyePosition.add(directionVector.scale(0.5)))
+        fireball.owner = player
+        fireball.deltaMovement = directionVector.scale(FIREBALL_SPEED)
+        level.addFreshEntity(fireball)
+        if (!player.isCreative) item.count -= 1
+        return InteractionResult.SUCCESS
+    }
+
+    private fun useInstantTNTEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?): InteractionResult {
+        if (hitResult !is HitResult)
+            return InteractionResult.PASS
+        val pos = hitResult.location
+        val tnt = PrimedTnt(level, pos.x, pos.y, pos.z, player)
+        level.addFreshEntity(tnt)
+        if (!player.isCreative) item.count -= 1
+        return InteractionResult.SUCCESS
+    }
+
+    private fun placeBlockIfValid(level: Level, blockPos: BlockPos, blockState: BlockState) {
+        val curBlockState = level.getBlockState(blockPos)
+        if (curBlockState.`is`(Blocks.AIR))
+            level.setBlockAndUpdate(blockPos, blockState)
+    }
+
+    private fun placeBlockIfValid(level: Level, pos: Vec3, blockState: BlockState) {
+        placeBlockIfValid(level, vecToBlockPos(pos), blockState)
+    }
+
+    private fun tickBridgeEggEffect(level: Level, egg: ThrowableItemProjectile, team: Team): InteractionResult {
+        val bridgePos = egg.position().relative(Direction.DOWN, 2.0)
+        val newBlockState = Blocks.WOOL.pick(team.dyeColour).defaultBlockState()
+        placeBlockIfValid(level,bridgePos.add(0.5, BRIDGE_EGG_OFFSET, 0.5), newBlockState)
+        placeBlockIfValid(level,bridgePos.add(0.5, BRIDGE_EGG_OFFSET, -0.5), newBlockState)
+        placeBlockIfValid(level,bridgePos.add(-0.5, BRIDGE_EGG_OFFSET, 0.5), newBlockState)
+        placeBlockIfValid(level,bridgePos.add(-0.5, BRIDGE_EGG_OFFSET, -0.5), newBlockState)
+        return InteractionResult.SUCCESS
+    }
+
+    private fun doBallOfBugsEffect(level: Level, ball: ThrowableItemProjectile, team: Team, hitResult: HitResult): InteractionResult {
+        val bug = Endermite(EntityTypes.ENDERMITE, level)
+        bug.setPos(hitResult.location)
+        bug.health = 1.0f
+        bug.speed = 2.0f
+        // DO THE TEAM THING SO IT'S FRIENDLY TO OWNER
+        level.addFreshEntity(bug)
+        ball.owner = null
+        return InteractionResult.SUCCESS
+    }
+
+    private fun usePopupTowerEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, team: Team): InteractionResult {
+        val direction = getCardinalDirection(player.lookAngle)
+        val rotation = when (direction) {
+            Direction.NORTH -> Rotation.COUNTERCLOCKWISE_90
+            Direction.EAST -> Rotation.NONE
+            Direction.SOUTH -> Rotation.CLOCKWISE_90
+            Direction.WEST -> Rotation.CLOCKWISE_180
+            else -> Rotation.NONE
+        }
+        if (hitResult !is HitResult)
+            return InteractionResult.PASS
+        val centerPos = vecToBlockPos(hitResult.location)
+        val woolBlockState = Blocks.WOOL.pick(team.dyeColour).defaultBlockState()
+        val ladderBlockState = Blocks.LADDER.defaultBlockState().rotate(Rotation.COUNTERCLOCKWISE_90).rotate(rotation)
+        for (offset in POPUP_TOWER_WOOL_OFFSETS) {
+            placeBlockIfValid(level, centerPos.offset(rotateVec(offset,rotation)), woolBlockState)
+        }
+        for (offset in POPUP_TOWER_LADDER_OFFSETS) {
+            placeBlockIfValid(level, centerPos.offset(rotateVec(offset,rotation)), ladderBlockState)
+        }
+        if (!player.isCreative) item.count -= 1
+        player.playSound(SoundEvents.ITEM_PICKUP, 1.0f, 1.0f)
+        return InteractionResult.SUCCESS
+    }
+}

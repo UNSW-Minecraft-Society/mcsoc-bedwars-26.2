@@ -3,14 +3,17 @@ package mcsoc.bedwars.eventhandlers.commands
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
+import mcsoc.bedwars.items.BedwarsItems
 import mcsoc.bedwars.TeamEffects
-import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.gamestate.GameManager
+import mcsoc.bedwars.items.CustomItemTypes
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.network.chat.Component
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.network.chat.TextColor
+import net.minecraft.world.item.ItemStack
 import kotlin.uuid.toKotlinUuid
 
 
@@ -77,6 +80,7 @@ object CommandActions {
         GameManager.endGame(ctx.source.level)
         return 1
     }
+
     fun upgradeItem(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.player ?: run {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
@@ -94,6 +98,35 @@ object CommandActions {
         return 1
     }
 
+    fun giveCustomItem(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player ?: run {
+            ctx.source.sendFailure(Component.literal("Command must be run by a player"))
+            return 0
+        }
+        val input = StringArgumentType.getString(ctx, CUSTOM_ITEM_ARG)
+        val type = try {
+            CustomItemTypes.valueOf(input.uppercase())
+        } catch (e: IllegalArgumentException) {
+            player.sendSystemMessage(Component.literal("$input is not a valid custom item"))
+            return 0
+        }
+        return when (type) {
+            CustomItemTypes.BALL_OF_BUGS -> tryAddItem(ctx.source.player, BedwarsItems.ballOfBugsItemStack())
+            CustomItemTypes.BRIDGE_EGG -> tryAddItem(ctx.source.player, BedwarsItems.bridgeEggItemStack())
+            CustomItemTypes.FIREBALL -> tryAddItem(ctx.source.player, BedwarsItems.fireballItemStack())
+            CustomItemTypes.INSTANT_TNT -> tryAddItem(ctx.source.player, BedwarsItems.instantTNTItemStack())
+            CustomItemTypes.PLAYER_TRACKER -> tryAddItem(ctx.source.player, BedwarsItems.playerTrackerItemStack())
+            CustomItemTypes.POPUP_TOWER -> tryAddItem(ctx.source.player, BedwarsItems.popupTowerItemStack())
+        }
+    }
+
+    private fun tryAddItem(player: ServerPlayer?, item: ItemStack): Int {
+        if (player is ServerPlayer && player.addItem(item))
+            return 1
+        else
+            return 0
+    }
+
     fun resetUpgrades(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.player ?: run {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
@@ -102,7 +135,5 @@ object CommandActions {
         ctx.source.level.gameState.clearItems(player)
         return 1
     }
-
-
 }
 

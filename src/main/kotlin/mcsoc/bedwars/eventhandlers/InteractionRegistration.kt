@@ -1,5 +1,7 @@
 package mcsoc.bedwars.eventhandlers
 
+import mcsoc.bedwars.items.CustomItemInteraction
+import net.fabricmc.fabric.api.event.player.UseBlockCallback
 import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.gameState
 import net.fabricmc.fabric.api.event.player.UseItemCallback
@@ -12,10 +14,16 @@ import net.minecraft.world.InteractionResult
 fun registerItemCallbacks() {
     // Alive UseItemCallbacks
     UseItemCallback.EVENT.register {player, level, hand ->
-        if (level is ServerLevel && level.gameState.isPlayerAlive(player)) {
-            InteractionResult.SUCCESS
-        } else {
-            InteractionResult.PASS
-        }
+        return@register CustomItemInteraction.triggerCustomItemEffect(player, level, hand)
+    }
+    UseBlockCallback.EVENT.register { player, level, hand, hitResult ->
+        return@register CustomItemInteraction.triggerCustomItemEffect(player, level, hand, hitResult)
+    }
+    ThrowableProjectileTickCallback.EVENT.register { projectile ->
+        return@register CustomItemInteraction.triggerCustomProjectileTickEffect(projectile)
+    }
+    ProjectileHitCallback.EVENT.register { projectile, result ->
+        return@register CustomItemInteraction.triggerCustomProjectileHitEffect(projectile, result)
     }
 }
+
