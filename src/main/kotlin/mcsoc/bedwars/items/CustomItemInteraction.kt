@@ -2,11 +2,13 @@ package mcsoc.bedwars.items
 
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.vecToBlockPos
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.core.component.DataComponents
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.EntityTypes
@@ -37,9 +39,10 @@ const val BRIDGE_EGG_OFFSET = -0.5
 object CustomItemInteraction {
     fun triggerCustomItemEffect(player: Player, level: Level, hand: InteractionHand, hitResult: HitResult? = null): InteractionResult {
         val item = player.getItemInHand(hand)
-        if (level.isClientSide)
+        if (level.isClientSide || level !is ServerLevel)
             return InteractionResult.PASS
-        if (!ModDataTracker.isPlayerAlive(player))
+        val gameState = level.gameState
+        if (!gameState.isPlayerAlive(player))
             return InteractionResult.PASS
         val type = item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
         BedwarsPlugin.LOGGER.info("Item has $CUSTOM_ITEM_TAG $type")
@@ -54,8 +57,9 @@ object CustomItemInteraction {
     fun triggerCustomProjectileTickEffect(projectile: Projectile): InteractionResult {
         val level = projectile.level()
         val owner = projectile.owner
-        if (level.isClientSide)
+        if (level.isClientSide || level !is ServerLevel)
             return InteractionResult.PASS
+        val gameState = level.gameState
         if (owner !is Player)
             return InteractionResult.PASS
         if (projectile !is ThrowableItemProjectile) // required for casting to ThrowableItemProjectile to grab item data (which all custom projectiles are)
@@ -63,7 +67,7 @@ object CustomItemInteraction {
 
         val type = projectile.item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
         BedwarsPlugin.LOGGER.info("Entity has $CUSTOM_ITEM_TAG $type")
-        val team = ModDataTracker.getPlayersTeam(owner.uuid.toKotlinUuid())
+        val team = gameState.getPlayersTeam(owner.uuid.toKotlinUuid())
         when (type) {
             CUSTOM_BRIDGE_EGG_VAL -> return tickBridgeEggEffect(level, projectile, team)
         }
@@ -73,8 +77,9 @@ object CustomItemInteraction {
     fun triggerCustomProjectileHitEffect(projectile: Projectile, hitResult: HitResult): InteractionResult {
         val level = projectile.level()
         val owner = projectile.owner
-        if (level.isClientSide)
+        if (level.isClientSide || level !is ServerLevel)
             return InteractionResult.PASS
+        val gameState = level.gameState
         if (owner !is Player)
             return InteractionResult.PASS
         if (projectile !is ThrowableItemProjectile) // required for casting to ThrowableItemProjectile to grab item data (which all custom projectiles are)
@@ -82,7 +87,7 @@ object CustomItemInteraction {
 
         val type = projectile.item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
         BedwarsPlugin.LOGGER.info("Entity has $CUSTOM_ITEM_TAG $type")
-        val team = ModDataTracker.getPlayersTeam(owner.uuid.toKotlinUuid())
+        val team = gameState.getPlayersTeam(owner.uuid.toKotlinUuid())
         when (type) {
             CUSTOM_BALL_OF_BUGS -> return doBallOfBugsEffect(level, projectile, team, hitResult)
             CUSTOM_POPUP_TOWER_VAL -> {}

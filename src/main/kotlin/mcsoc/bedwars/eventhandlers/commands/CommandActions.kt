@@ -133,6 +133,7 @@ object CommandActions {
             return 0
         }
         ctx.source.level.gameState.clearItems(player)
+        return 1
     }
 }
 
