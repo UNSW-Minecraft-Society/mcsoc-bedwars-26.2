@@ -1,6 +1,5 @@
 package mcsoc.bedwars.eventhandlers
 
-import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.gamestate.GameManager
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 

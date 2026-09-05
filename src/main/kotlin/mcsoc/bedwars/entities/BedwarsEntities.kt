@@ -6,9 +6,6 @@ import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.npc.villager.Villager
 import net.minecraft.world.phys.Vec3
 
-const val BEDWARS_ENTITY_TAG = "bedwars_entity"
-const val CUSTOM_SHOPKEEPER_VAL = "shopkeeper"
-
 fun spawnShopkeeper(level: ServerLevel, position: Vec3, type: CustomEntityType) {
     val shopkeeper = Villager(EntityTypes.VILLAGER, level)
     shopkeeper.setPos(position)

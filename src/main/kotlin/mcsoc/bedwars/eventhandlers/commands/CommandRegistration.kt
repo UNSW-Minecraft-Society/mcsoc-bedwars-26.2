@@ -3,14 +3,10 @@ package mcsoc.bedwars.eventhandlers.commands
 
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
-import mcsoc.bedwars.datatrackers.ModDataTracker
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.commands.Commands
 import mcsoc.bedwars.gui.ShopGui
-import mcsoc.bedwars.upgrades.UpgradeItemType
-import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.commands.arguments.coordinates.Vec3Argument
-import net.minecraft.network.chat.Component
 import net.minecraft.server.permissions.Permissions
 
 

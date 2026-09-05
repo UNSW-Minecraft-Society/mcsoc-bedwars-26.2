@@ -4,7 +4,6 @@ import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.gui.ShopGui
 import mcsoc.bedwars.gui.ShopType
-import mcsoc.bedwars.upgrades.UpgradableItem
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.InteractionHand
