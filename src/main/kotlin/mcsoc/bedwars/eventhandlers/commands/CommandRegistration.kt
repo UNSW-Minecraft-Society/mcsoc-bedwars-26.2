@@ -29,6 +29,12 @@ fun registerCommands() {
                                 .suggests(ExampleSuggestionProvider())
                                 .executes(CommandActions::pingWord)
                         )
+                        .then(Commands.literal("start")
+                            .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
+                            .executes(CommandActions::start))
+                        .then(Commands.literal("end")
+                            .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
+                            .executes(CommandActions::end))
                 )
                 .then(Commands.literal("join").executes(CommandActions::join))
                 .then(Commands.literal("leave").executes(CommandActions::leave))
