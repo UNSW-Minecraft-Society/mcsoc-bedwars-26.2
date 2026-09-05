@@ -1,14 +1,13 @@
 package mcsoc.bedwars.eventhandlers
 
 import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.gamestate.GameManager
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
-class EventRegistration {
-    companion object {
-        fun registerEventHandlers() {
-            ServerTickEvents.END_SERVER_TICK.register{server ->
-                ModDataTracker.tick()
-            }
-        }
+fun registerEventHandlers() {
+    ServerTickEvents.END_LEVEL_TICK.register{ level ->
+        GameManager.tick(level)
     }
+    registerItemCallbacks()
+    registerPlayerJoinEvent()
 }
