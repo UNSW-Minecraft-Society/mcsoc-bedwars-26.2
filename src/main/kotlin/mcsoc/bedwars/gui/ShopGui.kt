@@ -23,9 +23,9 @@ import net.minecraft.world.item.Items
 import net.minecraft.world.item.enchantment.Enchantments
 import java.util.UUID
 
-enum class ShopType {
-    PLAYER_SHOP,
-    TEAM_SHOP
+enum class ShopType(val title: String) {
+    PLAYER_SHOP("Player Shop"),
+    TEAM_SHOP("Team Shop");
 }
 
 /**
@@ -173,7 +173,7 @@ object ShopGui {
             }
 
             updateItems(gui)
-            gui.title = Component.literal("Shop")
+            gui.title = Component.literal(shopType.title)
             gui.open()
         } catch (e: Exception) {
             LOGGER.error(e.stackTraceToString())

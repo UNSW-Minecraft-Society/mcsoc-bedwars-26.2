@@ -12,9 +12,9 @@ import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.Level
 
-enum class CustomEntityType {
-    PLAYER_SHOPKEEPER,
-    TEAM_SHOPKEEPER,
+enum class CustomEntityType(val title: String) {
+    PLAYER_SHOPKEEPER("Player Shopkeeper"),
+    TEAM_SHOPKEEPER("Team Shopkeeper"),
 }
 
 object CustomEntityInteractions {

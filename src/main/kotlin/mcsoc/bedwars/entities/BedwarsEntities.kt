@@ -1,6 +1,7 @@
 package mcsoc.bedwars.entities
 
 import mcsoc.bedwars.datatrackers.customEntityData
+import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.npc.villager.Villager
@@ -11,6 +12,8 @@ fun spawnShopkeeper(level: ServerLevel, position: Vec3, type: CustomEntityType) 
     shopkeeper.setPos(position)
     shopkeeper.isNoAi = true
     shopkeeper.isInvulnerable = true
+    shopkeeper.customName = Component.literal(type.title)
+    shopkeeper.isCustomNameVisible = true
     level.customEntityData[shopkeeper.uuid] = type
     level.addFreshEntity(shopkeeper)
 }
