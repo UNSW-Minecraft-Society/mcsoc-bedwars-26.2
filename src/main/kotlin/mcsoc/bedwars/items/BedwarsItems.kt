@@ -38,7 +38,7 @@ object BedwarsItems {
         return stack
     }
 
-    fun primedTNTItemStack(): ItemStack {
+    fun instantTNTItemStack(): ItemStack {
         val stack = Items.TNT.defaultInstance
         applyTag(stack, BEDWARS_ITEM_TAG, CustomItemTypes.INSTANT_TNT.value)
         applyTag(stack, CUSTOM_ITEM_TAG, CustomItemTypes.INSTANT_TNT.value)
@@ -54,6 +54,24 @@ object BedwarsItems {
         applyTag(stack, CUSTOM_ITEM_TAG, CustomItemTypes.BALL_OF_BUGS.value)
         renameItem(stack, "Ball of Bugs")
         addItemLore(stack, "Right click to throw a ball, spawning an endermite when it lands.")
+        return stack
+    }
+
+    fun popupTowerItemStack(): ItemStack {
+        val stack = Items.REINFORCED_DEEPSLATE.defaultInstance
+        applyTag(stack, BEDWARS_ITEM_TAG, CustomItemTypes.POPUP_TOWER.value)
+        applyTag(stack, CUSTOM_ITEM_TAG, CustomItemTypes.POPUP_TOWER.value)
+        renameItem(stack, "Popup Tower")
+        addItemLore(stack, "Right click on a block to instantly create a tower structure.")
+        return stack
+    }
+
+    fun playerTrackerItemStack(): ItemStack {
+        val stack = Items.RECOVERY_COMPASS.defaultInstance
+        applyTag(stack, BEDWARS_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
+        applyTag(stack, CUSTOM_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
+        renameItem(stack, "Player Tracker")
+        addItemLore(stack, "Points to where the nearest player on an enemy team was, Right click to update the location.")
         return stack
     }
 }

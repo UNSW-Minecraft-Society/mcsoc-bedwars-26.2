@@ -5,6 +5,7 @@ import net.minecraft.core.Vec3i
 import net.minecraft.world.phys.Vec3
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.floor
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -27,5 +28,5 @@ fun roundVec(vector: Vec3): Vec3i {
 }
 
 fun vecToBlockPos(vector: Vec3): BlockPos {
-    return BlockPos(roundVec(vector))
+    return BlockPos(floor(vector.x).toInt(), floor(vector.y).toInt(), floor(vector.z).toInt())
 }

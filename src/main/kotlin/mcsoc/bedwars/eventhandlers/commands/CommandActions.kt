@@ -13,6 +13,7 @@ import net.minecraft.commands.CommandSourceStack
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.network.chat.TextColor
+import net.minecraft.world.item.ItemStack
 import kotlin.uuid.toKotlinUuid
 
 
@@ -109,56 +110,21 @@ object CommandActions {
             player.sendSystemMessage(Component.literal("$input is not a valid custom item"))
             return 0
         }
-        when (type) {
-            CustomItemTypes.BALL_OF_BUGS -> return giveBallOfBugs(ctx)
-            CustomItemTypes.BRIDGE_EGG -> return giveBridgeEgg(ctx)
-            CustomItemTypes.FIREBALL -> return giveFireball(ctx)
-            CustomItemTypes.INSTANT_TNT -> return giveInstantTNT(ctx)
-            CustomItemTypes.PLAYER_TRACKER -> return givePlayerTracker(ctx)
-            CustomItemTypes.POPUP_TOWER -> return givePopupTower(ctx)
+        return when (type) {
+            CustomItemTypes.BALL_OF_BUGS -> tryAddItem(ctx.source.player, BedwarsItems.ballOfBugsItemStack())
+            CustomItemTypes.BRIDGE_EGG -> tryAddItem(ctx.source.player, BedwarsItems.bridgeEggItemStack())
+            CustomItemTypes.FIREBALL -> tryAddItem(ctx.source.player, BedwarsItems.fireballItemStack())
+            CustomItemTypes.INSTANT_TNT -> tryAddItem(ctx.source.player, BedwarsItems.instantTNTItemStack())
+            CustomItemTypes.PLAYER_TRACKER -> tryAddItem(ctx.source.player, BedwarsItems.playerTrackerItemStack())
+            CustomItemTypes.POPUP_TOWER -> tryAddItem(ctx.source.player, BedwarsItems.popupTowerItemStack())
         }
     }
 
-    fun giveFireball(ctx: CommandContext<CommandSourceStack>): Int {
-        val player = ctx.source.player
-        if (player is ServerPlayer && player.addItem(BedwarsItems.fireballItemStack())) {
+    private fun tryAddItem(player: ServerPlayer?, item: ItemStack): Int {
+        if (player is ServerPlayer && player.addItem(item))
             return 1
-        }
-        return 0
-    }
-
-    fun giveBridgeEgg(ctx: CommandContext<CommandSourceStack>): Int {
-        val player = ctx.source.player
-        if (player is ServerPlayer && player.addItem(BedwarsItems.bridgeEggItemStack())) {
-            return 1
-        }
-        return 0
-    }
-
-    fun giveInstantTNT(ctx: CommandContext<CommandSourceStack>): Int {
-        val player = ctx.source.player
-        if (player is ServerPlayer && player.addItem(BedwarsItems.primedTNTItemStack())) {
-            return 1
-        }
-        return 0
-    }
-
-    fun giveBallOfBugs(ctx: CommandContext<CommandSourceStack>): Int {
-        val player = ctx.source.player
-        if (player is ServerPlayer && player.addItem(BedwarsItems.ballOfBugsItemStack())) {
-            return 1
-        }
-        return 0
-    }
-
-    fun givePlayerTracker(ctx: CommandContext<CommandSourceStack>): Int {
-        // IMPLEMENT
-        return 0
-    }
-
-    fun givePopupTower(ctx: CommandContext<CommandSourceStack>): Int {
-        // IMPLEMENT
-        return 0
+        else
+            return 0
     }
 
     fun resetUpgrades(ctx: CommandContext<CommandSourceStack>): Int {
