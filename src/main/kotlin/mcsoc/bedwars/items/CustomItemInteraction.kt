@@ -3,6 +3,8 @@ package mcsoc.bedwars.items
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.Team
+import mcsoc.bedwars.utils.getCardinalDirection
+import mcsoc.bedwars.utils.rotateVec
 import mcsoc.bedwars.utils.vecToBlockPos
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
@@ -181,16 +183,24 @@ object CustomItemInteraction {
     }
 
     private fun usePopupTowerEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, team: Team): InteractionResult {
+        val direction = getCardinalDirection(player.lookAngle)
+        val rotation = when (direction) {
+            Direction.NORTH -> Rotation.COUNTERCLOCKWISE_90
+            Direction.EAST -> Rotation.NONE
+            Direction.SOUTH -> Rotation.CLOCKWISE_90
+            Direction.WEST -> Rotation.CLOCKWISE_180
+            else -> Rotation.NONE
+        }
         if (hitResult !is HitResult)
             return InteractionResult.PASS
         val centerPos = vecToBlockPos(hitResult.location)
         val woolBlockState = Blocks.WOOL.pick(team.dyeColour).defaultBlockState()
-        val ladderBlockState = Blocks.LADDER.defaultBlockState().rotate(Rotation.COUNTERCLOCKWISE_90)
+        val ladderBlockState = Blocks.LADDER.defaultBlockState().rotate(Rotation.COUNTERCLOCKWISE_90).rotate(rotation)
         for (offset in POPUP_TOWER_WOOL_OFFSETS) {
-            placeBlockIfValid(level, centerPos.offset(offset), woolBlockState)
+            placeBlockIfValid(level, centerPos.offset(rotateVec(offset,rotation)), woolBlockState)
         }
         for (offset in POPUP_TOWER_LADDER_OFFSETS) {
-            placeBlockIfValid(level, centerPos.offset(offset), ladderBlockState)
+            placeBlockIfValid(level, centerPos.offset(rotateVec(offset,rotation)), ladderBlockState)
         }
         if (!player.isCreative) item.count -= 1
         player.playSound(SoundEvents.ITEM_PICKUP, 1.0f, 1.0f)
