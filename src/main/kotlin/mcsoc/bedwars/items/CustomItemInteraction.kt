@@ -23,6 +23,7 @@ import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.phys.HitResult
+import net.minecraft.world.phys.Vec3
 import kotlin.jvm.optionals.getOrNull
 import kotlin.uuid.toKotlinUuid
 
@@ -134,9 +135,10 @@ object CustomItemInteraction {
     }
 
     private fun doBallOfBugsEffect(level: Level, ball: ThrowableItemProjectile, team: Team, hitResult: HitResult): InteractionResult {
-        val pos = hitResult.location
         val bug = Endermite(EntityTypes.ENDERMITE, level)
-        bug.setPos(pos)
+        bug.setPos(hitResult.location)
+        bug.health = 1.0f
+        bug.speed = 2.0f
         // DO THE TEAM THING SO IT'S FRIENDLY TO OWNER
         level.addFreshEntity(bug)
         ball.owner = null
