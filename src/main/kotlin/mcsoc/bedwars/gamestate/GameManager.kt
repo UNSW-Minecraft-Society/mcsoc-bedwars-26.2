@@ -9,19 +9,16 @@ import net.minecraft.core.BlockPos
 import net.minecraft.core.Holder
 import net.minecraft.core.Position
 import net.minecraft.network.chat.Component
-import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket
-import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket
-import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
-import net.minecraft.network.protocol.game.ClientboundSoundPacket
+import net.minecraft.network.protocol.game.*
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.damagesource.DamageSource
-import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.LightningBolt
 import net.minecraft.world.level.GameType
+import net.minecraft.world.level.gamerules.GameRules
 import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.toKotlinUuid
 
@@ -53,6 +50,10 @@ class GameManager {
             // distribute players to teams + reset player stuff
 
             // generate map?
+
+            val gamerules = level.server.gameRules
+            gamerules.set(GameRules.IMMEDIATE_RESPAWN, true, level.server)
+            gamerules.set(GameRules.KEEP_INVENTORY, true, level.server)
 
             level_mod_data.resetGameTime()
             level_mod_data.setGamePhase(GamePhase.STARTING)
@@ -158,9 +159,13 @@ class GameManager {
 
                 level_mod_data.setPlayerRespawning(player)
                 level_mod_data.resetPlayerRespawnTime(player)
+                val respawn_time_message = ChatFormatting.YELLOW.toString() + "You will respawn in " + ChatFormatting.RED.toString() + RESPAWN_TIME.toString() + ChatFormatting.YELLOW.toString() + " seconds!"
+                player.connection.send(
+                    ClientboundSetTitlesAnimationPacket(0, 30, 0)
+                )
                 player.connection.send(
                     ClientboundSetSubtitleTextPacket(
-                        Component.literal((ChatFormatting.YELLOW.toString() + "You will respawn in " + ChatFormatting.RED.toString() + RESPAWN_TIME.toString() + ChatFormatting.YELLOW.toString() + " seconds!"))
+                        Component.literal(respawn_time_message)
                     )
                 )
                 player.connection.send(
@@ -168,6 +173,7 @@ class GameManager {
                         Component.literal((ChatFormatting.RED.toString() + "YOU DIED!"))
                     )
                 )
+                player.sendSystemMessage(Component.literal(respawn_time_message))
             } else {
                 eliminatePlayer(player)
             }
@@ -203,19 +209,23 @@ class GameManager {
         }
 
         fun tick(world: ServerLevel) {
-            val player_manager = world.server.playerList
             val level_mod_data = world.gameState
+            if (level_mod_data.getGamePhase() == GamePhase.INACTIVE) return
+
+            val player_manager = world.server.playerList
+
+
             level_mod_data.tick()
 
             if (level_mod_data.getTimerTick()) {
                 level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).forEach { player ->
                     if (level_mod_data.isPlayerEliminated(player)) return@forEach
 
-                    val seconds_left = level_mod_data.getPlayerRespawnSeconds(player)
                     if (level_mod_data.isPlayerRespawning(player)) {
+                        val seconds_left = level_mod_data.getPlayerRespawnSeconds(player)
 
                         if (seconds_left == 0) {
-                            // tp player to base location
+                            // tp player to base location for respawn
 //                            val base_position = SavedModData.getTeamBasePosition(SavedModData.getPlayerTeam(uuid))
 //                            player.teleportTo(base_position.x.toDouble(), base_position.y.toDouble(), base_position.z.toDouble())
 
@@ -224,10 +234,23 @@ class GameManager {
                             player.connection.send(
                                 ClientboundClearTitlesPacket(true)
                             )
+                            player.connection.send(
+                                ClientboundSetTitlesAnimationPacket(10, 40, 10)
+                            )
+                            player.connection.send(
+                                ClientboundSetTitleTextPacket(
+                                    Component.literal((ChatFormatting.GREEN.toString() + "RESPAWNED!"))
+                                )
+                            )
+                            player.sendSystemMessage(Component.literal(ChatFormatting.YELLOW.toString() + "You have respawned!"))
                         } else if (level_mod_data.playerTimerSecondPassed(player)) {
+                            val respawn_time_message = ChatFormatting.YELLOW.toString() + "You will respawn in " + ChatFormatting.RED.toString() + seconds_left.toString() + ChatFormatting.YELLOW.toString() + " seconds!"
+                            player.connection.send(
+                                ClientboundSetTitlesAnimationPacket(0, 30, 0)
+                            )
                             player.connection.send(
                                 ClientboundSetSubtitleTextPacket(
-                                    Component.literal((ChatFormatting.YELLOW.toString() + "You will respawn in " + ChatFormatting.RED.toString() + seconds_left.toString() + ChatFormatting.YELLOW.toString() + " seconds!"))
+                                    Component.literal(respawn_time_message)
                                 )
                             )
                             player.connection.send(
@@ -235,6 +258,7 @@ class GameManager {
                                     Component.literal((ChatFormatting.RED.toString() + "YOU DIED!"))
                                 )
                             )
+                            player.sendSystemMessage(Component.literal(respawn_time_message))
                         }
                     }
                 }

@@ -77,7 +77,7 @@ internal interface PlayerStateHolder : PlayerStateExposer {
 
     override fun setPlayerRespawning(player: Player) {
         val player_state = getPlayerState(player)
-        player_state.setLifeState(LifeState.ALIVE)
+        player_state.setLifeState(LifeState.RESPAWNING)
     }
 
     override fun setPlayerDead(player: Player, position: Vec3) {

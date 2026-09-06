@@ -212,9 +212,11 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         timer_second = game_timer.inWholeSeconds != (game_timer + tick_delta).inWholeSeconds
 
         // Tick down timers for all individual players
-        active_players.forEach { uuid ->
-            val record = player_data_map.getOrDefault(uuid.toKotlinUuid(), null)
-            if (record != null && timer_tick) record.decrementPlayerRespawnTicks()
+        if (game_phase == GamePhase.ACTIVE) {
+            active_players.forEach { uuid ->
+                val record = player_data_map.getOrDefault(uuid.toKotlinUuid(), null)
+                if (record != null && timer_tick) record.decrementPlayerRespawnTicks()
+            }
         }
 
         game_timer += tick_delta
@@ -222,7 +224,10 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 
     override fun getGameTime() = game_timer
 
-    override fun resetGameTime() {game_timer = Duration.ZERO}
+    override fun resetGameTime() {
+        game_timer = Duration.ZERO
+        prev_tick_time = TimeSource.Monotonic.markNow()
+    }
         
     override fun getTimerTick() = timer_tick
 
