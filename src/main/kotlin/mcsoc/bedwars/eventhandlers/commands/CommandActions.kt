@@ -4,8 +4,8 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import mcsoc.bedwars.TeamEffects
-import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
+import mcsoc.bedwars.datatrackers.blockprotection.ProtectionZone
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.upgrades.UpgradeItemType
@@ -15,17 +15,16 @@ import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.TextColor
-import net.minecraft.world.phys.AABB
 import kotlin.uuid.toKotlinUuid
 
 
 private fun setProtectionZoneMsg(p1: BlockPos, p2: BlockPos) = 
     Component.literal("Created new protection zone between ${p1.format} and ${p2.format}")
 
-private fun listProtectionZoneMsg(box: AABB): Component {
-    val p1 = BlockPos.containing(box.minPosition)
-    val p2 = BlockPos.containing(box.maxPosition)
-    return Component.literal("  from ${p1.format} to ${p2.format}")
+private fun listProtectionZoneMsg(zone: ProtectionZone): Component {
+    val p1 = BlockPos.containing(zone.box.minPosition)
+    val p2 = BlockPos.containing(zone.box.maxPosition)
+    return Component.literal("  ID: ${zone.id}, from ${p1.format} to ${p2.format}")
 }
 
 

@@ -9,7 +9,7 @@ import net.minecraft.world.phys.AABB
 
 
 private class BlockProtectionStore(): BlockProtectionHolder {
-    companion object {
+    companion object {        
         val CODEC: Codec<BlockProtectionStore> = RecordCodecBuilder.create{it.group(
             Codec.list(BlockPos.CODEC)
                 .xmap(List<BlockPos>::toSet, Set<BlockPos>::toList)
@@ -19,7 +19,7 @@ private class BlockProtectionStore(): BlockProtectionHolder {
     }
     
     private val placed_blocks_set = HashSet<BlockPos>()
-    private val block_protection_zone_list = HashMap<Long, MutableList<AABB>>()
+    private val block_protection_zone_list = HashMap<Long, MutableList<ProtectionZone>>()
     
     private constructor(placed_blocks: Set<BlockPos>) : this() {
         this.placed_blocks_set.addAll(placed_blocks)
@@ -36,11 +36,11 @@ private class BlockProtectionStore(): BlockProtectionHolder {
     override fun getIfBlockIsProtected(pos: BlockPos): Boolean {
         val chunk_key = ChunkPos.containing(pos).pack()
         return block_protection_zone_list[chunk_key]?.any{
-            it.contains(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5)
+            it.box.contains(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5)
         } ?: false
     }
     override fun registerProtectionZone(corner1: BlockPos, corner2: BlockPos) {
-        val to_box = AABB.of(BoundingBox.fromCorners(corner1, corner2))
+        val to_box = ProtectionZone(AABB.of(BoundingBox.fromCorners(corner1, corner2)))
         
         val cpos1 = ChunkPos.containing(corner1)
         val cpos2 = ChunkPos.containing(corner2)
@@ -48,15 +48,13 @@ private class BlockProtectionStore(): BlockProtectionHolder {
         for (x in minOf(cpos1.x, cpos2.x)..maxOf(cpos1.x, cpos2.x)) {
             for (z in minOf(cpos1.z, cpos2.z)..maxOf(cpos1.z, cpos2.z)) {
                 val chunk_key = ChunkPos.pack(x, z)
-                block_protection_zone_list.getOrPut(chunk_key){mutableListOf<AABB>()}.add(to_box)
+                block_protection_zone_list.getOrPut(chunk_key){mutableListOf<ProtectionZone>()}.add(to_box)
             }
         }
     }
     
-    override fun getProtectionZones(): Iterable<AABB> {
-        val toReturn = HashSet<AABB>()
-        this.block_protection_zone_list.values.forEach(toReturn::addAll)
-        return toReturn
+    override fun getProtectionZones(): Iterable<ProtectionZone> {
+        return this.block_protection_zone_list.values.flatten()
     }
 }
 
