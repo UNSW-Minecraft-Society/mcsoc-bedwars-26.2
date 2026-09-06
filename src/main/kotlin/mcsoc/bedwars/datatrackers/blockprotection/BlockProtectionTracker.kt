@@ -17,17 +17,25 @@ private class BlockProtectionStore(): BlockProtectionHolder {
             Codec.list(BlockPos.CODEC)
                 .xmap(List<BlockPos>::toSet, Set<BlockPos>::toList)
                 .fieldOf("placed_blocks_set")
-                .forGetter(BlockProtectionStore::placed_blocks_set)
+                .forGetter(BlockProtectionStore::placed_blocks_set),
+            Codec.unboundedMap(
+                Codec.STRING
+                    .xmap(String::toLong, Long::toString),
+                Codec.list(ProtectionZone.CODEC)
+                    .xmap(List<ProtectionZone>::toMutableSet, MutableSet<ProtectionZone>::toList)
+            )
+                .fieldOf("protection_zones_map")
+                .forGetter(BlockProtectionStore::block_protection_zones)
         ).apply(it, ::BlockProtectionStore)}
     }
     
     private val placed_blocks_set = HashSet<BlockPos>()
     private val block_protection_zones = HashMap<Long, MutableSet<ProtectionZone>>()
     
-    private constructor(placed_blocks: Set<BlockPos>) : this() {
+    private constructor(placed_blocks: Set<BlockPos>, block_protection_zones: Map<Long, MutableSet<ProtectionZone>>) : this() {
         this.placed_blocks_set.addAll(placed_blocks)
+        this.block_protection_zones.putAll(block_protection_zones)
     }
-    
     
     override fun getIfBlockWasPlaced(pos: BlockPos): Boolean {
         return placed_blocks_set.contains(pos)
@@ -88,6 +96,4 @@ class BlockProtectionTracker : LevelTiedData, BlockProtectionExposer {
         setDirty()
         protection_data.registerProtectionZone(corner1, corner2)
     }
-    
-    
 }

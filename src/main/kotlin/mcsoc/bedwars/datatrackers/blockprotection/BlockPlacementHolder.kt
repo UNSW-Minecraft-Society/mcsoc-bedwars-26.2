@@ -1,11 +1,19 @@
 package mcsoc.bedwars.datatrackers.blockprotection
 
+import com.mojang.serialization.Codec
+import com.mojang.serialization.codecs.RecordCodecBuilder
+import mcsoc.bedwars.utils.AABB_CODEC
 import net.minecraft.core.BlockPos
 import net.minecraft.world.phys.AABB
 import java.util.UUID
 
 
 data class ProtectionZone(val box: AABB) {
+    companion object {
+        val CODEC: Codec<ProtectionZone> = RecordCodecBuilder.create{ inst -> inst.group(
+            AABB_CODEC.fieldOf("box").forGetter(ProtectionZone::box)
+        ).apply(inst, ::ProtectionZone)}
+    }
     val id: UUID = UUID.randomUUID() 
 }
 
