@@ -53,10 +53,7 @@ sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>
 }
 
 private class LevelTiedDataTracker() : SavedData() {
-    private val tracked_data: MutableMap<LevelDataType<*>, LevelTiedData> = mutableMapOf(
-        Pair(LevelDataType.GameState, ModDataTracker()),
-        // register default entries for each enum value 
-    )
+    private val tracked_data: MutableMap<LevelDataType<*>, LevelTiedData> = mutableMapOf()
     constructor(map: Map<LevelDataType<*>, LevelTiedData>) : this() {
         tracked_data.putAll(map)
     }
