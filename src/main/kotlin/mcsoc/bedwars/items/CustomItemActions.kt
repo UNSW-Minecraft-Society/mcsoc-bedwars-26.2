@@ -1,2 +1,0 @@
-package mcsoc.bedwars.items
-

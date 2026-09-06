@@ -67,7 +67,7 @@ object BedwarsItems {
     }
 
     fun playerTrackerItemStack(): ItemStack {
-        val stack = Items.RECOVERY_COMPASS.defaultInstance
+        val stack = Items.COMPASS.defaultInstance
         applyTag(stack, BEDWARS_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
         applyTag(stack, CUSTOM_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
         renameItem(stack, "Player Tracker")
