@@ -39,7 +39,7 @@ enum class GamePeriod {
     INACTIVE
 }
 
-private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord, PlayerTimeRecord {
+private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord, PlayerTimeRecord, PlayerStatsRecord {
     companion object {
         val TOOL_UPGRADES_CODEC: Codec<HashMap<UpgradeItemType, UpgradableItem>> =
             Codec.unboundedMap(UpgradeItemType.CODEC, Codec.STRING).xmap(
@@ -64,6 +64,10 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
     private var respawn_ticks: Int = 0
     private var respawn_seconds: Int = 0
     private var respawn_second_passed: Boolean = false
+
+    private var kills: Int = 0
+    private var final_kills: Int = 0
+    private var deaths: Int = 0
 
     private constructor(
         life_state: LifeState,
@@ -128,6 +132,30 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
     override fun getSecondPassed(): Boolean {
         return respawn_second_passed
     }
+
+    override fun getKills(): Int {
+        return kills
+    }
+
+    override fun getFinalKills(): Int {
+        return final_kills
+    }
+
+    override fun getDeaths(): Int {
+        return deaths
+    }
+
+    override fun setKills(value: Int) {
+        kills = value
+    }
+
+    override fun setFinalKills(value: Int) {
+        final_kills = value
+    }
+
+    override fun setDeaths(value: Int) {
+        deaths = value
+    }
 }
 
 
@@ -163,7 +191,7 @@ private class TeamDataRecord(
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder, PlayerTimeHolder {
+private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder, PlayerTimeHolder, PlayerStatsHolder {
     companion object {
         val UUIDCodec: Codec<Uuid> = Codec.STRING.xmap(Uuid::parse, Uuid::toString)
         
@@ -270,6 +298,10 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         return getPlayerData(player)
     }
 
+    override fun getPlayerStats(player: Player): PlayerStatsRecord {
+        return getPlayerData(player)
+    }
+
     override fun getTeam(team: Team): TeamDataRecord {
         return teams_map[team] ?: throw Exception("Invalid team")
     }
@@ -300,7 +332,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 }
 
 
-class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer, PlayerTimeExposer {
+class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer, PlayerTimeExposer, PlayerStatsExposer {
     private val mod_data = ModDataStore()
 
     override fun tick() = mod_data.tick()
@@ -348,4 +380,11 @@ class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Player
     override fun getPlayerRespawnSeconds(player: ServerPlayer): Int = mod_data.getPlayerRespawnSeconds(player)
     override fun resetPlayerRespawnTime(player: ServerPlayer) = mod_data.resetPlayerRespawnTime(player)
     override fun playerTimerSecondPassed(player: ServerPlayer): Boolean = mod_data.playerTimerSecondPassed(player)
+
+    override fun getPlayerKills(player: ServerPlayer): Int = mod_data.getPlayerKills(player)
+    override fun getPlayerFinalKills(player: ServerPlayer): Int = mod_data.getPlayerFinalKills(player)
+    override fun getPlayerDeaths(player: ServerPlayer): Int = mod_data.getPlayerDeaths(player)
+    override fun setPlayerKills(player: ServerPlayer, value: Int) = mod_data.setPlayerKills(player, value)
+    override fun setPlayerFinalKills(player: ServerPlayer, value: Int) = mod_data.setPlayerFinalKills(player, value)
+    override fun setPlayerDeaths(player: ServerPlayer, value: Int) = mod_data.setPlayerDeaths(player, value)
 }

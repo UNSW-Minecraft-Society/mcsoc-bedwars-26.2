@@ -110,35 +110,18 @@ class GameManager {
             val player_team = level_mod_data.getPlayersTeam(player.uuid.toKotlinUuid())
             val bed_destroyed = level_mod_data.getBedDestroyed(player_team)
 
-            // bedhunt code for kill tracking, to be updated
-//            if (death_source.entity is ServerPlayer) {
-//                val killer = death_source.entity as ServerPlayer
-//                level_mod_data.setPlayerKills(killer.uuid, level_mod_data.getPlayerKills(killer.uuid) + 1)
-//
-//                if (!should_respawn) {
-//                    level_mod_data.setPlayerFinalKills(killer.uuid, level_mod_data.getPlayerFinalKills(killer.uuid) + 1)
-//                }
-//            }
+            val killer = player.killCredit
+            if (killer is ServerPlayer) {
+                level_mod_data.setPlayerKills(killer, level_mod_data.getPlayerKills(killer) + 1)
 
-            // used in bedhunt to drop player inventory on death - can probably be removed here, although, maybe this should ensure if player died to void
-            // maybe money (gold, iron diamonds emeralds) transfer to killer? I'm leaving this code here for reference in case we need to index
-            // over a player's inventory to do something like this. Note this could probably be moved into the eliminate player function as
-            // it was only originally here to make the player drop items at death location
-//            if (!should_respawn) {
-//                player.inventory.forEachIndexed { i, stack ->
-//                    if (!stack.isEmpty) {
-//                        val vanishingCurse = player.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.VANISHING_CURSE)
-//
-//                        // Check if the item stack contains the Curse of Vanishing
-//                        if (EnchantmentHelper.getItemEnchantmentLevel(vanishingCurse, stack) > 0) {
-//                            player.inventory.setItem(i, ItemStack.EMPTY);
-//                        } else {
-//                            player.drop(stack, true, false);
-//                            player.inventory.setItem(i, ItemStack.EMPTY);
-//                        }
-//                    }
-//                }
-//            }
+                if (bed_destroyed) {
+                    level_mod_data.setPlayerFinalKills(killer, level_mod_data.getPlayerFinalKills(killer) + 1)
+                }
+
+                // Insert something to transfer currency items (iron, gold, diamonds, emeralds) to killer - TODO
+            }
+
+            // Downgrade or like reset player item upgrades on death
 
             // store player's death position to summon lightning later. Due to the nature of this event handler,
             // all players are forced to enter "DEAD" state upon death.
@@ -200,8 +183,8 @@ class GameManager {
             world.players().forEach { p ->
                 p.sendSystemMessage(Component.literal(player.scoreboardName + " has been eliminated!"))
             }
-            // notify eliminate player of their kill stats - TODO
-//            player.sendSystemMessage(Component.literal("Kills: " + level_mod_data.getPlayerKills(player.uuid) + " Final Kills: " + level_mod_data.getPlayerFinalKills(player.uuid)))
+            // notify eliminated player of their stats - change to align more closely to hypixel later
+            player.sendSystemMessage(Component.literal("Kills: " + level_mod_data.getPlayerKills(player) + " Final Kills: " + level_mod_data.getPlayerFinalKills(player) + " Deaths: " + level_mod_data.getPlayerDeaths(player)))
 
             // check if a team has won - urgent todo
 //            val winning_team = checkPlayersLeftOnTeam(world,world.players(), SavedModData.getPlayerTeam(player.uuid)) ?: return
