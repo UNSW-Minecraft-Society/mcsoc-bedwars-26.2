@@ -68,7 +68,6 @@ object CommandActions {
     }
 
     fun start(ctx: CommandContext<CommandSourceStack>): Int {
-        IntegerArgumentType.getInteger(ctx, "num_teams")
         GameManager.setupGame(ctx.source.level, ctx.source.position)
         return 1
     }
