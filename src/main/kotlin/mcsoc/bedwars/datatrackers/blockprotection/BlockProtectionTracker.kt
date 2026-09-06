@@ -19,7 +19,7 @@ private class BlockProtectionStore(): BlockProtectionHolder {
     }
     
     private val placed_blocks_set = HashSet<BlockPos>()
-    private val block_protection_zone_list = HashMap<Long, MutableList<ProtectionZone>>()
+    private val block_protection_zones = HashMap<Long, MutableSet<ProtectionZone>>()
     
     private constructor(placed_blocks: Set<BlockPos>) : this() {
         this.placed_blocks_set.addAll(placed_blocks)
@@ -35,7 +35,7 @@ private class BlockProtectionStore(): BlockProtectionHolder {
     
     override fun getIfBlockIsProtected(pos: BlockPos): Boolean {
         val chunk_key = ChunkPos.containing(pos).pack()
-        return block_protection_zone_list[chunk_key]?.any{
+        return block_protection_zones[chunk_key]?.any{
             it.box.contains(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5)
         } ?: false
     }
@@ -48,13 +48,13 @@ private class BlockProtectionStore(): BlockProtectionHolder {
         for (x in minOf(cpos1.x, cpos2.x)..maxOf(cpos1.x, cpos2.x)) {
             for (z in minOf(cpos1.z, cpos2.z)..maxOf(cpos1.z, cpos2.z)) {
                 val chunk_key = ChunkPos.pack(x, z)
-                block_protection_zone_list.getOrPut(chunk_key){mutableListOf<ProtectionZone>()}.add(to_box)
+                block_protection_zones.getOrPut(chunk_key){mutableSetOf<ProtectionZone>()}.add(to_box)
             }
         }
     }
     
     override fun getProtectionZones(): Iterable<ProtectionZone> {
-        return this.block_protection_zone_list.values.flatten()
+        return this.block_protection_zones.values.flatten().distinctBy(ProtectionZone::id)
     }
 }
 
