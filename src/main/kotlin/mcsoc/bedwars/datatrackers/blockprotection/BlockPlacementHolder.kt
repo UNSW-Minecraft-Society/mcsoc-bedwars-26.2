@@ -25,6 +25,8 @@ internal interface BlockProtectionZoneHolder {
 }
 
 internal interface BlockProtectionExposer {
+    var protectionEnabled: Boolean
+    
     fun isBlockBreakAllowed(pos: BlockPos): Boolean
     fun isBlockPlacementAllowed(pos: BlockPos): Boolean
     
@@ -34,10 +36,10 @@ internal interface BlockProtectionExposer {
 }
 internal interface BlockProtectionHolder : BlockProtectionExposer, BlockPlacementHolder, BlockProtectionZoneHolder {
     override fun isBlockBreakAllowed(pos: BlockPos): Boolean {
-        return !getIfBlockIsProtected(pos) && getIfBlockWasPlaced(pos)
+        return !protectionEnabled && !getIfBlockIsProtected(pos) && getIfBlockWasPlaced(pos)
     }
     override fun isBlockPlacementAllowed(pos: BlockPos): Boolean {
-        return !getIfBlockIsProtected(pos)
+        return !(protectionEnabled || getIfBlockIsProtected(pos))
     }
 }
 

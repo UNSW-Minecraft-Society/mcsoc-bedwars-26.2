@@ -25,7 +25,7 @@ private class BlockProtectionStore(): BlockProtectionHolder {
                     .xmap(List<ProtectionZone>::toMutableSet, MutableSet<ProtectionZone>::toList)
             )
                 .fieldOf("protection_zones_map")
-                .forGetter(BlockProtectionStore::block_protection_zones)
+                .forGetter(BlockProtectionStore::block_protection_zones),
         ).apply(it, ::BlockProtectionStore)}
     }
     
@@ -36,6 +36,8 @@ private class BlockProtectionStore(): BlockProtectionHolder {
         this.placed_blocks_set.addAll(placed_blocks)
         this.block_protection_zones.putAll(block_protection_zones)
     }
+    // is always enabled when world starts, change to false for testing if desired
+    override var protectionEnabled: Boolean = true
     
     override fun getIfBlockWasPlaced(pos: BlockPos): Boolean {
         return placed_blocks_set.contains(pos)
@@ -84,6 +86,9 @@ class BlockProtectionTracker : LevelTiedData, BlockProtectionExposer {
     }
     internal constructor() : this(BlockProtectionStore())
     
+    override var protectionEnabled 
+        get() = protection_data.protectionEnabled 
+        set(v) {protection_data.protectionEnabled = v}
     override fun isBlockBreakAllowed(pos: BlockPos): Boolean = protection_data.isBlockBreakAllowed(pos)
     override fun isBlockPlacementAllowed(pos: BlockPos): Boolean = protection_data.isBlockPlacementAllowed(pos)
     override fun trackPlacedBlock(pos: BlockPos) {
