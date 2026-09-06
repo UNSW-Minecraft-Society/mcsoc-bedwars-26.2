@@ -36,7 +36,7 @@ private class PlayerDataRecord() : PlayerStateRecord {
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHolder {
+private class ModDataStore() : SavedData(), PlayerStateHolder {
     companion object {
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
             Codec.unboundedMap(
@@ -45,25 +45,16 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHo
                 PlayerDataRecord.CODEC
             )
                 .fieldOf("player_data_map")
-                .forGetter(ModDataStore::player_data_map),
-            Codec.list(BlockPos.CODEC)
-                .xmap(List<BlockPos>::toSet, Set<BlockPos>::toList)
-                .fieldOf("placed_blocks_set")
-                .forGetter(ModDataStore::placed_blocks_set)
+                .forGetter(ModDataStore::player_data_map)
         ).apply(it, ::ModDataStore)}
     }
     
     private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
-    private val placed_blocks_set = HashSet<BlockPos>()
-    private val block_protection_zone_list = HashMap<Long, MutableList<AABB>>()
-    
+        
     private constructor(
         player_data: Map<Uuid, PlayerDataRecord>,
-        placed_blocks: Set<BlockPos>,
     ): this() {
-        placed_blocks.toList().toSet()
         this.player_data_map.putAll(player_data)
-        this.placed_blocks_set.addAll(placed_blocks)
     }
     
     private fun getPlayerData(id: Uuid): PlayerDataRecord {
@@ -77,47 +68,10 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, BlockProtectionHo
     override fun getPlayerState(player: Player): PlayerDataRecord {
         return getPlayerData(player)
     }
-    
-    
-    override fun getIfBlockWasPlaced(pos: BlockPos): Boolean {
-        return placed_blocks_set.contains(pos)
-    }
-    override fun trackPlacedBlock(pos: BlockPos) {
-        placed_blocks_set.add(pos)
-        setDirty()
-    }
-    
-    override fun getIfBlockIsProtected(pos: BlockPos): Boolean {
-        val chunk_key = ChunkPos.containing(pos).pack()
-        return block_protection_zone_list[chunk_key]?.any{
-            it.contains(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5)
-        } ?: false
-    }
-    override fun registerProtectionZone(corner1: BlockPos, corner2: BlockPos) {
-        val to_box = AABB.of(BoundingBox.fromCorners(corner1, corner2))
-        
-        val cpos1 = ChunkPos.containing(corner1)
-        val cpos2 = ChunkPos.containing(corner2)
-        
-        for (x in minOf(cpos1.x, cpos2.x)..maxOf(cpos1.x, cpos2.x)) {
-            for (z in minOf(cpos1.z, cpos2.z)..maxOf(cpos1.z, cpos2.z)) {
-                val chunk_key = ChunkPos.pack(x, z)
-                block_protection_zone_list.getOrPut(chunk_key){mutableListOf<AABB>()}.add(to_box)
-            }
-        }
-
-        setDirty()
-    }
-    
-    override fun getProtectionZones(): Iterable<AABB> {
-        val toReturn = HashSet<AABB>()
-        this.block_protection_zone_list.values.forEach(toReturn::addAll)
-        return toReturn
-    }
 }
 
 
-object ModDataTracker : PlayerStateExposer, BlockProtectionExposer {
+object ModDataTracker : PlayerStateExposer {
     private val mod_data = ModDataStore()
     
     override fun isPlayerAlive(player: Player): Boolean {
@@ -129,19 +83,4 @@ object ModDataTracker : PlayerStateExposer, BlockProtectionExposer {
     override fun isPlayerDead(player: Player): Boolean {
         return mod_data.isPlayerDead(player)
     }
-    
-    override fun isBlockBreakAllowed(pos: BlockPos): Boolean {
-        return mod_data.isBlockBreakAllowed(pos)
-    }
-    override fun isBlockPlacementAllowed(pos: BlockPos): Boolean {
-        return mod_data.isBlockPlacementAllowed(pos)
-    }
-    override fun trackPlacedBlock(pos: BlockPos) {
-        mod_data.trackPlacedBlock(pos)
-    }
-    override fun registerProtectionZone(corner1: BlockPos, corner2: BlockPos) {
-        mod_data.registerProtectionZone(corner1, corner2)
-    }
-    
-    override fun getProtectionZones() = mod_data.getProtectionZones()
 }

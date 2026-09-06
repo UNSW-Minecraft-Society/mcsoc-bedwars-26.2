@@ -18,14 +18,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import mcsoc.bedwars.datatrackers.ModDataTracker;
+import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker;
 
 
 @Mixin(BlockBehaviour.class)
 public class BlockPlacementMixin {
     @Inject(at = @At("HEAD"), method = "canBeReplaced", cancellable = true)
     public void preventBlockReplace(final BlockState state, final BlockPlaceContext context, CallbackInfoReturnable<Boolean> cir) {
-        if (!state.getBlock().equals(Blocks.AIR) && (state.getFluidState().isEmpty() || !ModDataTracker.INSTANCE.isBlockBreakAllowed(context.getClickedPos()))) {
+        if (!state.getBlock().equals(Blocks.AIR) && (state.getFluidState().isEmpty() || !BlockProtectionTracker.INSTANCE.isBlockBreakAllowed(context.getClickedPos()))) {
             cir.setReturnValue(false);
         }
     }

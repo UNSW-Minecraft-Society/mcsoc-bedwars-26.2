@@ -9,7 +9,7 @@ import net.minecraft.network.chat.MutableComponent
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
 
-import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
 import mcsoc.bedwars.utils.format
 
 const val ROOT_NODE = "bedwars"
@@ -35,7 +35,7 @@ fun registerCommands() {
                 .executes{
                     val p1 = BlockPosArgument.getBlockPos(it, FIRST_POSITION_ARGUMENT)
                     val p2 = BlockPosArgument.getBlockPos(it, SECOND_POSITION_ARGUMENT)
-                    val res = ModDataTracker.registerProtectionZone(p1, p2)
+                    val res = BlockProtectionTracker.registerProtectionZone(p1, p2)
                     
                     it.source.sendSuccess({setProtectionZoneMsg(p1, p2)}, true)
                     1
@@ -46,7 +46,7 @@ fun registerCommands() {
         .executes{
             val source = it.source
             source.sendSystemMessage(Component.literal("Protected Zones:"))
-            ModDataTracker.getProtectionZones().forEach{z -> source.sendSystemMessage(listProtectionZoneMsg(z))}
+            BlockProtectionTracker.getProtectionZones().forEach{z -> source.sendSystemMessage(listProtectionZoneMsg(z))}
             
             1
         })

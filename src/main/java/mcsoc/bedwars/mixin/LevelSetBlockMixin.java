@@ -13,16 +13,16 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
 
-import mcsoc.bedwars.datatrackers.ModDataTracker;
+import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker;
 
 
 @Mixin(Level.class)
 public abstract class LevelSetBlockMixin {
     @Inject(at = @At("HEAD"), method = "setBlock(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;II)Z", cancellable = true)
     private void onSetBlock(BlockPos pos, BlockState newState, int flags, int maxUpdateDepth, CallbackInfoReturnable<Boolean> cir) {
-        if (!ModDataTracker.INSTANCE.isBlockPlacementAllowed(pos)) {
+        if (!BlockProtectionTracker.INSTANCE.isBlockPlacementAllowed(pos)) {
             cir.setReturnValue(false);
         }
-        ModDataTracker.INSTANCE.trackPlacedBlock(pos);
+        BlockProtectionTracker.INSTANCE.trackPlacedBlock(pos);
     }
 }

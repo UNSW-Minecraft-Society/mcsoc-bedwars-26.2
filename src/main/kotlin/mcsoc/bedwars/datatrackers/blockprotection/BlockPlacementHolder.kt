@@ -1,4 +1,4 @@
-package mcsoc.bedwars.datatrackers
+package mcsoc.bedwars.datatrackers.blockprotection
 
 import net.minecraft.core.BlockPos
 import net.minecraft.world.phys.AABB
