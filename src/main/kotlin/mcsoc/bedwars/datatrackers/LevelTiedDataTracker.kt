@@ -1,5 +1,6 @@
 package mcsoc.bedwars.datatrackers
 
+import com.mojang.datafixers.util.Unit
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -19,7 +20,7 @@ import kotlin.reflect.safeCast
 
 // each tracker should extend this class
 abstract class LevelTiedData {
-    companion object {
+    companion object {                
         internal val CODEC: Codec<LevelTiedData> = LevelDataType.CODEC.dispatch(
             { inst -> inst.type },
             { type -> type.codec }
@@ -33,7 +34,8 @@ abstract class LevelTiedData {
     abstract val type: LevelDataType<*>
 }
 
-sealed class LevelDataType<T : LevelTiedData>(val id: String, val codec: MapCodec<T>, val default: T) {
+// codec can be null, indicating that the datatype should be level-tied but not saved
+sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>?, val default: T) {
     companion object {
         fun fromId(id: String): LevelDataType<*> {
             return when (id) {
@@ -42,6 +44,8 @@ sealed class LevelDataType<T : LevelTiedData>(val id: String, val codec: MapCode
         }
         val CODEC: Codec<LevelDataType<*>> = Codec.STRING.xmap(::fromId, LevelDataType<*>::id)
     }
+    internal val codec: MapCodec<T> = codec ?: MapCodec.unit(default)
+    
     object GameState : LevelDataType<ModDataTracker>("game_state", ModDataTracker.CODEC, ModDataTracker())
     // put another enum value for each tracked data type
 }
