@@ -1,7 +1,7 @@
 package mcsoc.bedwars
 
-import mcsoc.bedwars.eventhandlers.registerBlockBreakEvents
-import mcsoc.bedwars.eventhandlers.registerCommands
+import mcsoc.bedwars.eventhandlers.commands.registerCommands
+import mcsoc.bedwars.eventhandlers.registerEventHandlers
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 object BedwarsPlugin : ModInitializer {
 	const val MOD_ID: String = "bedwars-plugin"
 
-	private val LOGGER = LoggerFactory.getLogger(MOD_ID)
+	val LOGGER = LoggerFactory.getLogger(MOD_ID)
 
 	override fun onInitialize() {
 		// This code runs as soon as Minecraft is in a mod-load-ready state.
@@ -18,9 +18,8 @@ object BedwarsPlugin : ModInitializer {
 
 		LOGGER.info("Hello Fabric world!")
 
-		// register eventhandlers
-        registerBlockBreakEvents()
-        registerCommands()
+		registerCommands()
+		registerEventHandlers()
 	}
 
 	fun id(path: String): Identifier
