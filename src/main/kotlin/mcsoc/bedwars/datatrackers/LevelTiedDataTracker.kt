@@ -50,6 +50,7 @@ sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>
     
     object GameState : LevelDataType<ModDataTracker>("game_state", ModDataTracker.CODEC, ModDataTracker())
     // put another enum value for each tracked data type
+    object CustomEntityData : LevelDataType<CustomEntityDataTracker>("custom_entity_data", null, CustomEntityDataTracker())
 }
 
 private class LevelTiedDataTracker() : SavedData() {
@@ -87,4 +88,5 @@ private class LevelTiedDataTracker() : SavedData() {
 private val ServerLevel.levelTiedData get() = LevelTiedDataTracker.getLevelData(this)
 
 val ServerLevel.gameState: ModDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GameState) as ModDataTracker
+val ServerLevel.customEntityData get() = levelTiedData.getDataOfType(LevelDataType.CustomEntityData) as CustomEntityDataTracker
 // put other level-tied data getters here

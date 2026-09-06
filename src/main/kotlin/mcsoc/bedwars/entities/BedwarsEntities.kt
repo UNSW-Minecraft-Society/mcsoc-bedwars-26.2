@@ -14,6 +14,6 @@ fun spawnShopkeeper(level: ServerLevel, position: Vec3, type: CustomEntityType) 
     shopkeeper.isInvulnerable = true
     shopkeeper.customName = Component.literal(type.title)
     shopkeeper.isCustomNameVisible = true
-    level.customEntityData[shopkeeper.uuid] = type
+    level.customEntityData.addEntity(shopkeeper, type)
     level.addFreshEntity(shopkeeper)
 }

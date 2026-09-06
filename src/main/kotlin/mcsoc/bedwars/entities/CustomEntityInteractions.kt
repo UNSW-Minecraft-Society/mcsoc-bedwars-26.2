@@ -23,9 +23,7 @@ object CustomEntityInteractions {
             return InteractionResult.PASS
         if (player !is ServerPlayer || !level.gameState.isPlayerAlive(player))
             return InteractionResult.PASS
-        if (!level.customEntityData.containsKey(entity.uuid))
-            return InteractionResult.PASS
-        val type = level.customEntityData[entity.uuid]!!
+        val type = level.customEntityData.getEntityType(entity) ?: return InteractionResult.PASS
         when (type) {
             CustomEntityType.PLAYER_SHOPKEEPER -> ShopGui.displayShop(player, ShopType.PLAYER_SHOP)
             CustomEntityType.TEAM_SHOPKEEPER -> ShopGui.displayShop(player, ShopType.TEAM_SHOP)
