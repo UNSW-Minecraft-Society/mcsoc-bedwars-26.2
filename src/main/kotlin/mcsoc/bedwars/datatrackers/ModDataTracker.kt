@@ -11,7 +11,6 @@ import kotlin.time.Duration
 import kotlin.time.TimeSource
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
-import mcsoc.bedwars.generators.BaseGenerator
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.server.level.ServerPlayer
@@ -92,22 +91,21 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
 private class TeamDataRecord(
     private val players: MutableList<UUID> = mutableListOf(),
     private var bedAlive: Boolean = true,
+    private var genUpgrade: Int = 0,
     private val spawn: Vec3 = Vec3(0.0, 0.0, 0.0),
 ) : TeamStateRecord, TeamGeneratorState {
     companion object {
         val CODEC: Codec<TeamDataRecord> = RecordCodecBuilder.create { it.group(
             UUIDUtil.CODEC.listOf().fieldOf("players").forGetter(TeamDataRecord::players),
             Codec.BOOL.fieldOf("bed_alive").forGetter(TeamDataRecord::bedAlive),
+            Codec.INT.fieldOf("gen_upgrade").forGetter(TeamDataRecord::genUpgrade),
             Vec3.CODEC.fieldOf("spawn").forGetter(TeamDataRecord::spawn),
         ).apply(it, ::TeamDataRecord)}
     }
-    
-    private lateinit var generator: BaseGenerator
-    
+        
     override fun getBedAlive(): Boolean = bedAlive
     override fun getSpawn(): Vec3 = spawn
     override fun getPlayers(): MutableList<UUID> = players
-    override fun getGenerator() = generator
 
     override fun setBedAlive(bedAlive: Boolean) {
         this.bedAlive = bedAlive
@@ -117,12 +115,9 @@ private class TeamDataRecord(
         players.add(player)
     }
 
-    override fun setGenerator(gen: BaseGenerator) {
-        generator = gen    
-    }
-
-    override fun upgradeGenerator() {
-        if (::generator.isInitialized) generator.upgrade()
+    override fun getGenUpgrade(): Int = genUpgrade
+    override fun upgradeGen() {
+        genUpgrade++
     }
 }
 
@@ -172,9 +167,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         
         timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
         timer_second = game_timer.inWholeSeconds != (game_timer + tick_delta).inWholeSeconds
-        game_timer += tick_delta
-        
-        getGenerators().forEach { it.tick() }
+        game_timer += tick_delta   
     }
 
     override fun getGameTime() = game_timer
@@ -335,7 +328,9 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     override fun getNextItemStack(player: ServerPlayer, item: UpgradeItemType) = mod_data.getNextItemStack(player, item)
     override fun getTier(player: ServerPlayer, item: UpgradeItemType) = mod_data.getTier(player, item)
 
-    override fun getGenerator(team: Team) = mod_data.getGenerator(team)
-    override fun setGenerator(team: Team, gen: BaseGenerator) = mod_data.setGenerator(team, gen)
-    override fun upgradeGenerator(team: Team) = mod_data.upgradeGenerator(team)
+    override fun getGenUpgrade(team: Team) = mod_data.getGenUpgrade(team)
+    override fun upgradeGen(team: Team) {
+        setDirty()
+        mod_data.upgradeGen(team)
+    }
 }

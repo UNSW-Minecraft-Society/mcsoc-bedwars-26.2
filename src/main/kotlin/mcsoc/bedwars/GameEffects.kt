@@ -20,7 +20,7 @@ object TeamEffects {
 
         players.shuffled().forEachIndexed { index, player ->
             val team = teams[index % numTeams]
-            mod_level_data.addPlayer(player.toKotlinUuid(), team)
+            mod_level_data.addPlayer(player, team)
         }
     }
 

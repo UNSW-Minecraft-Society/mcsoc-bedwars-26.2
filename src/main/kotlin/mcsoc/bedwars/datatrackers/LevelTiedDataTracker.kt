@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.datatrackers.generatorData.GeneratorDataTracker
 import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.util.datafix.DataFixTypes
@@ -37,18 +38,22 @@ sealed class LevelDataType<T : LevelTiedData>(val id: String, val codec: MapCode
     companion object {
         fun fromId(id: String): LevelDataType<*> {
             return when (id) {
+                // add branches for other state
+                "generator_state" -> GeneratorState
                 else -> GameState
             }
         }
         val CODEC: Codec<LevelDataType<*>> = Codec.STRING.xmap(::fromId, LevelDataType<*>::id)
     }
     object GameState : LevelDataType<ModDataTracker>("game_state", ModDataTracker.CODEC, ModDataTracker())
+    object GeneratorState : LevelDataType<GeneratorDataTracker>("generator_state", GeneratorDataTracker.CODEC, GeneratorDataTracker())
     // put another enum value for each tracked data type
 }
 
 private class LevelTiedDataTracker() : SavedData() {
     private val tracked_data: MutableMap<LevelDataType<*>, LevelTiedData> = mutableMapOf(
         Pair(LevelDataType.GameState, ModDataTracker()),
+        Pair(LevelDataType.GeneratorState, GeneratorDataTracker())
         // register default entries for each enum value 
     )
     constructor(map: Map<LevelDataType<*>, LevelTiedData>) : this() {
@@ -84,4 +89,5 @@ private class LevelTiedDataTracker() : SavedData() {
 private val ServerLevel.levelTiedData get() = LevelTiedDataTracker.getLevelData(this)
 
 val ServerLevel.gameState: ModDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GameState) as ModDataTracker
+val ServerLevel.generatorState: GeneratorDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GeneratorState) as GeneratorDataTracker
 // put other level-tied data getters here

@@ -3,6 +3,7 @@ package mcsoc.bedwars.gamestate
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.generatorState
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Holder
 import net.minecraft.core.Position
@@ -91,6 +92,7 @@ class GameManager {
 
         fun tick(world: ServerLevel) {
             val player_manager = world.server.playerList
+            world.generatorState.tick(world.server)
             val level_mod_data = world.gameState
             level_mod_data.tick()
             val time = level_mod_data.getGameTime()

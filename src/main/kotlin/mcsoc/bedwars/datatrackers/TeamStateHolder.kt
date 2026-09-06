@@ -1,7 +1,5 @@
 package mcsoc.bedwars.datatrackers
 
-import mcsoc.bedwars.generators.BaseGenerator
-import mcsoc.bedwars.generators.Generator
 import mcsoc.bedwars.utils.Team
 import net.minecraft.world.phys.Vec3
 import java.util.UUID
