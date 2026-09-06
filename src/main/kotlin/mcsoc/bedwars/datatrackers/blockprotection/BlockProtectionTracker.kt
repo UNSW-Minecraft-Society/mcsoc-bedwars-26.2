@@ -1,7 +1,10 @@
 package mcsoc.bedwars.datatrackers.blockprotection
 
 import com.mojang.serialization.Codec
+import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+import mcsoc.bedwars.datatrackers.LevelDataType
+import mcsoc.bedwars.datatrackers.LevelTiedData
 import net.minecraft.core.BlockPos
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.levelgen.structure.BoundingBox
@@ -59,8 +62,19 @@ private class BlockProtectionStore(): BlockProtectionHolder {
 }
 
 
-object BlockProtectionTracker : BlockProtectionExposer {
-    private val protection_data = BlockProtectionStore()
+class BlockProtectionTracker : LevelTiedData, BlockProtectionExposer {
+    companion object {
+        val CODEC: MapCodec<BlockProtectionTracker> = RecordCodecBuilder.mapCodec{ it.group(
+            BlockProtectionStore.CODEC.fieldOf("block_protection_data").forGetter(BlockProtectionTracker::protection_data)
+        ).apply(it, ::BlockProtectionTracker)}
+    }
+    override val type get() = LevelDataType.BlockProtection
+    
+    private val protection_data: BlockProtectionStore
+    private constructor(protection_data: BlockProtectionStore) {
+        this.protection_data = protection_data
+    }
+    internal constructor() : this(BlockProtectionStore())
     
     override fun isBlockBreakAllowed(pos: BlockPos): Boolean {
         return protection_data.isBlockBreakAllowed(pos)

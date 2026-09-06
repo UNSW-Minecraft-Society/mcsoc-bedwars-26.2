@@ -1,3 +1,4 @@
+@file:JvmName("LevelData")
 package mcsoc.bedwars.datatrackers
 
 import com.mojang.datafixers.util.Unit
@@ -5,6 +6,7 @@ import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
 import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.util.datafix.DataFixTypes
@@ -39,6 +41,7 @@ sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>
     companion object {
         fun fromId(id: String): LevelDataType<*> {
             return when (id) {
+                BlockProtection.id -> BlockProtection
                 else -> GameState
             }
         }
@@ -47,12 +50,14 @@ sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>
     internal val codec: MapCodec<T> = codec ?: MapCodec.unit(default)
     
     object GameState : LevelDataType<ModDataTracker>("game_state", ModDataTracker.CODEC, ModDataTracker())
+    object BlockProtection: LevelDataType<BlockProtectionTracker>("block_protection", BlockProtectionTracker.CODEC, BlockProtectionTracker())
     // put another enum value for each tracked data type
 }
 
 private class LevelTiedDataTracker() : SavedData() {
     private val tracked_data: MutableMap<LevelDataType<*>, LevelTiedData> = mutableMapOf(
         Pair(LevelDataType.GameState, ModDataTracker()),
+        Pair(LevelDataType.BlockProtection, BlockProtectionTracker()),
         // register default entries for each enum value 
     )
     constructor(map: Map<LevelDataType<*>, LevelTiedData>) : this() {
@@ -87,5 +92,7 @@ private class LevelTiedDataTracker() : SavedData() {
 
 private val ServerLevel.levelTiedData get() = LevelTiedDataTracker.getLevelData(this)
 
+
 val ServerLevel.gameState: ModDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GameState) as ModDataTracker
+val ServerLevel.blockProtection: BlockProtectionTracker get() = levelTiedData.getDataOfType(LevelDataType.BlockProtection) as BlockProtectionTracker
 // put other level-tied data getters here

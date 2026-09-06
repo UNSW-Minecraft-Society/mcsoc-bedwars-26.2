@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import mcsoc.bedwars.TeamEffects
+import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
 import mcsoc.bedwars.datatrackers.blockprotection.ProtectionZone
 import mcsoc.bedwars.datatrackers.gameState
@@ -120,7 +121,7 @@ object CommandActions {
     fun setProtectionZone(ctx: CommandContext<CommandSourceStack>): Int {
         val p1 = BlockPosArgument.getBlockPos(ctx, FIRST_POSITION_ARGUMENT)
         val p2 = BlockPosArgument.getBlockPos(ctx, SECOND_POSITION_ARGUMENT)
-        val res = BlockProtectionTracker.registerProtectionZone(p1, p2)
+        val res = ctx.source.level.blockProtection.registerProtectionZone(p1, p2)
         
         ctx.source.sendSuccess({setProtectionZoneMsg(p1, p2)}, true)
         return 1
@@ -129,7 +130,7 @@ object CommandActions {
     fun listProtectionZones(ctx: CommandContext<CommandSourceStack>): Int {
         val source = ctx.source
         source.sendSystemMessage(Component.literal("Protected Zones:"))
-        BlockProtectionTracker.getProtectionZones().forEach{z -> source.sendSystemMessage(listProtectionZoneMsg(z))}
+        ctx.source.level.blockProtection.getProtectionZones().forEach{z -> source.sendSystemMessage(listProtectionZoneMsg(z))}
         return 1
     }
 
