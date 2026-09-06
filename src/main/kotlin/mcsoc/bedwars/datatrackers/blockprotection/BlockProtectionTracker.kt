@@ -76,18 +76,18 @@ class BlockProtectionTracker : LevelTiedData, BlockProtectionExposer {
     }
     internal constructor() : this(BlockProtectionStore())
     
-    override fun isBlockBreakAllowed(pos: BlockPos): Boolean {
-        return protection_data.isBlockBreakAllowed(pos)
-    }
-    override fun isBlockPlacementAllowed(pos: BlockPos): Boolean {
-        return protection_data.isBlockPlacementAllowed(pos)
-    }
+    override fun isBlockBreakAllowed(pos: BlockPos): Boolean = protection_data.isBlockBreakAllowed(pos)
+    override fun isBlockPlacementAllowed(pos: BlockPos): Boolean = protection_data.isBlockPlacementAllowed(pos)
     override fun trackPlacedBlock(pos: BlockPos) {
+        setDirty()
         protection_data.trackPlacedBlock(pos)
-    }
-    override fun registerProtectionZone(corner1: BlockPos, corner2: BlockPos) {
-        protection_data.registerProtectionZone(corner1, corner2)
     }
     
     override fun getProtectionZones() = protection_data.getProtectionZones()
+    override fun registerProtectionZone(corner1: BlockPos, corner2: BlockPos) {
+        setDirty()
+        protection_data.registerProtectionZone(corner1, corner2)
+    }
+    
+    
 }
