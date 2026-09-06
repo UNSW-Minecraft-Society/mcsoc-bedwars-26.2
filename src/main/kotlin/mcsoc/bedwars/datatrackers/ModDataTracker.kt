@@ -1,6 +1,7 @@
 package mcsoc.bedwars.datatrackers
 
 import com.mojang.serialization.Codec
+import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.utils.inWholeTicks
 import mcsoc.bedwars.utils.ticks
@@ -115,7 +116,7 @@ private class TeamDataRecord(
     override fun getPlayers(): MutableList<Uuid> = players
 
     override fun setBedAlive(bedAlive: Boolean) {
-       this.bedAlive = bedAlive
+        this.bedAlive = bedAlive
     }
 
     override fun addPlayer(player: Uuid) {
@@ -245,19 +246,42 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 }
 
 
-class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer {
-    private val mod_data = ModDataStore()
+class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer {
+    companion object {
+        val CODEC: MapCodec<ModDataTracker> = RecordCodecBuilder.mapCodec{ it.group(
+            ModDataStore.CODEC.fieldOf("mod_data").forGetter(ModDataTracker::mod_data)
+        ).apply(it, ::ModDataTracker)}
+    }
+    override val type get() = LevelDataType.GameState
 
-    override fun tick() = mod_data.tick()
+    private val mod_data: ModDataStore
+    private constructor(mod_data: ModDataStore) {
+        this.mod_data = mod_data
+    }
+    internal constructor() : this(ModDataStore())
+
+    override fun tick() {
+        setDirty()
+        mod_data.tick()
+    }
     override fun getGameTime(): Duration = mod_data.getGameTime()
-    override fun resetGameTime() = mod_data.resetGameTime()
+    override fun resetGameTime() {
+        setDirty()
+        mod_data.resetGameTime()
+    }
     override fun getTimerTick(): Boolean = mod_data.getTimerTick()
     override fun getTimerSecond(): Boolean = mod_data.getTimerSecond()
 
     fun getGamePhase(): GamePhase = mod_data.getGamePhase()
-    fun setGamePhase(phase: GamePhase) = mod_data.setGamePhase(phase)
+    fun setGamePhase(phase: GamePhase) {
+        setDirty()
+        mod_data.setGamePhase(phase)
+    }
     fun getGamePeriod(): GamePeriod = mod_data.getGamePeriod()
-    fun setGamePeriod(period: GamePeriod) = mod_data.setGamePeriod(period)
+    fun setGamePeriod(period: GamePeriod) {
+        setDirty()
+        mod_data.setGamePeriod(period)
+    }
 
     override fun isPlayerAlive(player: Player) = mod_data.isPlayerAlive(player)
     override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
@@ -267,20 +291,46 @@ class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Player
     override fun getPlayersInTeam(team: Team): List<Uuid> = mod_data.getPlayersInTeam(team)
     override fun getTeamSpawn(team: Team): Vec3 = mod_data.getTeamSpawn(team)
     override fun getActiveTeams(): List<Team> = mod_data.getActiveTeams()
-    override fun setBedAlive(team: Team, state: Boolean) = mod_data.setBedAlive(team, state)
-    override fun initialiseTeams(numTeams: Int) = mod_data.initialiseTeams(numTeams)
-    override fun addPlayer(player: Uuid, team: Team) = mod_data.addPlayer(player, team)
+    override fun setBedAlive(team: Team, state: Boolean) {
+        setDirty()
+        mod_data.setBedAlive(team, state)
+    }
+    override fun initialiseTeams(numTeams: Int) {
+        setDirty()
+        mod_data.initialiseTeams(numTeams)
+    } 
+    override fun addPlayer(player: Uuid, team: Team) {
+        setDirty()
+        mod_data.addPlayer(player, team)
+    }
     
     override fun getPlayersTeam(player: Uuid): Team = mod_data.getPlayersTeam(player)
     override fun getActivePlayers() = mod_data.getActivePlayers()
-    override fun addActivePlayer(uuid: UUID) = mod_data.addActivePlayer(uuid)
-    override fun removeActivePlayer(uuid: UUID) = mod_data.removeActivePlayer(uuid)
-    override fun clearActivePlayers() = mod_data.clearActivePlayers()
-
-    override fun upgradeItem(player: ServerPlayer, item: UpgradeItemType) = mod_data.upgradeItem(player, item)
-    override fun downgradeItems(player: ServerPlayer) = mod_data.downgradeItems(player)
-    override fun clearItems(player: ServerPlayer) = mod_data.clearItems(player)
-
+    override fun addActivePlayer(uuid: UUID): Boolean {
+        setDirty()
+        return mod_data.addActivePlayer(uuid)
+    }
+    override fun removeActivePlayer(uuid: UUID): Boolean {
+        setDirty()
+        return mod_data.removeActivePlayer(uuid)
+    }
+    override fun clearActivePlayers() {
+        setDirty()
+        mod_data.clearActivePlayers()
+    } 
+    
+    override fun upgradeItem(player: ServerPlayer, item: UpgradeItemType) {
+        setDirty()
+        mod_data.upgradeItem(player, item)
+    }
+    override fun downgradeItems(player: ServerPlayer) {
+        setDirty()
+        mod_data.downgradeItems(player)
+    }
+    override fun clearItems(player: ServerPlayer) {
+        setDirty()
+        mod_data.clearItems(player)
+    }
     override fun getNextItemStack(player: ServerPlayer, item: UpgradeItemType) = mod_data.getNextItemStack(player, item)
     override fun getTier(player: ServerPlayer, item: UpgradeItemType) = mod_data.getTier(player, item)
 }
