@@ -1,5 +1,6 @@
 package mcsoc.bedwars.datatrackers
 
+import com.mojang.datafixers.util.Unit
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -20,7 +21,7 @@ import kotlin.reflect.safeCast
 
 // each tracker should extend this class
 abstract class LevelTiedData {
-    companion object {
+    companion object {                
         internal val CODEC: Codec<LevelTiedData> = LevelDataType.CODEC.dispatch(
             { inst -> inst.type },
             { type -> type.codec }
@@ -34,28 +35,27 @@ abstract class LevelTiedData {
     abstract val type: LevelDataType<*>
 }
 
-sealed class LevelDataType<T : LevelTiedData>(val id: String, val codec: MapCodec<T>, val default: T) {
+// codec can be null, indicating that the datatype should be level-tied but not saved
+sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>?, val default: T) {
     companion object {
-        fun fromId(id: String): LevelDataType<*> {
-            return when (id) {
-                // add branches for other state
-                "generator_state" -> GeneratorState
-                else -> GameState
-            }
+        private val REGISTRY: Map<String, LevelDataType<*>> by lazy {
+            LevelDataType::class.sealedSubclasses
+                .mapNotNull { it.objectInstance }
+                .associateBy { it.id }
         }
+        fun fromId(id: String): LevelDataType<*> = REGISTRY[id] ?: throw IllegalArgumentException("Unknown LevelDataType: \"$id\"")
+            
         val CODEC: Codec<LevelDataType<*>> = Codec.STRING.xmap(::fromId, LevelDataType<*>::id)
     }
+    internal val codec: MapCodec<T> = codec ?: MapCodec.unit(default)
+    
     object GameState : LevelDataType<ModDataTracker>("game_state", ModDataTracker.CODEC, ModDataTracker())
     object GeneratorState : LevelDataType<GeneratorDataTracker>("generator_state", GeneratorDataTracker.CODEC, GeneratorDataTracker())
     // put another enum value for each tracked data type
 }
 
 private class LevelTiedDataTracker() : SavedData() {
-    private val tracked_data: MutableMap<LevelDataType<*>, LevelTiedData> = mutableMapOf(
-        Pair(LevelDataType.GameState, ModDataTracker()),
-        Pair(LevelDataType.GeneratorState, GeneratorDataTracker())
-        // register default entries for each enum value 
-    )
+    private val tracked_data: MutableMap<LevelDataType<*>, LevelTiedData> = mutableMapOf()
     constructor(map: Map<LevelDataType<*>, LevelTiedData>) : this() {
         tracked_data.putAll(map)
     }
