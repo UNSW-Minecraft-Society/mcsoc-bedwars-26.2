@@ -39,12 +39,13 @@ abstract class LevelTiedData {
 // codec can be null, indicating that the datatype should be level-tied but not saved
 sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>?, val default: T) {
     companion object {
-        fun fromId(id: String): LevelDataType<*> {
-            return when (id) {
-                BlockProtection.id -> BlockProtection
-                else -> GameState
-            }
+        private val REGISTRY: Map<String, LevelDataType<*>> by lazy {
+            LevelDataType::class.sealedSubclasses
+                .mapNotNull { it.objectInstance }
+                .associateBy { it.id }
         }
+        fun fromId(id: String): LevelDataType<*> = REGISTRY[id] ?: throw IllegalArgumentException("Unknown LevelDataType: \"$id\"")
+            
         val CODEC: Codec<LevelDataType<*>> = Codec.STRING.xmap(::fromId, LevelDataType<*>::id)
     }
     internal val codec: MapCodec<T> = codec ?: MapCodec.unit(default)
