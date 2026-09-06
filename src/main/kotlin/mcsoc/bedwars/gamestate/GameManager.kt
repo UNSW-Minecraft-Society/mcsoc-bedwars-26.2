@@ -9,6 +9,7 @@ import net.minecraft.core.Holder
 import net.minecraft.core.Position
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
 import net.minecraft.network.protocol.game.ClientboundSoundPacket
 import net.minecraft.server.level.ServerLevel
@@ -25,6 +26,7 @@ import kotlin.uuid.toKotlinUuid
 
 val DEATHMATCH_TIME = 10.minutes // change if i'm wrong
 const val BORDER_SIZE: Double = 300.0 // change if needed
+const val RESPAWN_TIME: Int = 5
 
 class GameManager {
     companion object {
@@ -152,14 +154,17 @@ class GameManager {
 //                player.teleportTo(base_position.x.toDouble(), base_position.y.toDouble(), base_position.z.toDouble())
 
                 level_mod_data.setPlayerRespawning(player)
-                // notify player how much time left in respawn maybe? either that or just display a fat ass word RESPAWNING
-                // i need to check hypixel bedwars again...
-                // todo
-//                player.connection.send(
-//                    ClientboundSetTitleTextPacket(
-//                        Component.literal((level_mod_data.getRespawnTime().toString()))
-//                    )
-//                )
+                level_mod_data.resetPlayerRespawnTime(player)
+                player.connection.send(
+                    ClientboundSetSubtitleTextPacket(
+                        Component.literal((ChatFormatting.YELLOW.toString() + "You will respawn in " + ChatFormatting.RED.toString() + RESPAWN_TIME.toString() + ChatFormatting.YELLOW.toString() + " seconds!"))
+                    )
+                )
+                player.connection.send(
+                    ClientboundSetTitleTextPacket(
+                        Component.literal((ChatFormatting.RED.toString() + "YOU DIED!"))
+                    )
+                )
             } else {
                 eliminatePlayer(player)
             }
@@ -198,6 +203,40 @@ class GameManager {
             val player_manager = world.server.playerList
             val level_mod_data = world.gameState
             level_mod_data.tick()
+
+            if (level_mod_data.getTimerTick()) {
+                level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).forEach { player ->
+                    if (level_mod_data.isPlayerEliminated(player)) return@forEach
+
+                    val seconds_left = level_mod_data.getPlayerRespawnSeconds(player)
+                    if (level_mod_data.isPlayerRespawning(player)) {
+
+                        if (seconds_left == 0) {
+                            // tp player to base location
+//                            val base_position = SavedModData.getTeamBasePosition(SavedModData.getPlayerTeam(uuid))
+//                            player.teleportTo(base_position.x.toDouble(), base_position.y.toDouble(), base_position.z.toDouble())
+
+                            player.setGameMode(GameType.SURVIVAL)
+                            level_mod_data.setPlayerAlive(player)
+                            player.connection.send(
+                                ClientboundClearTitlesPacket(true)
+                            )
+                        } else if (level_mod_data.playerTimerSecondPassed(player)) {
+                            player.connection.send(
+                                ClientboundSetSubtitleTextPacket(
+                                    Component.literal((ChatFormatting.YELLOW.toString() + "You will respawn in " + ChatFormatting.RED.toString() + seconds_left.toString() + ChatFormatting.YELLOW.toString() + " seconds!"))
+                                )
+                            )
+                            player.connection.send(
+                                ClientboundSetTitleTextPacket(
+                                    Component.literal((ChatFormatting.RED.toString() + "YOU DIED!"))
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
             val time = level_mod_data.getGameTime()
             if (level_mod_data.getTimerSecond()) {
                 if (level_mod_data.getGamePhase() == GamePhase.STARTING) {

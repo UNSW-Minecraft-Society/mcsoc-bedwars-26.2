@@ -2,6 +2,7 @@ package mcsoc.bedwars.datatrackers
 
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+import mcsoc.bedwars.gamestate.RESPAWN_TIME
 import mcsoc.bedwars.utils.inWholeTicks
 import mcsoc.bedwars.utils.ticks
 import kotlin.time.Duration
@@ -11,6 +12,7 @@ import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
+import net.minecraft.commands.arguments.EntityArgument.players
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
@@ -19,6 +21,7 @@ import net.minecraft.world.level.Level
 import net.minecraft.world.level.saveddata.SavedData
 import net.minecraft.world.phys.Vec3
 import java.util.UUID
+import kotlin.math.ceil
 import kotlin.uuid.Uuid
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
@@ -36,7 +39,7 @@ enum class GamePeriod {
     INACTIVE
 }
 
-private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord {
+private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord, PlayerTimeRecord {
     companion object {
         val TOOL_UPGRADES_CODEC: Codec<HashMap<UpgradeItemType, UpgradableItem>> =
             Codec.unboundedMap(UpgradeItemType.CODEC, Codec.STRING).xmap(
@@ -57,6 +60,10 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
     private var team: Team = Team.NONE
 
     private var toolUpgrades = HashMap<UpgradeItemType, UpgradableItem>()
+
+    private var respawn_ticks: Int = 0
+    private var respawn_seconds: Int = 0
+    private var respawn_second_passed: Boolean = false
 
     private constructor(
         life_state: LifeState,
@@ -98,6 +105,29 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
     override fun removeItem(item: UpgradeItemType) {
         toolUpgrades.remove(item)
     }
+
+    override fun getRespawnSeconds(): Int {
+        return respawn_seconds
+    }
+
+    override fun decrementPlayerRespawnTicks() {
+        if (respawn_ticks > 0) {
+            respawn_ticks -= 1
+            if (ceil((respawn_ticks / 20.0)) < respawn_seconds) {
+                respawn_seconds -= 1
+                respawn_second_passed = true
+            } else respawn_second_passed = false
+        }
+    }
+
+    override fun resetPlayerRespawnTime() {
+        respawn_ticks = RESPAWN_TIME * 20
+        respawn_seconds = RESPAWN_TIME
+    }
+
+    override fun getSecondPassed(): Boolean {
+        return respawn_second_passed
+    }
 }
 
 
@@ -133,7 +163,7 @@ private class TeamDataRecord(
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder {
+private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder, PlayerTimeHolder {
     companion object {
         val UUIDCodec: Codec<Uuid> = Codec.STRING.xmap(Uuid::parse, Uuid::toString)
         
@@ -180,6 +210,13 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         
         timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
         timer_second = game_timer.inWholeSeconds != (game_timer + tick_delta).inWholeSeconds
+
+        // Tick down timers for all individual players
+        active_players.forEach { uuid ->
+            val record = player_data_map.getOrDefault(uuid.toKotlinUuid(), null)
+            if (record != null && timer_tick) record.decrementPlayerRespawnTicks()
+        }
+
         game_timer += tick_delta
     }
 
@@ -224,6 +261,10 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         return getPlayerData(player)
     }
 
+    override fun getPlayerTime(player: Player): PlayerDataRecord {
+        return getPlayerData(player)
+    }
+
     override fun getTeam(team: Team): TeamDataRecord {
         return teams_map[team] ?: throw Exception("Invalid team")
     }
@@ -254,7 +295,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 }
 
 
-class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer {
+class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer, PlayerTimeExposer {
     private val mod_data = ModDataStore()
 
     override fun tick() = mod_data.tick()
@@ -298,4 +339,8 @@ class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Player
 
     override fun getNextItemStack(player: ServerPlayer, item: UpgradeItemType) = mod_data.getNextItemStack(player, item)
     override fun getTier(player: ServerPlayer, item: UpgradeItemType) = mod_data.getTier(player, item)
+
+    override fun getPlayerRespawnSeconds(player: ServerPlayer): Int = mod_data.getPlayerRespawnSeconds(player)
+    override fun resetPlayerRespawnTime(player: ServerPlayer) = mod_data.resetPlayerRespawnTime(player)
+    override fun playerTimerSecondPassed(player: ServerPlayer): Boolean = mod_data.playerTimerSecondPassed(player)
 }
