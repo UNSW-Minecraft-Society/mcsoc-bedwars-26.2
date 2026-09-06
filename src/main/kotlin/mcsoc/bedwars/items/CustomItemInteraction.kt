@@ -44,8 +44,8 @@ import kotlin.uuid.toKotlinUuid
 const val FIREBALL_SPEED = 1.0
 const val BRIDGE_EGG_OFFSET = -0.5
 const val POPUP_TOWER_HEIGHT = 6 // needs to be >5
-val POPUP_TOWER_WOOL_OFFSETS = buildList {
-    for (y in 0..POPUP_TOWER_HEIGHT-3) {
+val POPUP_TOWER_WOOL_OFFSETS = buildSet {
+    for (y in -1..POPUP_TOWER_HEIGHT-3) {
         add(Vec3i(-1, y, -1))
         add(Vec3i(-1, y, +1))
         add(Vec3i(0, y, -2))
@@ -56,10 +56,11 @@ val POPUP_TOWER_WOOL_OFFSETS = buildList {
         add(Vec3i(+2, y, 0))
         add(Vec3i(+2, y, +1))
     }
-    for (y in 2..POPUP_TOWER_HEIGHT-3) add(Vec3i(-1, y, 0))
-    for (x in -1..2) for (z in -2..2) {
-        if (x != 1 || z != 0)
-            add(Vec3i(x, POPUP_TOWER_HEIGHT-2, z))
+    for (y in (2..POPUP_TOWER_HEIGHT-3)) add(Vec3i(-1, y, 0))
+    add(Vec3i(-1, -1, 0))
+    for (x in -1..2) for (y in intArrayOf(-1,POPUP_TOWER_HEIGHT-2)) for (z in -2..2) {
+        if (x != 1 || y == -1 || z != 0 )
+            add(Vec3i(x, y, z))
     }
     for (x in intArrayOf(-2, 3)) for (z in -2..2) {
         add(Vec3i(x, POPUP_TOWER_HEIGHT-1, z))
@@ -76,7 +77,7 @@ val POPUP_TOWER_WOOL_OFFSETS = buildList {
         }
     }
 }
-val POPUP_TOWER_LADDER_OFFSETS = buildList { for (y in 0..POPUP_TOWER_HEIGHT-2) add(Vec3i(1,y,0))}
+val POPUP_TOWER_LADDER_OFFSETS = buildSet { for (y in 0..POPUP_TOWER_HEIGHT-2) add(Vec3i(1,y,0))}
 
 object CustomItemInteraction {
     fun triggerCustomItemEffect(player: Player, level: Level, hand: InteractionHand, hitResult: HitResult? = null): InteractionResult {
