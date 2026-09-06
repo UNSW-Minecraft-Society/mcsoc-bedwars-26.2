@@ -28,7 +28,6 @@ class GameManager {
 
             val start_block_pos = BlockPos.containing(start_pos)
             // TODO val map = level_mod_data.getLoadedMapData()
-            level_mod_data.initialiseTeams(2)
 
             // set difficulty to peaceful/easy maybe?
             // maybe disable mob spawning
