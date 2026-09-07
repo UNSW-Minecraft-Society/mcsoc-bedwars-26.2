@@ -4,17 +4,23 @@ import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
+import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
 import mcsoc.bedwars.datatrackers.blockprotection.ProtectionZone
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.entities.CustomEntityType
+import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.gamestate.GameManager
+import mcsoc.bedwars.gui.ShopGui.displayShop
+import mcsoc.bedwars.gui.ShopType
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.format
 import net.minecraft.commands.CommandSourceStack
+import net.minecraft.commands.arguments.coordinates.Vec3Argument
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
@@ -202,15 +208,58 @@ internal object CommandActions {
         return 1
     }
 
+    fun summonShopkeeper(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player ?: run {
+            ctx.source.sendFailure(Component.literal("Command must be run by a player"))
+            return 0
+        }
+        val posInput = Vec3Argument.getVec3(ctx, POSITION_ARG)
+        val typeInput = StringArgumentType.getString(ctx, ENTITY_TYPE_ARG)
+        val type = try {
+            CustomEntityType.valueOf(typeInput.uppercase())
+        } catch (e: IllegalArgumentException) {
+            player.sendSystemMessage(Component.literal("$typeInput is not a valid entity"))
+            return 0
+        }
+        when (type) {
+            CustomEntityType.PLAYER_SHOPKEEPER -> spawnShopkeeper(player.level(), posInput, type)
+            CustomEntityType.TEAM_SHOPKEEPER -> spawnShopkeeper(player.level(), posInput, type)
+        }
+        return 1
+    }
+
+    fun openShop(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player ?: run {
+            ctx.source.sendFailure(Component.literal("Command must be run by a player"))
+            return 0
+        }
+        val input = StringArgumentType.getString(ctx, SHOP_TYPE_ARG)
+        val type = try {
+            ShopType.valueOf(input.uppercase())
+        } catch (e: IllegalArgumentException) {
+            player.sendSystemMessage(Component.literal("$input is not a valid shop"))
+            return 0
+        }
+        try {
+            displayShop(player, type)
+            return 1
+        } catch (e: Exception) {
+            BedwarsPlugin.LOGGER.error(e.stackTraceToString())
+            e.printStackTrace()
+            return 0
+        }
+    }
+
+
     fun setProtectionZone(ctx: CommandContext<CommandSourceStack>): Int {
         val p1 = BlockPosArgument.getBlockPos(ctx, FIRST_POSITION_ARGUMENT)
         val p2 = BlockPosArgument.getBlockPos(ctx, SECOND_POSITION_ARGUMENT)
         val res = ctx.source.level.blockProtection.registerProtectionZone(p1, p2)
-        
+
         ctx.source.sendSuccess(setProtectionZoneMsg(p1, p2), true)
         return 1
     }
-    
+
     fun listProtectionZones(ctx: CommandContext<CommandSourceStack>): Int {
         val source = ctx.source
         source.sendSystemMessage(Component.literal("Protected Zones:"))
@@ -224,7 +273,7 @@ internal object CommandActions {
         source.sendSystemMessage(blockProtectionGetMsg(state)())
         return 1
     }
-    
+
     fun setProtectionState(ctx: CommandContext<CommandSourceStack>): Int {
         val source = ctx.source
         val state = BoolArgumentType.getBool(ctx, BOOL_ARGUMENT)
@@ -242,10 +291,10 @@ internal object CommandActions {
         val pos = Vec3.atBottomCenterOf(bpos)
         return addGenerator(ctx.source, pos, genArg)
     }
-    
+
     fun addTeamGenerator(ctx: CommandContext<CommandSourceStack>): Int {
         val teamArg = StringArgumentType.getString(ctx, GEN_TEAM_ARG)
-        val bpos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above() 
+        val bpos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above()
         val pos = Vec3.atBottomCenterOf(bpos)
         return addGeneratorTeam(ctx.source, pos, teamArg)
     }
@@ -256,7 +305,7 @@ internal object CommandActions {
         ctx.source.sendSystemMessage(Component.literal("removed generator"))
         return 1
     }
-    
+
     fun removeGeneratorById(ctx: CommandContext<CommandSourceStack>): Int {
         val id: Int = IntegerArgumentType.getInteger(ctx, GEN_ID_ARG)
         ctx.source.level.generatorState.removeGenerator(id)
@@ -267,16 +316,16 @@ internal object CommandActions {
     fun upgradeGeneratorTier(ctx: CommandContext<CommandSourceStack>): Int {
         val type = StringArgumentType.getString(ctx, GEN_TYPE_ARG)
         val genType = GeneratorType.ENTRIES[type.uppercase()]
-        
+
         if (genType == null) {
             ctx.source.sendFailure(Component.literal("$type is not an upgradable generator"))
             return 0
         }
-        
+
         ctx.source.level.generatorState.upgradeGenerator(genType)
         return 1
     }
-    
+
     fun upgradeTeamGen(ctx: CommandContext<CommandSourceStack>): Int {
         val teamArg = StringArgumentType.getString(ctx, GEN_TEAM_ARG)
         val team = ctx.source.level.gameState.getActiveTeams().find { it.getName() == teamArg }
@@ -284,21 +333,20 @@ internal object CommandActions {
             ctx.source.sendFailure(Component.literal("$teamArg is not a valid team"))
             return 0
         }
-        
+
         ctx.source.level.gameState.upgradeGen(team)
         return 1
     }
 }
 
-
 private fun addGenerator(src: CommandSourceStack, pos: Vec3, type: String): Int {
     val genType = GeneratorType.ENTRIES[type.uppercase()]
-        
+
     if (genType == null) {
         src.sendFailure(Component.literal("$type is not a valid generator type"))
         return 0
     }
-    
+
     val id = src.level.generatorState.addGenerator(src.server, pos, src.level.dimension(), genType)
     src.sendSystemMessage(Component.literal("added $type generator at ${pos.format} (Id: $id)"))
     return 1
@@ -309,7 +357,7 @@ private fun addGeneratorTeam(src: CommandSourceStack, pos: Vec3, teamStr: String
         src.sendFailure(Component.literal("$teamStr is not a valid team"))
         return 0
     }
-    
+
     val id = src.level.generatorState.addTeamGenerator(src.server, pos, src.level.dimension(), team)
     src.sendSystemMessage(Component.literal("added base generator for team $teamStr at ${pos.format} (Id: $id)"))
     return 1

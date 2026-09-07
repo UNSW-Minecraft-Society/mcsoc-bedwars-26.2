@@ -12,18 +12,19 @@ fun registerEventHandlers() {
     }
 
     ServerLifecycleEvents.SERVER_STARTED.register { server ->
-        server.allLevels.forEach { 
-            it.generatorState.placeGenerators(server)       
+        server.allLevels.forEach {
+            it.generatorState.placeGenerators(server)
         }
     }
-    
-    ServerLifecycleEvents.SERVER_STOPPING.register {server -> 
-        server.allLevels.forEach { 
+
+    ServerLifecycleEvents.SERVER_STOPPING.register {server ->
+        server.allLevels.forEach {
             it.generatorState.removeTimerEntities()
-        }    
+        }
     }
-    
+
     registerItemCallbacks()
+    registerEntityCallbacks()
     registerPlayerJoinEvent()
     registerBlockBreakEvents()
 }

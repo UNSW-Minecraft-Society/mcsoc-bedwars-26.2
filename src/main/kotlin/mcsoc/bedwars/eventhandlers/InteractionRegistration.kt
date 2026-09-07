@@ -2,6 +2,8 @@ package mcsoc.bedwars.eventhandlers
 
 import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.entities.CustomEntityInteractions
+import net.fabricmc.fabric.api.event.player.UseEntityCallback
 import net.fabricmc.fabric.api.event.player.UseItemCallback
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.InteractionResult
@@ -17,5 +19,11 @@ fun registerItemCallbacks() {
         } else {
             InteractionResult.PASS
         }
+    }
+}
+
+fun registerEntityCallbacks() {
+    UseEntityCallback.EVENT.register { player, level, hand, entity, hitResult ->
+        return@register CustomEntityInteractions.triggerShopkeeperOpen(player, level, hand, entity)
     }
 }

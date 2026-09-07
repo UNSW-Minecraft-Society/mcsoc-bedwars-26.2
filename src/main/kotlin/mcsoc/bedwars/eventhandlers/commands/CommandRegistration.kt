@@ -11,6 +11,8 @@ import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.resources.Identifier
 import net.minecraft.server.permissions.PermissionLevel
+import mcsoc.bedwars.gui.ShopGui
+import net.minecraft.commands.arguments.coordinates.Vec3Argument
 import net.minecraft.server.permissions.Permissions
 
 
@@ -25,6 +27,9 @@ const val MAP_NAME_ARGUMENT = "name"
 const val SOME_ARGUMENT = "some"
 const val BOOL_ARGUMENT = "bool"
 const val UPGRADE_TYPE_ARG = "type"
+const val ENTITY_TYPE_ARG = "type2"
+const val SHOP_TYPE_ARG = "type3"
+const val POSITION_ARG = "pos"
 const val FIRST_POSITION_ARGUMENT = "pos1"
 const val SECOND_POSITION_ARGUMENT = "pos2"
 const val GEN_TYPE_ARG = "type"
@@ -142,6 +147,25 @@ fun registerCommands() {
                     .then(Commands.argument(GEN_TEAM_ARG, StringArgumentType.word())
                         .suggests(TeamSuggestionProvider())
                         .executes(CommandActions::upgradeTeamGen)
+                    )
+                )
+            )
+            .then(Commands.literal("open_shop_gui").executes(CommandActions::openShop)
+                .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
+                .then(Commands.argument(SHOP_TYPE_ARG, StringArgumentType.word())
+                    .suggests(ShopTypeSuggestionProvider())
+                    .executes(CommandActions::openShop)
+                )
+            )
+            .then(Commands.literal("test_simple_gui").executes(ShopGui::testSimpleGui))
+
+            .then(Commands.literal("test_simple_gui_4").executes(ShopGui::testSimpleGui4))
+            .then(Commands.literal("summon_shopkeeper")
+                .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
+                .then(Commands.argument(POSITION_ARG, Vec3Argument.vec3())
+                    .then(Commands.argument(ENTITY_TYPE_ARG, StringArgumentType.word())
+                        .suggests(EntityTypeSuggestionProvider())
+                        .executes(CommandActions::summonShopkeeper)
                     )
                 )
             )
