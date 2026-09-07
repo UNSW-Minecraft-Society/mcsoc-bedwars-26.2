@@ -184,7 +184,7 @@ object CommandActions {
             return 0
         }
     }
-}
+
 
     fun setProtectionZone(ctx: CommandContext<CommandSourceStack>): Int {
         val p1 = BlockPosArgument.getBlockPos(ctx, FIRST_POSITION_ARGUMENT)
@@ -273,7 +273,6 @@ object CommandActions {
         return 1
     }
 }
-
 
 private fun addGenerator(src: CommandSourceStack, pos: Vec3, type: String): Int {
     val genType = GeneratorType.ENTRIES[type.uppercase()]

@@ -143,7 +143,7 @@ class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
 
     override fun setPlayer(player: ServerPlayer) {
         val gameState = player.level().gameState
-        val team = gameState.getPlayersTeam(player.uuid.toKotlinUuid())
+        val team = gameState.getPlayersTeam(player.uuid)
         setItemStack(templates.getValue(team))
     }
 }
@@ -206,7 +206,7 @@ abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player ?: return@ClickCallback
             val gameState = player.level().gameState
-            val team = gameState.getPlayersTeam(player.uuid.toKotlinUuid())
+            val team = gameState.getPlayersTeam(player.uuid)
             purchaseUnit(player, fun(): Boolean {
                 gameState.upgrade(team, teamUpgrade)
                 return true
@@ -220,7 +220,7 @@ abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
 
     protected fun getUpgradeState(): T {
         val gameState = player.level().gameState
-        val team = gameState.getPlayersTeam(player.uuid.toKotlinUuid())
+        val team = gameState.getPlayersTeam(player.uuid)
         return gameState.getUpgrade(team, teamUpgrade)
     }
 }

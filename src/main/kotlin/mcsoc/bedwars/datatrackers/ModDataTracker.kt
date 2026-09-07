@@ -20,8 +20,6 @@ import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup
-import net.minecraft.server.level.ServerLevel
-import net.minecraft.server.level.ServerPlayer
 import net.minecraft.resources.ResourceKey
 import net.minecraft.world.effect.MobEffect
 import net.minecraft.world.effect.MobEffectInstance
