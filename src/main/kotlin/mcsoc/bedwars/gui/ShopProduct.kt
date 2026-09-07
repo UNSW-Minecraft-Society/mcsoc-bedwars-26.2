@@ -3,7 +3,6 @@ package mcsoc.bedwars.gui
 import eu.pb4.sgui.api.ClickType
 import eu.pb4.sgui.api.elements.GuiElement
 import mcsoc.bedwars.BedwarsPlugin
-import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.upgrades.TeamUpgradeType
 import mcsoc.bedwars.upgrades.UpgradeItemType
@@ -16,7 +15,6 @@ import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.ItemStackTemplate
 import net.minecraft.world.item.Items
-import kotlin.uuid.toKotlinUuid
 
 val DEFAULT_TEAM = Team.BLACK
 
@@ -67,7 +65,7 @@ abstract class ShopProduct {
  * player-specific upgrades). `setPlayer` needs to be called to initialize the player it before this class is used.
  */
 interface PlayerSpecificShopProduct {
-    fun setPlayer(player: ServerPlayer)
+    fun setShopPlayer(player: ServerPlayer)
 }
 
 /**
@@ -141,7 +139,7 @@ class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
     constructor(items: Map<Team, Item>, count: Int, currency: Item, price: Int) : this(
         items.mapValues { ItemStackTemplate(it.value, count) },currency, price)
 
-    override fun setPlayer(player: ServerPlayer) {
+    override fun setShopPlayer(player: ServerPlayer) {
         val gameState = player.level().gameState
         val team = gameState.getPlayersTeam(player.uuid)
         setItemStack(templates.getValue(team))
@@ -186,7 +184,7 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
         return ItemStack(currencies[tier], prices[tier])
     }
 
-    override fun setPlayer(player: ServerPlayer) {
+    override fun setShopPlayer(player: ServerPlayer) {
         this.player = player
     }
 
@@ -214,7 +212,7 @@ abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
         }
     }
 
-    override fun setPlayer(player: ServerPlayer) {
+    override fun setShopPlayer(player: ServerPlayer) {
         this.player = player
     }
 

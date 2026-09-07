@@ -9,6 +9,8 @@ import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
 import mcsoc.bedwars.datatrackers.blockprotection.ProtectionZone
+import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
+import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader.Companion.place
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.entities.CustomEntityType
 import mcsoc.bedwars.entities.spawnShopkeeper
@@ -18,6 +20,7 @@ import mcsoc.bedwars.gui.ShopGui.displayShop
 import mcsoc.bedwars.gui.ShopType
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.generators.GeneratorType
+import mcsoc.bedwars.utils.MapData
 import mcsoc.bedwars.utils.format
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.arguments.coordinates.Vec3Argument
@@ -25,10 +28,12 @@ import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.TextColor
+import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
 
 
-private fun setProtectionZoneMsg(p1: BlockPos, p2: BlockPos): () -> Component = {Component.literal("Created new protection zone between ${p1.format} and ${p2.format}")}
+private fun setProtectionZoneMsg(p1: BlockPos, p2: BlockPos): () -> Component = 
+        {Component.literal("Created new protection zone between ${p1.format} and ${p2.format}")}
 
 private fun listProtectionZoneMsg(zone: ProtectionZone): () -> Component {
     return {
@@ -52,32 +57,7 @@ private fun blockProtectionSetMsg(state: Boolean): () -> Component {
     }
 }
 
-private fun setProtectionZoneMsg(p1: BlockPos, p2: BlockPos) = 
-    Component.literal("Created new protection zone between ${p1.format} and ${p2.format}")
-
-private fun listProtectionZoneMsg(box: AABB): Component {
-    val p1 = BlockPos.containing(box.minPosition)
-    val p2 = BlockPos.containing(box.maxPosition)
-    return Component.literal("  from ${p1.format} to ${p2.format}")
-}
-
 internal object CommandActions {
-    fun setProtectionZone(ctx: CommandContext<CommandSourceStack>): Int {
-        val p1 = BlockPosArgument.getBlockPos(ctx, FIRST_POSITION_ARGUMENT)
-        val p2 = BlockPosArgument.getBlockPos(ctx, SECOND_POSITION_ARGUMENT)
-        val res = ModDataTracker.registerProtectionZone(p1, p2)
-        
-        ctx.source.sendSuccess({setProtectionZoneMsg(p1, p2)}, true)
-        return 1
-    }
-    
-    fun listProtectionZones(ctx: CommandContext<CommandSourceStack>): Int {
-        val source = ctx.source
-        source.sendSystemMessage(Component.literal("Protected Zones:"))
-        ModDataTracker.getProtectionZones().forEach{z -> source.sendSystemMessage(listProtectionZoneMsg(z))}
-        return 1
-    }
-    
     fun placeStructure(ctx: CommandContext<CommandSourceStack>): Int {
         val map_name = StringArgumentType.getString(ctx, MAP_NAME_ARGUMENT)
         val pos = BlockPosArgument.getLoadedBlockPos(ctx, POSITION_ARGUMENT)
@@ -213,7 +193,7 @@ internal object CommandActions {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
             return 0
         }
-        val posInput = Vec3Argument.getVec3(ctx, POSITION_ARG)
+        val posInput = Vec3Argument.getVec3(ctx, POSITION_ARGUMENT)
         val typeInput = StringArgumentType.getString(ctx, ENTITY_TYPE_ARG)
         val type = try {
             CustomEntityType.valueOf(typeInput.uppercase())
@@ -249,7 +229,6 @@ internal object CommandActions {
             return 0
         }
     }
-
 
     fun setProtectionZone(ctx: CommandContext<CommandSourceStack>): Int {
         val p1 = BlockPosArgument.getBlockPos(ctx, FIRST_POSITION_ARGUMENT)

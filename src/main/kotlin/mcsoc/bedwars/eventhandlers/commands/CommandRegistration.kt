@@ -29,9 +29,7 @@ const val BOOL_ARGUMENT = "bool"
 const val UPGRADE_TYPE_ARG = "type"
 const val ENTITY_TYPE_ARG = "type2"
 const val SHOP_TYPE_ARG = "type3"
-const val POSITION_ARG = "pos"
-const val FIRST_POSITION_ARGUMENT = "pos1"
-const val SECOND_POSITION_ARGUMENT = "pos2"
+
 const val GEN_TYPE_ARG = "type"
 const val GEN_POS_ARG = "pos"
 const val GEN_TEAM_ARG = "team"
@@ -162,7 +160,7 @@ fun registerCommands() {
             .then(Commands.literal("test_simple_gui_4").executes(ShopGui::testSimpleGui4))
             .then(Commands.literal("summon_shopkeeper")
                 .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
-                .then(Commands.argument(POSITION_ARG, Vec3Argument.vec3())
+                .then(Commands.argument(POSITION_ARGUMENT, Vec3Argument.vec3())
                     .then(Commands.argument(ENTITY_TYPE_ARG, StringArgumentType.word())
                         .suggests(EntityTypeSuggestionProvider())
                         .executes(CommandActions::summonShopkeeper)
