@@ -35,7 +35,6 @@ internal open class Generator(val location: Vec3, val levelKey: ResourceKey<Leve
     
     private lateinit var level: ServerLevel
     private lateinit var timerDisplay: TimerDisplay
-    // private val config = type.getConfig()
     
     private var currentTick = 0
     var id = -1
@@ -71,7 +70,6 @@ internal open class Generator(val location: Vec3, val levelKey: ResourceKey<Leve
         
         val rateMultiplier = type.config.kind.rateAt(upgrade)
         val cycle = type.config.cycleTime / rateMultiplier
-
         for (item in type.config.kind.itemsAt(upgrade)) {
             val generated = curCycleItems.firstOrNull {it.first == item }?.second ?: 0
             val expected = (currentTick / cycle * item.itemsPerCycle).toInt()

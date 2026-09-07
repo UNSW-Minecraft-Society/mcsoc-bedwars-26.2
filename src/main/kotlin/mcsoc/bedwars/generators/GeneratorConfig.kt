@@ -20,13 +20,8 @@ sealed interface GeneratorKind {
         override fun rateAt(level: Int) = 1.0
     }
 
-    data class Base(val items: Map<Int, Iterable<GeneratorItem>>, val rates: List<Double>) : GeneratorKind {
-        override fun itemsAt(level: Int) = items[level] ?: emptyList()
-        override fun rateAt(level: Int) = rates.getOrElse(level) { rates.last() }
-    }
-
-    data class Tiered(val items: Iterable<GeneratorItem>, val rates: List<Double>) : GeneratorKind {
-        override fun itemsAt(level: Int) = items
+    data class Upgradable(val items: Map<Int, Iterable<GeneratorItem>>, val rates: List<Double>) : GeneratorKind {
+        override fun itemsAt(level: Int) = items[level] ?: items.values.lastOrNull() ?: emptyList()
         override fun rateAt(level: Int) = rates.getOrElse(level) { rates.last() }
     }
 }
@@ -43,7 +38,7 @@ sealed interface GeneratorType {
     
     data class BASE(val team: Team): GeneratorType {
         override val config = GeneratorConfig(
-            GeneratorKind.Base(
+            GeneratorKind.Upgradable(
                 listOf(
                     (0..2).map { it to baseGenT1Items },
                     (3..4).map {it to baseGenT3Items}
@@ -59,8 +54,8 @@ sealed interface GeneratorType {
     
     data object DIAMOND: GeneratorType {
         override val config = GeneratorConfig(
-            GeneratorKind.Tiered(
-                listOf(GeneratorItem(Items.DIAMOND, 1, 8)),
+            GeneratorKind.Upgradable(
+                mapOf(0 to listOf(GeneratorItem(Items.DIAMOND, 1, 8))),
                 listOf(1.0, 1.25, 2.5)
             ),
             30 * 20,
@@ -72,8 +67,8 @@ sealed interface GeneratorType {
     
     data object EMERALD: GeneratorType {
         override val config = GeneratorConfig(
-            GeneratorKind.Tiered(
-                listOf(GeneratorItem(Items.EMERALD, 1, 4)),
+            GeneratorKind.Upgradable(
+                mapOf(0 to listOf(GeneratorItem(Items.EMERALD, 1, 4))),
                 listOf(1.0, 1.3, 1.85)
             ),
             65 * 20,
