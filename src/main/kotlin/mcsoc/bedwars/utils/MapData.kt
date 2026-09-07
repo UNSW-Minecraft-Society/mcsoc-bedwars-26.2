@@ -71,10 +71,16 @@ private enum class LoadedShopkeeper {
 } 
 
 
+@Serializable
+private data class ProtectionZoneData(
+    val c1: @Serializable(with=BlockPosSerialiser::class) BlockPos = BlockPos(0, 0, 0), 
+    val c2: @Serializable(with=BlockPosSerialiser::class) BlockPos = BlockPos(0, 0, 0)
+)
+
 private interface Island {
     val cpos: CylindricalBlockPos
     val structure: String
-    val protection_zones: List<ProtectionZoneData>
+    val protection_zones: Iterable<ProtectionZoneData>
     
     fun place(level: ServerLevel, origin: BlockPos) {
         level.place(structure, cpos.toBlockPos(origin))
@@ -93,31 +99,24 @@ private interface GeneratorIsland : Island {
     } 
 }
 
-@Serializable
-private data class ProtectionZoneData(
-    val c1: @Serializable(with=BlockPosSerialiser::class) BlockPos = BlockPos(0, 0, 0), 
-    val c2: @Serializable(with=BlockPosSerialiser::class) BlockPos = BlockPos(0, 0, 0)
-)
-
-@Serializable
 private data class IslandData(
     override val cpos: CylindricalBlockPos = CylindricalBlockPos(),
     override val structure: String = "default",
-    override val protection_zones: List<ProtectionZoneData> = listOf(ProtectionZoneData())
+    override val protection_zones: Iterable<ProtectionZoneData> = listOf(ProtectionZoneData())
 ) : Island
 
 private data class GeneratorIslandData(
     override val cpos: CylindricalBlockPos = CylindricalBlockPos(),
     override val structure: String = "default",
     override val generators: Iterable<Pair<GeneratorType, BlockPos>> = listOf(Pair(GeneratorType.Diamond, BlockPos(0, 0, 0))),
-    override val protection_zones: List<ProtectionZoneData> = listOf(ProtectionZoneData())
+    override val protection_zones: Iterable<ProtectionZoneData> = listOf(ProtectionZoneData())
 ) : GeneratorIsland
 
 private data class BaseIslandData(
     override val cpos: CylindricalBlockPos = CylindricalBlockPos(),
     override val structure: String = "default",
     override val generators: Iterable<Pair<GeneratorType, BlockPos>> = listOf(Pair(GeneratorType.Base(Team.RED), BlockPos(0, -2, 0))),
-    override val protection_zones: List<ProtectionZoneData> = listOf(ProtectionZoneData()),
+    override val protection_zones: Iterable<ProtectionZoneData> = listOf(ProtectionZoneData()),
     val shops: Iterable<Pair<LoadedShopkeeper, BlockPos>> = listOf(Pair(LoadedShopkeeper.PERSONAL, BlockPos(2, 0, 0))),
     val team: Team = Team.RED
 ) : GeneratorIsland {
@@ -138,7 +137,7 @@ data class MapData private constructor(
     private val mid_island: @Serializable(with=GeneratorIslandDataSerialiser::class) GeneratorIslandData,
     private val base_islands: List<@Serializable(with=BaseIslandDataSerialiser::class) BaseIslandData>,
     private val diamond_islands: List<@Serializable(with=GeneratorIslandDataSerialiser::class) GeneratorIslandData>,
-    private val misc_islands: List<IslandData>,
+    private val misc_islands: List<@Serializable(with=IslandDataSerialiser::class) IslandData>,
 ) {
     constructor() : this(
         GeneratorIslandData(generators = listOf(Pair(GeneratorType.Emerald, BlockPos(0, 0, 0)))), 
@@ -229,7 +228,7 @@ private object GeneratorTypeSerialiser: KSerializer<GeneratorType> {
         encoder.encodeStructure(descriptor) {
             encodeStringElement(descriptor, 0, value.name)
             val team = value.team
-            if (team != null) encodeStringElement(descriptor, 1, team.name)
+            if (team != null) encodeStringElement(descriptor, 1, team.name.lowercase())
         }
     }
     override fun deserialize(decoder: Decoder): GeneratorType = decoder.decodeStructure(descriptor) {
@@ -240,7 +239,7 @@ private object GeneratorTypeSerialiser: KSerializer<GeneratorType> {
             when (val index = decodeElementIndex(descriptor)) {
                 CompositeDecoder.DECODE_DONE -> break
                 0 -> type = decodeStringElement(descriptor, index)
-                1 -> team = Team.valueOf(decodeStringElement(descriptor, index))
+                1 -> team = Team.valueOf(decodeStringElement(descriptor, index).uppercase())
                 else -> error("Unexpected index: $index")
             }
         }
@@ -278,11 +277,49 @@ private object GeneratorPositionSerialiser: KSerializer<Pair<GeneratorType, Bloc
     }
 }
 
+
+private object IslandDataSerialiser: KSerializer<IslandData> {
+    override val descriptor = buildClassSerialDescriptor("GeneratorIslandData") {
+        element("cpos", CylindricalBlockPos.serializer().descriptor)
+        element<String>("structure")
+        element("protection_zones", ListSerializer(ProtectionZoneData.serializer()).descriptor)
+    }
+    
+    override fun serialize(encoder: Encoder, value: IslandData) {
+        encoder.encodeStructure(descriptor) {
+            encodeSerializableElement(descriptor, 0, CylindricalBlockPos.serializer(), value.cpos)
+            encodeStringElement(descriptor, 1, value.structure)
+            encodeSerializableElement(descriptor, 2, ListSerializer(ProtectionZoneData.serializer()), value.protection_zones.toList())
+        }
+    }
+    
+    override fun deserialize(decoder: Decoder): IslandData = decoder.decodeStructure(descriptor) {
+        val default = GeneratorIslandData()
+        var cpos = default.cpos
+        var structure = default.structure
+        var protection_zones = default.protection_zones
+        
+        while (true) {
+            when (val index = decodeElementIndex(descriptor)) {
+                CompositeDecoder.DECODE_DONE -> break
+                0 -> cpos = decodeSerializableElement(descriptor, index, CylindricalBlockPos.serializer())
+                1 -> structure = decodeStringElement(descriptor, index)
+                2 -> protection_zones = decodeSerializableElement(descriptor, index, ListSerializer(ProtectionZoneData.serializer()))
+                else -> error("Unexpected index: $index")
+            }
+        }
+
+        IslandData(cpos, structure, protection_zones)
+    }
+}
+
+
 private object GeneratorIslandDataSerialiser: KSerializer<GeneratorIslandData> {
     override val descriptor = buildClassSerialDescriptor("GeneratorIslandData") {
         element("cpos", CylindricalBlockPos.serializer().descriptor)
         element<String>("structure")
         element("generators", ListSerializer(GeneratorPositionSerialiser).descriptor)
+        element("protection_zones", ListSerializer(ProtectionZoneData.serializer()).descriptor)
     }
     
     override fun serialize(encoder: Encoder, value: GeneratorIslandData) {
@@ -290,6 +327,7 @@ private object GeneratorIslandDataSerialiser: KSerializer<GeneratorIslandData> {
             encodeSerializableElement(descriptor, 0, CylindricalBlockPos.serializer(), value.cpos)
             encodeStringElement(descriptor, 1, value.structure)
             encodeSerializableElement(descriptor, 2, ListSerializer(GeneratorPositionSerialiser), value.generators.toList())
+            encodeSerializableElement(descriptor, 3, ListSerializer(ProtectionZoneData.serializer()), value.protection_zones.toList())
         }
     }
     
@@ -298,6 +336,7 @@ private object GeneratorIslandDataSerialiser: KSerializer<GeneratorIslandData> {
         var cpos = default.cpos
         var structure = default.structure
         var generators = default.generators
+        var protection_zones = default.protection_zones
         
         while (true) {
             when (val index = decodeElementIndex(descriptor)) {
@@ -305,11 +344,12 @@ private object GeneratorIslandDataSerialiser: KSerializer<GeneratorIslandData> {
                 0 -> cpos = decodeSerializableElement(descriptor, index, CylindricalBlockPos.serializer())
                 1 -> structure = decodeStringElement(descriptor, index)
                 2 -> generators = decodeSerializableElement(descriptor, index, ListSerializer(GeneratorPositionSerialiser))
+                3 -> protection_zones = decodeSerializableElement(descriptor, index, ListSerializer(ProtectionZoneData.serializer()))
                 else -> error("Unexpected index: $index")
             }
         }
 
-        GeneratorIslandData(cpos, structure, generators)
+        GeneratorIslandData(cpos, structure, generators, protection_zones)
     }
 }
 
@@ -349,6 +389,7 @@ private object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
         element("generators", ListSerializer(GeneratorPositionSerialiser).descriptor)
         element("shopkeepers", ListSerializer(ShopkeeperPositionSerialiser).descriptor)
         element<String>("team")
+        element("protection_zones", ListSerializer(ProtectionZoneData.serializer()).descriptor)
     }
     
     override fun serialize(encoder: Encoder, value: BaseIslandData) {
@@ -358,6 +399,7 @@ private object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
             encodeSerializableElement(descriptor, 2, ListSerializer(GeneratorPositionSerialiser), value.generators.toList())
             encodeSerializableElement(descriptor, 3, ListSerializer(ShopkeeperPositionSerialiser), value.shops.toList())
             encodeStringElement(descriptor, 4, value.team.name.lowercase())
+            encodeSerializableElement(descriptor, 5, ListSerializer(ProtectionZoneData.serializer()), value.protection_zones.toList())
         }
     }
     
@@ -366,6 +408,7 @@ private object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
         var cpos = default.cpos
         var structure = default.structure
         var generators = default.generators
+        var protection_zones = default.protection_zones
         var shops = default.shops
         var team = default.team
         
@@ -377,6 +420,7 @@ private object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
                 2 -> generators = decodeSerializableElement(descriptor, index, ListSerializer(GeneratorPositionSerialiser))
                 3 -> shops = decodeSerializableElement(descriptor, index, ListSerializer(ShopkeeperPositionSerialiser))
                 4 -> team = Team.valueOf(decodeStringElement(descriptor, index).uppercase())
+                5 -> protection_zones = decodeSerializableElement(descriptor, index, ListSerializer(ProtectionZoneData.serializer()))
                 else -> error("Unexpected index: $index")
             }
         }
