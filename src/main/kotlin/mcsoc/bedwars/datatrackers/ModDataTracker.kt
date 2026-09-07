@@ -14,15 +14,11 @@ import net.minecraft.core.UUIDUtil
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup
-import net.minecraft.resources.ResourceKey
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
-import net.minecraft.world.effect.MobEffect
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.player.Player
-import net.minecraft.world.item.ItemStack
-import net.minecraft.world.level.Level
 import net.minecraft.world.level.saveddata.SavedData
 import net.minecraft.world.phys.Vec3
 import java.util.UUID
@@ -117,10 +113,13 @@ private class TeamDataRecord(
         ).apply(it, ::TeamDataRecord)}
         
         private const val PLAYER_RANGE = 15
+        private const val TRAP_COOLDOWN = 10 * 20
     }
     
+    private var trapCooldown = 0
     
     fun tick(level: ServerLevel) {
+            
         if (getUpgrade(TeamUpgradeType.HEAL_POOL)) {
             players
                 .mapNotNull {level.getPlayerByUUID(it.toJavaUuid())}
@@ -135,10 +134,19 @@ private class TeamDataRecord(
                 .forEach { it.addEffect(MobEffectInstance(MobEffects.HASTE, 1, haste - 1, false, false)) }
         }
 
+        if (trapCooldown > 0) {
+            trapCooldown--
+            return
+        }
+        
         val playersInBase = PlayerLookup.around(level, spawn, PLAYER_RANGE.toDouble())
-        val playersNotInTeam = playersInBase.filter {it.uuid.toKotlinUuid() in players}
-        if (traps.isNotEmpty() && playersNotInTeam.isNotEmpty()) {
-            popTrap()?.doTrap(level, playersNotInTeam)
+        val enemies = playersInBase.filter { it.uuid.toKotlinUuid() !in players }
+        val teammates = playersInBase.filter {it.uuid.toKotlinUuid() in players}
+        if (traps.isNotEmpty() && enemies.isNotEmpty()) {
+            val trap = popTrap()
+            trap?.enemyEffect(level, enemies)
+            trap?.teamEffect(level, teammates)
+            // notify teammates about trap being triggered with title and sfx
         }
     }
 
