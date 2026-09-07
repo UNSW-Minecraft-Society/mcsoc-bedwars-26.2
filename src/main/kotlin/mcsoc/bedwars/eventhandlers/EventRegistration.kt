@@ -12,4 +12,5 @@ fun registerEventHandlers() {
     registerPlayerJoinEvent()
     AfterDeathEvent()
     AfterRespawnEvent()
+    onBedBreakAttempt()
 }
