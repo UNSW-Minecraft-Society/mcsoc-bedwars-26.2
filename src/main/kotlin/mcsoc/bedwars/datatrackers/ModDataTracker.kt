@@ -12,8 +12,13 @@ import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup
 import net.minecraft.resources.ResourceKey
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.effect.MobEffect
+import net.minecraft.world.effect.MobEffectInstance
+import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
@@ -109,6 +114,31 @@ private class TeamDataRecord(
             Codec.BOOL.fieldOf("bed_alive").forGetter(TeamDataRecord::bedAlive),
             Vec3.CODEC.fieldOf("spawn").forGetter(TeamDataRecord::spawn),
         ).apply(it, ::TeamDataRecord)}
+        
+        private const val PLAYER_RANGE = 15
+    }
+    
+    
+    fun tick(level: ServerLevel) {
+        if (getUpgrade(TeamUpgradeType.HEAL_POOL)) {
+            players
+                .mapNotNull {level.getPlayerByUUID(it.toJavaUuid())}
+                .filter { spawn.distanceTo(it.position()) < PLAYER_RANGE }
+                .forEach { it.addEffect(MobEffectInstance(MobEffects.REGENERATION, 1, 0, false, false)) }
+        }
+        
+        val haste = getUpgrade(TeamUpgradeType.HASTE)
+        if (haste > 0) {
+            players
+                .mapNotNull {level.getPlayerByUUID(it.toJavaUuid())}
+                .forEach { it.addEffect(MobEffectInstance(MobEffects.HASTE, 1, haste - 1, false, false)) }
+        }
+
+        val playersInBase = PlayerLookup.around(level, spawn, PLAYER_RANGE.toDouble())
+        val playersNotInTeam = playersInBase.filter {it.uuid.toKotlinUuid() in players}
+        if (traps.isNotEmpty() && playersNotInTeam.isNotEmpty()) {
+            popTrap()?.doTrap(level, playersNotInTeam)
+        }
     }
 
     override fun getBedAlive(): Boolean = bedAlive
@@ -196,6 +226,10 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         timer_second = game_timer.inWholeSeconds != (game_timer + tick_delta).inWholeSeconds
         game_timer += tick_delta
     }
+    
+    fun tickTeams(level: ServerLevel) {
+        teams_map.values.forEach { it.tick(level) }
+    }
 
     override fun getGameTime() = game_timer
 
@@ -272,6 +306,7 @@ class ModDataTracker : PlayerStateExposer, TeamStateExposer, TickExposer, Player
     private val mod_data = ModDataStore()
 
     override fun tick() = mod_data.tick()
+    fun tickTeams(level: ServerLevel) = mod_data.tickTeams(level)
     override fun getGameTime(): Duration = mod_data.getGameTime()
     override fun resetGameTime() = mod_data.resetGameTime()
     override fun getTimerTick(): Boolean = mod_data.getTimerTick()

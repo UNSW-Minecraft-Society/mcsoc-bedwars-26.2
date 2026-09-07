@@ -11,9 +11,9 @@ import net.minecraft.world.level.Level
 sealed class TeamUpgradeType<T>(val default: () -> TeamUpgrade<T>) {
     object PROTECTION : TeamUpgradeType<Int>({ IntUpgrade(4, listOf(Cost(0), Cost(0), Cost(0), Cost(0))) })
     object FEATHER_FALLING : TeamUpgradeType<Int>({ IntUpgrade(2, listOf(Cost(0), Cost(0))) })
-    object HASTE : TeamUpgradeType<Int>({ IntUpgrade(2, listOf(Cost(0), Cost(0))) }) // todo
+    object HASTE : TeamUpgradeType<Int>({ IntUpgrade(2, listOf(Cost(0), Cost(0))) })
     object SHARPNESS : TeamUpgradeType<Boolean>({ BooleanUpgrade(Cost(0)) })
-    object HEAL_POOL : TeamUpgradeType<Boolean>({ BooleanUpgrade(Cost(0)) }) // todo
+    object HEAL_POOL : TeamUpgradeType<Boolean>({ BooleanUpgrade(Cost(0)) })
 }
 
 // temp
