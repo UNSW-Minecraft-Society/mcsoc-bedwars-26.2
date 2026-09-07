@@ -3,9 +3,12 @@
 	"package": "mcsoc.bedwars.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"ExampleMixin",
+		"BlockPlacementMixin",
+		"SnowReplacementMixin",
+		"LevelSetBlockMixin",
 		"DisableCraftingMixin",
-		"DisableRecipeBookMixin"
+		"DisableRecipeBookMixin",
+		"PickupMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
