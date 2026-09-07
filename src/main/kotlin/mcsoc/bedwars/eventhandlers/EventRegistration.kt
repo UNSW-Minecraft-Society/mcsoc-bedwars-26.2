@@ -10,6 +10,7 @@ fun registerEventHandlers() {
     }
     registerItemCallbacks()
     registerPlayerJoinEvent()
+    registerBlockBreakEvents()
     AfterDeathEvent()
     AfterRespawnEvent()
     onBedBreakAttempt()
