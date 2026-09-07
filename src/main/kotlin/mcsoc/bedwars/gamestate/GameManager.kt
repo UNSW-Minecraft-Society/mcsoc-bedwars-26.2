@@ -1,5 +1,6 @@
 package mcsoc.bedwars.gamestate
 
+import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.gameState
@@ -27,8 +28,10 @@ class GameManager {
             }
 
             val start_block_pos = BlockPos.containing(start_pos)
+
+            // later add a command that can modify number of teams (seperate to assign_teams)
+            TeamEffects.createTeamsWithPlayers(level, 2)
             // TODO val map = level_mod_data.getLoadedMapData()
-            level_mod_data.initialiseTeams(2)
 
             // set difficulty to peaceful/easy maybe?
             // maybe disable mob spawning
@@ -93,6 +96,7 @@ class GameManager {
             val player_manager = world.server.playerList
             val level_mod_data = world.gameState
             level_mod_data.tick()
+            level_mod_data.tickTeams(world)
             val time = level_mod_data.getGameTime()
             if (level_mod_data.getTimerSecond()) {
                 if (level_mod_data.getGamePhase() == GamePhase.STARTING) {
