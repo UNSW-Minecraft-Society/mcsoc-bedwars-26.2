@@ -16,12 +16,8 @@ import kotlin.time.TimeSource
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
-import mcsoc.bedwars.upgrades.UpgradableItem
-import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup
 import net.minecraft.resources.ResourceKey
-import net.minecraft.server.level.ServerLevel
-import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.effect.MobEffect
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects

@@ -5,6 +5,7 @@ import eu.pb4.sgui.api.elements.GuiElement
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.upgrades.TeamUpgradeType
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.utils.Team
 import net.minecraft.network.chat.Component
@@ -32,7 +33,7 @@ abstract class ShopProduct {
      * Gets the callback function to be executed when this item is clicked in the shop.
      */
     abstract fun getClickCallback(): GuiElement.ClickCallback
-    abstract fun getItemCost(): ItemStack
+    abstract fun getItemCost(): ItemStack?
 
     /**
      * Handles purchasing logic, returns true if purchase successful.
@@ -40,8 +41,8 @@ abstract class ShopProduct {
       */
     protected fun purchaseUnit(player: Player, transaction: () -> Boolean, sendMsg: Boolean = true): Boolean {
         val inventory = player.inventory
-        val currency = getItemCost().item
-        val price = getItemCost().count
+        val currency = getItemCost()?.item ?: return false
+        val price = getItemCost()?.count ?: return false
         if (inventory.countItem(currency) < price) {
             player.playSound(SoundEvents.NOTE_BLOCK_BIT.value())
             if (sendMsg) player.sendSystemMessage(Component.literal("Insufficient funds"))
@@ -73,10 +74,10 @@ interface PlayerSpecificShopProduct {
  * Class for storing data on default item shop products.
  */
 open class ShopItem : ShopProduct {
-    private var itemTemplate: ItemStackTemplate
-    private lateinit var stack: ItemStack
-    private val currency: Item
-    private val price: Int
+    protected var itemTemplate: ItemStackTemplate
+    protected lateinit var stack: ItemStack
+    protected val currency: Item
+    protected val price: Int
 
     constructor(template: ItemStackTemplate, currency: Item, price: Int) {
         this.itemTemplate = template
@@ -133,7 +134,7 @@ class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
     private val templates: Map<Team, ItemStackTemplate>
 
     constructor(templates: Map<Team, ItemStackTemplate>, currency: Item, price: Int) : super(
-        templates.get(Team.NONE) ?: ItemStackTemplate(Items.BARRIER), currency, price) {
+        templates[Team.NONE] ?: ItemStackTemplate(Items.BARRIER), currency, price) {
         this.templates = templates
     }
 
@@ -178,15 +179,95 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
         }
     }
 
-    override fun getItemCost(): ItemStack {
+    override fun getItemCost(): ItemStack? {
         val gameState = player.level().gameState
         val tier = gameState.getTier(player, playerUpgrade)
-        if (tier >= currencies.size) return ItemStack(Items.BARRIER, 999)
+        if (tier >= currencies.size) return null
         return ItemStack(currencies[tier], prices[tier])
     }
 
     override fun setPlayer(player: ServerPlayer) {
         this.player = player
+    }
+
+}
+
+abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
+    protected var teamUpgrade: TeamUpgradeType<T>
+    protected var displayItem: Item
+    protected lateinit var player: ServerPlayer
+
+    constructor(teamUpgrade: TeamUpgradeType<T>, displayItem: Item) {
+        this.teamUpgrade = teamUpgrade
+        this.displayItem = displayItem
+    }
+
+    override fun getClickCallback(): GuiElement.ClickCallback {
+        return GuiElement.ClickCallback { index, clickType, action, gui ->
+            val player = gui.player ?: return@ClickCallback
+            val gameState = player.level().gameState
+            val team = gameState.getPlayersTeam(player.uuid.toKotlinUuid())
+            purchaseUnit(player, fun(): Boolean {
+                gameState.upgrade(team, teamUpgrade)
+                return true
+            })
+        }
+    }
+
+    override fun setPlayer(player: ServerPlayer) {
+        this.player = player
+    }
+
+    protected fun getUpgradeState(): T {
+        val gameState = player.level().gameState
+        val team = gameState.getPlayersTeam(player.uuid.toKotlinUuid())
+        return gameState.getUpgrade(team, teamUpgrade)
+    }
+}
+
+class BooleanShopTeamUpgrade : ShopTeamUpgrade<Boolean> {
+    private var currency: Item
+    private var price: Int
+
+    constructor(teamUpgrade: TeamUpgradeType<Boolean>, displayItem: Item, currency: Item, price: Int) : super(teamUpgrade, displayItem) {
+        this.currency = currency
+        this.price = price
+    }
+
+    override fun getItemStack(): ItemStack {
+        return if (!getUpgradeState())
+            ItemStack(displayItem)
+        else
+            Items.STAINED_GLASS_PANE.lightGray.defaultInstance
+    }
+
+    override fun getItemCost(): ItemStack? {
+        return if (!getUpgradeState())
+            ItemStack(currency, price)
+        else
+            null
+    }
+
+}
+
+class IntShopTeamUpgrade : ShopTeamUpgrade<Int> {
+    private val currencies: Array<Item>
+    private val prices: Array<Int>
+
+    constructor(teamUpgrade: TeamUpgradeType<Int>, displayItem: Item, currencies: Array<Item>, prices: Array<Int>) : super(teamUpgrade, displayItem) {
+        this.currencies = currencies
+        this.prices = prices
+    }
+
+    override fun getItemStack(): ItemStack {
+        val nextTier = getUpgradeState()
+        if (currencies.lastIndex < nextTier) return Items.STAINED_GLASS_PANE.lightGray.defaultInstance
+        return ItemStack(displayItem, nextTier)
+    }
+
+    override fun getItemCost(): ItemStack? {
+        val nextTier = getUpgradeState()
+        return currencies.getOrNull(nextTier)?.let { prices.getOrNull(nextTier)?.let { count -> ItemStack(it, count) } }
     }
 
 }
