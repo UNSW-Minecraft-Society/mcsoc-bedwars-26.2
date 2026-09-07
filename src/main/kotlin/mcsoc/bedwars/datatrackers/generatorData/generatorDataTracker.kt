@@ -23,7 +23,6 @@ private class GeneratorDataStore() : GeneratorsHolder {
                 Codec.unboundedMap(GeneratorType.CODEC, GEN_LIST_CODEC)
                     .fieldOf("generators")
                     .forGetter(GeneratorDataStore::generators),
-
                 Codec.unboundedMap(GeneratorType.CODEC, Codec.INT)
                     .fieldOf("upgrades")
                     .forGetter(GeneratorDataStore::genUpgrades),

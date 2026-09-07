@@ -189,10 +189,13 @@ private class TeamDataRecord(
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder, TeamGeneratorHolder, TeamUpgradesHolder {
+private class ModDataStore() : PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder, TeamGeneratorHolder, TeamUpgradesHolder {
     companion object {
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
-            Codec.unboundedMap(UUIDUtil.CODEC, PlayerDataRecord.CODEC)
+            Codec.unboundedMap(
+                UUIDUtil.STRING_CODEC,
+                PlayerDataRecord.CODEC
+            )
                 .fieldOf("player_data_map")
                 .forGetter(ModDataStore::player_data_map),
 
@@ -295,6 +298,11 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         val teams = Team.entries.take(numTeams)
         teams.forEach { teams_map[it] = TeamDataRecord() }
     }
+    
+    override fun initialiseTeams(teams: Set<Team>) {
+        teams_map.clear()
+        teams.forEach { teams_map[it] = TeamDataRecord() }
+    }
 
     override fun addPlayer(player: UUID, team: Team) {
         getTeam(team).addPlayer(player)
@@ -366,6 +374,10 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     override fun initialiseTeams(numTeams: Int) {
         setDirty()
         mod_data.initialiseTeams(numTeams)
+    }
+    override fun initialiseTeams(teams: Set<Team>) {
+        setDirty()
+        mod_data.initialiseTeams(teams)
     } 
     override fun addPlayer(player: UUID, team: Team) {
         setDirty()

@@ -12,6 +12,7 @@ import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader.Companion.place
+import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.entities.CustomEntityType
 import mcsoc.bedwars.entities.spawnShopkeeper
@@ -37,7 +38,7 @@ private sealed class LoadedGeneratorType(val name: String, protected val type: G
         fun valueOf(id: String, team: Team? = null): LoadedGeneratorType = (REGISTRY[id] ?: throw IllegalArgumentException("Unknown LevelDataType: \"$id\""))(team)
     }
     
-    class Base(override val team: Team) : LoadedGeneratorType(NAME, GeneratorType.BASE(team)) {
+    class Base(override var team: Team) : LoadedGeneratorType(NAME, GeneratorType.BASE(team)) {
         companion object {
             const val NAME = "base"
         }
@@ -73,24 +74,28 @@ private interface Island {
     val structure: String
     val protection_zones: Iterable<ProtectionZoneData>
     
-    fun place(level: ServerLevel, origin: BlockPos) {
-        level.place(structure, cpos.toBlockPos(origin))
+    fun place(level: ServerLevel, origin: BlockPos): BlockPos {
+        val pos = cpos.toBlockPos(origin)
+        level.place(structure, pos)
         
         for (zone in protection_zones) {
-            level.blockProtection.registerProtectionZone(zone.c1.offset(origin), zone.c2.offset(origin))
+            level.blockProtection.registerProtectionZone(zone.c1.offset(pos), zone.c2.offset(pos))
         }
+        
+        return pos
     }
 }
 
 private interface GeneratorIsland : Island {
     val generators: Iterable<Pair<LoadedGeneratorType, BlockPos>>
 
-    override fun place(level: ServerLevel, origin: BlockPos) {
-        super.place(level, origin)
+    override fun place(level: ServerLevel, origin: BlockPos): BlockPos {
+        val pos = super.place(level, origin)
         for (generator_pos in generators) {
             val generator = generator_pos.first
-            generator.place(level, generator_pos.second.offset(origin))
+            generator.place(level, generator_pos.second.offset(pos))
         }
+        return pos
     } 
 }
 
@@ -115,13 +120,13 @@ private data class BaseIslandData(
     val shops: Iterable<Pair<LoadedShopkeeper, BlockPos>> = listOf(Pair(LoadedShopkeeper.PERSONAL, BlockPos(2, 0, 0))),
     val team: Team = Team.RED
 ) : GeneratorIsland {
-    override fun place(level: ServerLevel, origin: BlockPos) {
-        super.place(level, origin)
-        
+    override fun place(level: ServerLevel, origin: BlockPos): BlockPos {
+        val pos = super.place(level, origin)
         for (shop_pos in shops) {
             val shop = shop_pos.first
-            shop.place(level, shop_pos.second.offset(origin))
+            shop.place(level, shop_pos.second.offset(pos))
         }
+        return pos
     }
 }
 
@@ -143,6 +148,7 @@ data class MapData private constructor(
     
     fun place(level: ServerLevel, origin: BlockPos) {
         // also register generators
+        level.gameState.initialiseTeams(base_islands.map(BaseIslandData::team).toSet())
         base_islands.forEach{it.place(level, origin)}
         diamond_islands.forEach{it.place(level, origin)}
         misc_islands.forEach{it.place(level, origin)}
@@ -217,29 +223,29 @@ object BlockPosSerialiser: KSerializer<BlockPos> {
 private object GeneratorTypeSerialiser: KSerializer<LoadedGeneratorType> {
     override val descriptor = buildClassSerialDescriptor("GeneratorType") {
         element<String>("type") // 0
-        element<String>("team") // 1
     }
     override fun serialize(encoder: Encoder, value: LoadedGeneratorType) {
         encoder.encodeStructure(descriptor) {
             encodeStringElement(descriptor, 0, value.name)
             val team = value.team
-            if (team != null) encodeStringElement(descriptor, 1, team.name.lowercase())
         }
     }
     override fun deserialize(decoder: Decoder): LoadedGeneratorType = decoder.decodeStructure(descriptor) {
         var type: String = ""
-        var team: Team? = null
         
         while (true) {
             when (val index = decodeElementIndex(descriptor)) {
                 CompositeDecoder.DECODE_DONE -> break
                 0 -> type = decodeStringElement(descriptor, index)
-                1 -> team = Team.valueOf(decodeStringElement(descriptor, index).uppercase())
                 else -> error("Unexpected index: $index")
             }
         }
-
-        LoadedGeneratorType.valueOf(type, team)
+        
+        try {
+            LoadedGeneratorType.valueOf(type, null)
+        } catch(e: IllegalArgumentException) {
+            LoadedGeneratorType.valueOf(type, Team.RED)
+        }
     }
 }
 
@@ -419,7 +425,8 @@ private object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
                 else -> error("Unexpected index: $index")
             }
         }
-
-        BaseIslandData(cpos, structure, generators, listOf(), shops, team)
+        
+        val teamed_generators = generators.map{Pair(LoadedGeneratorType.Base(team), it.second)}
+        BaseIslandData(cpos, structure, teamed_generators, listOf(), shops, team)
     }
 }

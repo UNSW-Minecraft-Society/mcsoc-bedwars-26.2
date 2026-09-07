@@ -27,6 +27,7 @@ internal interface TeamStateExposer {
     fun setBedAlive(team: Team, state: Boolean)
     fun addPlayer(player: UUID, team: Team)
     fun initialiseTeams(numTeams: Int)
+    fun initialiseTeams(teams: Set<Team>)
 
     fun getPlayersTeam(player: UUID): Team
     
