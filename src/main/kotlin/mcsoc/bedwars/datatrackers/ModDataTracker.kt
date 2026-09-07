@@ -142,7 +142,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
                 .fieldOf("game_timer")
                 .forGetter(ModDataStore::game_timer)
         ).apply(it, ::ModDataStore)}
-    }    
+    }
     
     private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
     private val teams_map = HashMap<Team, TeamDataRecord>()
@@ -207,7 +207,6 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     private fun getPlayerData(player: Player): PlayerDataRecord {
         return getPlayerData(player.uuid.toKotlinUuid())
     }
-
     override fun getPlayerState(player: Player): PlayerDataRecord {
         return getPlayerData(player)
     }
