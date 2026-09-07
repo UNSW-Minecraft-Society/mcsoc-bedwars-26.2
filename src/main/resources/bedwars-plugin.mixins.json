@@ -5,7 +5,11 @@
 	"mixins": [
 		"ProjectileMixin",
 		"ThrowableProjectileMixin",
-		"ExampleMixin"
+		"BlockPlacementMixin",
+		"SnowReplacementMixin",
+		"LevelSetBlockMixin",
+		"DisableCraftingMixin",
+		"DisableRecipeBookMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
