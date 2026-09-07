@@ -132,21 +132,23 @@ object CommandActions {
     fun removeGenerator(ctx: CommandContext<CommandSourceStack>): Int {
         val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above()
         ctx.source.level.generatorState.removeGenerator(Vec3.atBottomCenterOf(pos))
+        ctx.source.sendSystemMessage(Component.literal("removed generator"))
         return 1
     }
     
     fun removeGeneratorById(ctx: CommandContext<CommandSourceStack>): Int {
         val id: Int = IntegerArgumentType.getInteger(ctx, GEN_ID_ARG)
         ctx.source.level.generatorState.removeGenerator(id)
+        ctx.source.sendSystemMessage(Component.literal("removed generator with id: $id"))
         return 1
     }
 
     fun upgradeGeneratorTier(ctx: CommandContext<CommandSourceStack>): Int {
         val type = StringArgumentType.getString(ctx, GEN_TYPE_ARG)
-        val genType = try {
-            GeneratorType.valueOf(type.uppercase())
-        } catch (e: IllegalArgumentException) {
-            ctx.source.sendFailure(Component.literal("$type is not a valid generator type"))
+        val genType = GeneratorType.ENTRIES[type.uppercase()]
+        
+        if (genType == null) {
+            ctx.source.sendFailure(Component.literal("$type is not an upgradable generator"))
             return 0
         }
         
@@ -169,22 +171,15 @@ object CommandActions {
 
 
 private fun addGenerator(src: CommandSourceStack, pos: Vec3, type: String): Int {
-    val genType = try {
-        GeneratorType.valueOf(type.uppercase())
-    } catch (e: IllegalArgumentException) {
+    val genType = GeneratorType.ENTRIES[type.uppercase()]
+        
+    if (genType == null) {
         src.sendFailure(Component.literal("$type is not a valid generator type"))
-        return 0
-    }
-    
-    if (genType.getConfig().kind is GeneratorKind.Base) {
-        src.sendFailure(Component.literal("$type must have a team, use '/bedwars generator add_team' for this"))
         return 0
     }
     
     val id = src.level.generatorState.addGenerator(src.server, pos, src.level.dimension(), genType)
     src.sendSystemMessage(Component.literal("added $type generator at ${pos.format} (Id: $id)"))
-    
-    
     return 1
 }
 
@@ -194,13 +189,13 @@ private fun addGeneratorTeam(src: CommandSourceStack, pos: Vec3, teamStr: String
         return 0
     }
     
-    try {
-    val id = src.level.generatorState.addGenerator(src.server, pos, src.level.dimension(), team)
+    val id = src.level.generatorState.addTeamGenerator(src.server, pos, src.level.dimension(), team)
     src.sendSystemMessage(Component.literal("added base generator for team $teamStr at ${pos.format} (Id: $id)"))
-    } catch (e: Exception) {
-        println(e.cause)
-        println(e.message)
-        e.printStackTrace()
-    }
+    // try {
+    // } catch (e: Exception) {
+    //     println(e.cause)
+    //     println(e.message)
+    //     e.printStackTrace()
+    // }
     return 1
 }

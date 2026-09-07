@@ -1,6 +1,5 @@
 package mcsoc.bedwars.datatrackers
 
-import net.minecraft.server.MinecraftServer
 import kotlin.time.Duration
 
 internal interface TickExposer {

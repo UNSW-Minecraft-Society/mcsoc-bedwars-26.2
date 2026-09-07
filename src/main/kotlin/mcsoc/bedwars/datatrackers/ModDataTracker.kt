@@ -3,9 +3,9 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import mcsoc.bedwars.datatrackers.generatorData.TeamGeneratorExposer
-import mcsoc.bedwars.datatrackers.generatorData.TeamGeneratorHolder
-import mcsoc.bedwars.datatrackers.generatorData.TeamGeneratorState
+import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorExposer
+import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorHolder
+import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorState
 import mcsoc.bedwars.utils.inWholeTicks
 import kotlin.time.Duration
 import kotlin.time.TimeSource

@@ -28,7 +28,7 @@ internal class UpgradeItemsSuggestionProvider : SuggestionProvider<CommandSource
 
 internal class GeneratorSuggestionProvider: SuggestionProvider<CommandSourceStack> {
     override fun getSuggestions(context: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
-        GeneratorType.getTieredTypes().forEach { builder.suggest(it.name.lowercase()) }
+        GeneratorType.ENTRIES.forEach { builder.suggest(it.key.lowercase()) }
 		return builder.buildFuture()
     }
 }

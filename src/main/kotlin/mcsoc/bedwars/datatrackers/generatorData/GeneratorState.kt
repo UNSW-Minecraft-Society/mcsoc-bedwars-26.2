@@ -1,8 +1,7 @@
-package mcsoc.bedwars.datatrackers.generatorData
+package mcsoc.bedwars.datatrackers.generatordata
 
 import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.generators.Generator
-import mcsoc.bedwars.generators.GeneratorFactory
 import mcsoc.bedwars.utils.Team
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.MinecraftServer
@@ -29,7 +28,7 @@ internal interface TeamGeneratorHolder : TeamGeneratorExposer {
 // generator related
 internal interface GeneratorsExposer {
     fun addGenerator(server: MinecraftServer, location: Vec3, level: ResourceKey<Level>, type: GeneratorType): Int
-    fun addGenerator(server: MinecraftServer, location: Vec3, level: ResourceKey<Level>, team: Team): Int
+    fun addTeamGenerator(server: MinecraftServer, location: Vec3, level: ResourceKey<Level>, team: Team): Int
     fun removeGenerator(location: Vec3)
     fun removeGenerator(id: Int)
     fun getGeneratorUpgrade(type: GeneratorType): Int
@@ -37,37 +36,30 @@ internal interface GeneratorsExposer {
 }
 
 internal interface GeneratorsHolder : GeneratorsExposer {
-    fun getGenerators(type: GeneratorType): List<Generator>
-    fun addGenerator(gen: Generator, type: GeneratorType)
-    fun removeGenerator(gen: Generator, type: GeneratorType)
+    fun getGenerators(): List<Generator>
+    fun addGenerator(gen: Generator)
+    fun removeGenerator(gen: Generator)
 
     override fun addGenerator(server: MinecraftServer, location: Vec3, level: ResourceKey<Level>, type: GeneratorType): Int {
-        val gen = GeneratorFactory.createGenerator(type, location, level)
+        val gen = Generator(location, level, type)
         gen.place(server)
-        addGenerator(gen, type)
+        addGenerator(gen)
         return gen.id
     }
 
-    override fun addGenerator(server: MinecraftServer, location: Vec3, level: ResourceKey<Level>, team: Team): Int {
-        val gen = GeneratorFactory.createGenerator(GeneratorType.BASE, location, level, team)
-        gen.place(server)
-        addGenerator(gen, GeneratorType.BASE)
-        return gen.id
+    override fun addTeamGenerator(server: MinecraftServer, location: Vec3, level: ResourceKey<Level>, team: Team): Int {
+        return addGenerator(server, location, level, GeneratorType.BASE(team))
     }
 
     override fun removeGenerator(location: Vec3) {
-        GeneratorType.entries.forEach { type ->
-            getGenerators(type)
-                .filter { it.location == location }
-                .forEach { removeGenerator(it, type) }
-        }
+        getGenerators()
+            .filter { it.location == location }
+            .forEach { removeGenerator(it) }
     }
 
     override fun removeGenerator(id: Int) {
-        GeneratorType.entries.forEach { type ->
-            getGenerators(type)
-                .filter { it.id == id }
-                .forEach { removeGenerator(it, type) }
-        }
+        getGenerators()
+            .filter { it.id == id }
+            .forEach { removeGenerator(it) }
     }
 }

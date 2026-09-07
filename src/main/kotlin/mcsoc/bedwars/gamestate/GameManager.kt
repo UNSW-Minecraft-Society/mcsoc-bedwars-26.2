@@ -95,7 +95,7 @@ class GameManager {
 
         fun tick(world: ServerLevel) {
             val player_manager = world.server.playerList
-            world.generatorState.tick(world.server)
+            world.generatorState.tick()
             val level_mod_data = world.gameState
             level_mod_data.tick()
             val time = level_mod_data.getGameTime()

@@ -3,7 +3,6 @@ package mcsoc.bedwars.generators
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.datatrackers.gameState
-import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.registries.Registries
 import net.minecraft.network.chat.Component
@@ -23,37 +22,24 @@ import net.minecraft.world.phys.Vec3
 private const val PLAYER_RANGE = 15
 private const val ITEM_SPAWN_HEIGHT = 2.0
 
-internal object GeneratorFactory {
-    fun createGenerator(type: GeneratorType, loc: Vec3, level: ResourceKey<Level>): Generator {
-        require(type.getConfig().kind !is GeneratorKind.Base) {"$type requires a team — use createTeamGenerator"}
-        return Generator(loc, level, type, team = null)
-    }
-
-    fun createGenerator(type: GeneratorType, loc: Vec3, level: ResourceKey<Level>, team: Team): Generator {
-        require(type.getConfig().kind is GeneratorKind.Base) {"$type is not a team generator — use createGenerator"}
-        return Generator(loc, level, type, team)
-    }
-}
-
 // cycle time in ticks
-internal open class Generator(val location: Vec3, val levelKey: ResourceKey<Level>, val type: GeneratorType, val team: Team? = null) {
+internal open class Generator(val location: Vec3, val levelKey: ResourceKey<Level>, val type: GeneratorType) {
     companion object { 
         private var curId = 0
         val CODEC: Codec<Generator> = RecordCodecBuilder.create{it.group(
             Vec3.CODEC.fieldOf("location").forGetter(Generator::location),
             ResourceKey.codec(Registries.DIMENSION).fieldOf("level").forGetter(Generator::levelKey),
             GeneratorType.CODEC.fieldOf("type").forGetter(Generator::type),
-            Team.CODEC.fieldOf("team").forGetter(Generator::team)
         ).apply(it, ::Generator)}
     }
     
     private lateinit var level: ServerLevel
     private lateinit var timerDisplay: TimerDisplay
-    private val config = type.getConfig()
+    // private val config = type.getConfig()
     
     private var currentTick = 0
     var id = -1
-    private val curCycleItems: HashMap<GeneratorItem, Int> = HashMap()
+    private val curCycleItems = mutableSetOf<Pair<GeneratorItem, Int>>()
     var placed = false
     
     init { 
@@ -62,10 +48,13 @@ internal open class Generator(val location: Vec3, val levelKey: ResourceKey<Leve
     }
     
     fun place(server: MinecraftServer) {
-        level = server.getLevel(levelKey) ?: throw Exception("Invalid level sent to generator")
-        timerDisplay = TimerDisplay(level, location.add(Vec3(0.0, ITEM_SPAWN_HEIGHT, 0.0)))
-        if (!config.showTimer) timerDisplay.hide()
+        if (placed) return
         placed = true
+        
+        level = server.getLevel(levelKey) ?: throw Exception("Invalid level sent to generator")
+        
+        timerDisplay = TimerDisplay(level, location.add(Vec3(0.0, ITEM_SPAWN_HEIGHT, 0.0)))
+        if (!type.config.showTimer) timerDisplay.hide()
     }
     
     fun remove() = timerDisplay.remove()
@@ -73,28 +62,30 @@ internal open class Generator(val location: Vec3, val levelKey: ResourceKey<Leve
     private var lastUpgrade = -1
     fun tick() {
         currentTick++
-        val upgrade = currentUpgrade()
+        val upgrade = getUpgrade()
         if (upgrade != lastUpgrade) {
             lastUpgrade = upgrade
             currentTick = 0
             curCycleItems.clear()
         }
         
-        val rateMultiplier = config.kind.rateAt(upgrade)
-        val cycle = config.cycleTime / rateMultiplier
+        val rateMultiplier = type.config.kind.rateAt(upgrade)
+        val cycle = type.config.cycleTime / rateMultiplier
 
-        for (item in config.kind.itemsAt(upgrade)) {
-            val generated = curCycleItems[item] ?: 0
+        for (item in type.config.kind.itemsAt(upgrade)) {
+            val generated = curCycleItems.firstOrNull {it.first == item }?.second ?: 0
             val expected = (currentTick / cycle * item.itemsPerCycle).toInt()
 
             if (generated >= expected) continue
             if (!hasSpace(level, item.maxItems, item.item) || !playersInRange()) {
-                curCycleItems[item] = expected
+                curCycleItems.removeIf { it.first == item } 
+                curCycleItems.add(item to expected)
                 continue
             }
 
             generateItem(level, item.item)
-            curCycleItems[item] = generated + 1
+            curCycleItems.removeIf { it.first == item }
+            curCycleItems.add(item to (generated + 1))
         }
 
         if (currentTick >= cycle) {
@@ -105,11 +96,7 @@ internal open class Generator(val location: Vec3, val levelKey: ResourceKey<Leve
         timerDisplay.setText(currentTick, cycle.toInt())
     }
     
-    private fun currentUpgrade(): Int = when (config.kind) {
-        is GeneratorKind.Default -> 0
-        is GeneratorKind.Base -> level.gameState.getGenUpgrade(team!!)
-        is GeneratorKind.Tiered -> level.generatorState.getGeneratorUpgrade(type)
-    }
+    private fun getUpgrade() = type.getUpgrade(level)
 
     private fun hasSpace(level: ServerLevel, max: Int, item: Item): Boolean {
         val nearby = level.getEntitiesOfClass(
@@ -121,7 +108,8 @@ internal open class Generator(val location: Vec3, val levelKey: ResourceKey<Leve
     }
     
     private fun playersInRange(): Boolean {
-        return level.getPlayers { it.position().distanceTo(location) < PLAYER_RANGE }.isNotEmpty()
+        val active = level.gameState.getActivePlayers().mapNotNull { level.getPlayerByUUID(it) }
+        return active.any { it.position().distanceTo(location) < PLAYER_RANGE }
     }
 
     private fun generateItem(level: ServerLevel, item: Item) {
@@ -140,6 +128,7 @@ private class TimerDisplay(level: ServerLevel, pos: Vec3) {
     
     init {
         entity.setPos(pos)
+        entity.addTag("gen")
         entity.isNoGravity = true
         entity.billboardConstraints = Display.BillboardConstraints.CENTER
         entity.text = Component.literal("Soon").withColor(TextColor.WHITE)

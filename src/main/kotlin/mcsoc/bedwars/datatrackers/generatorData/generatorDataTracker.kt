@@ -1,4 +1,4 @@
-package mcsoc.bedwars.datatrackers.generatorData
+package mcsoc.bedwars.datatrackers.generatordata
 
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
@@ -10,15 +10,17 @@ import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.Team
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.MinecraftServer
+import net.minecraft.world.entity.Display
+import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
 
 private class GeneratorDataStore() : GeneratorsHolder {
     companion object {
-        private val genListCodec = Generator.CODEC.listOf().xmap({ l -> l.toMutableList() }, { l -> l.toList() })
+        private val GEN_LIST_CODEC = Generator.CODEC.listOf().xmap({ l -> l.toMutableList() }, { l -> l.toList() })
         
         val CODEC: Codec<GeneratorDataStore> = RecordCodecBuilder.create {it.group(
-                Codec.unboundedMap(GeneratorType.CODEC, genListCodec)
+                Codec.unboundedMap(GeneratorType.CODEC, GEN_LIST_CODEC)
                     .fieldOf("generators")
                     .forGetter(GeneratorDataStore::generators),
 
@@ -40,15 +42,15 @@ private class GeneratorDataStore() : GeneratorsHolder {
         this.genUpgrades.putAll(genUpgrades)
     }
 
-    override fun getGenerators(type: GeneratorType) = generators[type] ?: mutableListOf()
+    override fun getGenerators() = generators.values.flatten()
 
-    override fun addGenerator(gen: Generator, type: GeneratorType) {
-        generators.getOrPut(type) { mutableListOf<Generator>() }.add(gen)
+    override fun addGenerator(gen: Generator) {
+        generators.getOrPut(gen.type) { mutableListOf<Generator>() }.add(gen)
     }
 
-    override fun removeGenerator(gen: Generator, type: GeneratorType) {
+    override fun removeGenerator(gen: Generator) {
         gen.remove()
-        generators[type]?.remove(gen)
+        generators[gen.type]?.remove(gen)
     }
 
     override fun getGeneratorUpgrade(type: GeneratorType) = genUpgrades[type] ?: 0
@@ -57,11 +59,16 @@ private class GeneratorDataStore() : GeneratorsHolder {
         genUpgrades[type] = (genUpgrades[type] ?: 0) + 1
     }
 
-    fun tick(server: MinecraftServer) {
-        generators.flatMap { it.value }.forEach {
-            if (!it.placed) it.place(server)
-            it.tick()
-        }
+    fun tick() {
+        getGenerators().forEach(Generator::tick)
+    }
+    
+    fun placeGenerators(server: MinecraftServer) {
+        getGenerators().forEach { it.place(server) }
+    }
+    
+    fun removeTimerEntities() {
+        getGenerators().forEach(Generator::remove)
     }
 }
 
@@ -87,9 +94,9 @@ class GeneratorDataTracker : LevelTiedData, GeneratorsExposer {
         setDirty()
         return generator_data.addGenerator(server, location, level, type)
     }
-    override fun addGenerator(server: MinecraftServer, location: Vec3, level: ResourceKey<Level>, team: Team): Int {
+    override fun addTeamGenerator(server: MinecraftServer, location: Vec3, level: ResourceKey<Level>, team: Team): Int {
         setDirty()
-        return generator_data.addGenerator(server, location, level, team)
+        return generator_data.addTeamGenerator(server, location, level, team)
     }
     override fun removeGenerator(location: Vec3) {
         setDirty()
@@ -104,8 +111,13 @@ class GeneratorDataTracker : LevelTiedData, GeneratorsExposer {
         setDirty()
         generator_data.upgradeGenerator(type)
     }
-    fun tick(server: MinecraftServer) {
+    fun tick() {
         setDirty()
-        generator_data.tick(server)
+        generator_data.tick()
     }
+    fun placeGenerators(server: MinecraftServer) {
+        setDirty()
+        generator_data.placeGenerators(server)
+    }
+    fun removeTimerEntities() = generator_data.removeTimerEntities()
 }
