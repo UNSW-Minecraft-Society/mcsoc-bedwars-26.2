@@ -1,7 +1,10 @@
 package mcsoc.bedwars.utils
 
 import kotlinx.serialization.Serializable
+import com.mojang.serialization.Codec
+import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.core.BlockPos
+import net.minecraft.world.phys.AABB
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -26,3 +29,12 @@ data class CylindricalBlockPos(
         return origin.offset((radius * sin(angle)).roundToInt(), height, (radius * cos(angle)).roundToInt())
     }
 }
+
+val AABB_CODEC: Codec<AABB> = RecordCodecBuilder.create {inst -> inst.group(
+        Codec.DOUBLE.fieldOf("min_x").forGetter(AABB::minX),
+        Codec.DOUBLE.fieldOf("min_y").forGetter(AABB::minY),
+        Codec.DOUBLE.fieldOf("min_z").forGetter(AABB::minZ),
+        Codec.DOUBLE.fieldOf("max_x").forGetter(AABB::maxX),
+        Codec.DOUBLE.fieldOf("max_y").forGetter(AABB::maxY),
+        Codec.DOUBLE.fieldOf("max_z").forGetter(AABB::maxZ)
+    ).apply(inst, ::AABB)}

@@ -1,7 +1,9 @@
 package mcsoc.bedwars.eventhandlers
 
 import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.datatrackers.gameState
 import net.fabricmc.fabric.api.event.player.UseItemCallback
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.InteractionResult
 
 /**
@@ -10,7 +12,7 @@ import net.minecraft.world.InteractionResult
 fun registerItemCallbacks() {
     // Alive UseItemCallbacks
     UseItemCallback.EVENT.register {player, level, hand ->
-        if (ModDataTracker.isPlayerAlive(player)) {
+        if (level is ServerLevel && level.gameState.isPlayerAlive(player)) {
             InteractionResult.SUCCESS
         } else {
             InteractionResult.PASS

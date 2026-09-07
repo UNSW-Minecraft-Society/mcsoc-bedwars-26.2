@@ -6,7 +6,8 @@ import net.minecraft.server.network.ServerPlayerConnection
 
 
 fun registerPlayerJoinEvent() {
-    ServerPlayerEvents.JOIN.register { player ->
-        ModDataTracker.addActivePlayer(player.uuid)
-    }
+//    removed in favour of adding active players on game start
+//    ServerPlayerEvents.JOIN.register { player ->
+//        ModDataTracker.addActivePlayer(player.uuid)
+//    }
 }

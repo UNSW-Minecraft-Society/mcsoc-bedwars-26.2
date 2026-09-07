@@ -1,23 +1,50 @@
 package mcsoc.bedwars.eventhandlers.commands
 
+import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import mcsoc.bedwars.TeamEffects
-import mcsoc.bedwars.datatrackers.ModDataTracker
-import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
-import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader.Companion.place
+import mcsoc.bedwars.datatrackers.blockProtection
+import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
+import mcsoc.bedwars.datatrackers.blockprotection.ProtectionZone
+import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.generatorState
+import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.upgrades.UpgradeItemType
-import mcsoc.bedwars.utils.MapData
+import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.format
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.TextColor
-import net.minecraft.world.phys.AABB
-import kotlin.uuid.toKotlinUuid
+import net.minecraft.world.phys.Vec3
 
+
+private fun setProtectionZoneMsg(p1: BlockPos, p2: BlockPos): () -> Component = {Component.literal("Created new protection zone between ${p1.format} and ${p2.format}")}
+
+private fun listProtectionZoneMsg(zone: ProtectionZone): () -> Component {
+    return {
+        val p1 = BlockPos.containing(zone.box.minPosition)
+        val p2 = BlockPos.containing(zone.box.maxPosition)
+        Component.literal("  ID: ${zone.id}, from ${p1.format} to ${p2.format}")
+    }
+}
+
+private fun blockProtectionGetMsg(state: Boolean): () -> Component {
+    return {
+        if (state) Component.literal("Block Protection is enabled.")
+        else Component.literal("Block Protection is disabled.")
+    }
+}
+
+private fun blockProtectionSetMsg(state: Boolean): () -> Component {
+    return {
+        if (state) Component.literal("Block Protection is now enabled.")
+        else Component.literal("Block Protection is now disabled.")
+    }
+}
 
 private fun setProtectionZoneMsg(p1: BlockPos, p2: BlockPos) = 
     Component.literal("Created new protection zone between ${p1.format} and ${p2.format}")
@@ -101,11 +128,8 @@ internal object CommandActions {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
             return 0
         }
-
-        ModDataTracker.addActivePlayer(player.uuid)
-        player.sendSystemMessage(
-            Component.literal("You have joined the bedwars lobby").withColor(TextColor.GREEN)
-        )
+        ctx.source.level.gameState.addActivePlayer(player.uuid)
+        player.sendSystemMessage(Component.literal("You have joined the bedwars lobby").withColor(TextColor.GREEN))
 
         return 1
     }
@@ -116,18 +140,18 @@ internal object CommandActions {
             return 0
         }
 
-        ModDataTracker.removeActivePlayer(player.uuid)
-        // todo add other things when a player leaves
-        player.sendSystemMessage(
-            Component.literal("You have left the bedwars lobby").withColor(TextColor.RED)
-        )
+        ctx.source.level.gameState.removeActivePlayer(player.uuid)
+        player.sendSystemMessage(Component.literal("You have left the bedwars lobby").withColor(TextColor.RED))
 
         return 1
     }
 
+    // Ideally only use for testing. Start command creates teams now
+    // Will need to make a new command that stores a number of teams in future - refer to bedhunt
+    // for template
     fun assignTeams(ctx: CommandContext<CommandSourceStack>): Int {
         val input = IntegerArgumentType.getInteger(ctx, "number_of_teams")
-        TeamEffects.createTeamsWithPlayers(input)
+        TeamEffects.createTeamsWithPlayers(ctx.source.level, input)
         return 1
     }
 
@@ -137,20 +161,27 @@ internal object CommandActions {
             return 0
         }
 
-        val team = ModDataTracker.getPlayersTeam(player.uuid.toKotlinUuid())
-        player.sendSystemMessage(
-            Component.literal("Your team is ${team.name}").withColor(TextColor.GREEN)
-        )
+        val team = ctx.source.level.gameState.getPlayersTeam(player.uuid)
+        player.sendSystemMessage(Component.literal("Your team is ${team.name}").withColor(TextColor.GREEN))
 
         return 1
     }
-    
-    fun upgradeTool(ctx: CommandContext<CommandSourceStack>): Int {
+
+    fun start(ctx: CommandContext<CommandSourceStack>): Int {
+        GameManager.setupGame(ctx.source.level, ctx.source.position)
+        return 1
+    }
+
+    fun end(ctx: CommandContext<CommandSourceStack>): Int {
+        GameManager.endGame(ctx.source.level)
+        return 1
+    }
+    fun upgradeItem(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.player ?: run {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
             return 0
         }
-        val input = StringArgumentType.getString(ctx, "type")
+        val input = StringArgumentType.getString(ctx, UPGRADE_TYPE_ARG)
         val type = try {
             UpgradeItemType.valueOf(input)
         } catch (e: IllegalArgumentException) {
@@ -158,13 +189,128 @@ internal object CommandActions {
             return 0
         }
 
-        ModDataTracker.upgradeItem(player, type)
+        ctx.source.level.gameState.upgradeItem(player, type)
+        return 1
+    }
+
+    fun resetUpgrades(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player ?: run {
+            ctx.source.sendFailure(Component.literal("Command must be run by a player"))
+            return 0
+        }
+        ctx.source.level.gameState.clearItems(player)
+        return 1
+    }
+
+    fun setProtectionZone(ctx: CommandContext<CommandSourceStack>): Int {
+        val p1 = BlockPosArgument.getBlockPos(ctx, FIRST_POSITION_ARGUMENT)
+        val p2 = BlockPosArgument.getBlockPos(ctx, SECOND_POSITION_ARGUMENT)
+        val res = ctx.source.level.blockProtection.registerProtectionZone(p1, p2)
+        
+        ctx.source.sendSuccess(setProtectionZoneMsg(p1, p2), true)
         return 1
     }
     
-    fun resetTools(ctx: CommandContext<CommandSourceStack>): Int {
-        val player = ctx.source.playerOrException
-        ModDataTracker.clearItems(player)
+    fun listProtectionZones(ctx: CommandContext<CommandSourceStack>): Int {
+        val source = ctx.source
+        source.sendSystemMessage(Component.literal("Protected Zones:"))
+        source.level.blockProtection.getProtectionZones().forEach{z -> source.sendSystemMessage(listProtectionZoneMsg(z)())}
         return 1
     }
+
+    fun getProtectionState(ctx: CommandContext<CommandSourceStack>): Int {
+        val source = ctx.source
+        val state = source.level.blockProtection.protectionEnabled
+        source.sendSystemMessage(blockProtectionGetMsg(state)())
+        return 1
+    }
+    
+    fun setProtectionState(ctx: CommandContext<CommandSourceStack>): Int {
+        val source = ctx.source
+        val state = BoolArgumentType.getBool(ctx, BOOL_ARGUMENT)
+        source.sendSuccess(blockProtectionSetMsg(state), true)
+        source.level.blockProtection.protectionEnabled = state
+        return 1
+    }    fun addGeneratorAtPlayer(ctx: CommandContext<CommandSourceStack>): Int {
+        val genArg = StringArgumentType.getString(ctx, GEN_TYPE_ARG)
+        return addGenerator(ctx.source, ctx.source.position, genArg)
+    }
+
+    fun addGenerator(ctx: CommandContext<CommandSourceStack>): Int {
+        val genArg = StringArgumentType.getString(ctx, GEN_TYPE_ARG)
+        val bpos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above()
+        val pos = Vec3.atBottomCenterOf(bpos)
+        return addGenerator(ctx.source, pos, genArg)
+    }
+    
+    fun addTeamGenerator(ctx: CommandContext<CommandSourceStack>): Int {
+        val teamArg = StringArgumentType.getString(ctx, GEN_TEAM_ARG)
+        val bpos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above() 
+        val pos = Vec3.atBottomCenterOf(bpos)
+        return addGeneratorTeam(ctx.source, pos, teamArg)
+    }
+
+    fun removeGenerator(ctx: CommandContext<CommandSourceStack>): Int {
+        val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above()
+        ctx.source.level.generatorState.removeGenerator(Vec3.atBottomCenterOf(pos))
+        ctx.source.sendSystemMessage(Component.literal("removed generator"))
+        return 1
+    }
+    
+    fun removeGeneratorById(ctx: CommandContext<CommandSourceStack>): Int {
+        val id: Int = IntegerArgumentType.getInteger(ctx, GEN_ID_ARG)
+        ctx.source.level.generatorState.removeGenerator(id)
+        ctx.source.sendSystemMessage(Component.literal("removed generator with id: $id"))
+        return 1
+    }
+
+    fun upgradeGeneratorTier(ctx: CommandContext<CommandSourceStack>): Int {
+        val type = StringArgumentType.getString(ctx, GEN_TYPE_ARG)
+        val genType = GeneratorType.ENTRIES[type.uppercase()]
+        
+        if (genType == null) {
+            ctx.source.sendFailure(Component.literal("$type is not an upgradable generator"))
+            return 0
+        }
+        
+        ctx.source.level.generatorState.upgradeGenerator(genType)
+        return 1
+    }
+    
+    fun upgradeTeamGen(ctx: CommandContext<CommandSourceStack>): Int {
+        val teamArg = StringArgumentType.getString(ctx, GEN_TEAM_ARG)
+        val team = ctx.source.level.gameState.getActiveTeams().find { it.getName() == teamArg }
+        if (team == null) {
+            ctx.source.sendFailure(Component.literal("$teamArg is not a valid team"))
+            return 0
+        }
+        
+        ctx.source.level.gameState.upgradeGen(team)
+        return 1
+    }
+}
+
+
+private fun addGenerator(src: CommandSourceStack, pos: Vec3, type: String): Int {
+    val genType = GeneratorType.ENTRIES[type.uppercase()]
+        
+    if (genType == null) {
+        src.sendFailure(Component.literal("$type is not a valid generator type"))
+        return 0
+    }
+    
+    val id = src.level.generatorState.addGenerator(src.server, pos, src.level.dimension(), genType)
+    src.sendSystemMessage(Component.literal("added $type generator at ${pos.format} (Id: $id)"))
+    return 1
+}
+
+private fun addGeneratorTeam(src: CommandSourceStack, pos: Vec3, teamStr: String): Int {
+    val team = src.level.gameState.getActiveTeams().find { it.getName() == teamStr } ?: run {
+        src.sendFailure(Component.literal("$teamStr is not a valid team"))
+        return 0
+    }
+    
+    val id = src.level.generatorState.addTeamGenerator(src.server, pos, src.level.dimension(), team)
+    src.sendSystemMessage(Component.literal("added base generator for team $teamStr at ${pos.format} (Id: $id)"))
+    return 1
 }

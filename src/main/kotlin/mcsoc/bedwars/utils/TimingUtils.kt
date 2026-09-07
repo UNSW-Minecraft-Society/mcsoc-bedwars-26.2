@@ -9,5 +9,8 @@ import kotlin.time.toDuration
 inline val Int.ticks: Duration 
     get() = this.seconds / 20
 
-inline val Duration.inWholeTicks: Duration 
-    get() = ((inWholeMilliseconds / 50).toInt() * 50).toDuration(DurationUnit.MILLISECONDS)
+inline val Long.ticks: Duration
+    get() = this.seconds / 20
+
+inline val Duration.inWholeTicks: Long
+    get() = (inWholeMilliseconds / 50)
