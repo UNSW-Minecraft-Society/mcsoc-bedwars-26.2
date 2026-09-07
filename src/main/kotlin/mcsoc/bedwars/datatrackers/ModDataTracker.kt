@@ -3,26 +3,21 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorExposer
+import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorHolder
+import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorState
 import mcsoc.bedwars.utils.inWholeTicks
-import mcsoc.bedwars.utils.ticks
 import kotlin.time.Duration
 import kotlin.time.TimeSource
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
-import net.minecraft.server.level.ServerLevel
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
-import net.minecraft.resources.ResourceKey
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
-import net.minecraft.world.item.ItemStack
-import net.minecraft.world.level.Level
 import net.minecraft.world.level.saveddata.SavedData
-import net.minecraft.world.phys.Vec3
 import java.util.UUID
-import kotlin.uuid.Uuid
-import kotlin.uuid.toJavaUuid
-import kotlin.uuid.toKotlinUuid
+import net.minecraft.world.phys.Vec3
 
 enum class GamePhase {
     STARTING,
@@ -94,57 +89,57 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
 
 
 private class TeamDataRecord(
-    private val players: MutableList<Uuid> = mutableListOf(),
+    private val players: MutableList<UUID> = mutableListOf(),
     private var bedAlive: Boolean = true,
+    private var genUpgrade: Int = 0,
     private val spawn: Vec3 = Vec3(0.0, 0.0, 0.0),
-) : TeamStateRecord {
+) : TeamStateRecord, TeamGeneratorState {
     companion object {
-        val UUID_LIST_CODEC: Codec<MutableList<Uuid>> = UUIDUtil.CODEC.listOf().xmap(
-            { it.map(UUID::toKotlinUuid).toMutableList() },
-            { it.map(Uuid::toJavaUuid) }
-        )
-        
         val CODEC: Codec<TeamDataRecord> = RecordCodecBuilder.create { it.group(
-            UUID_LIST_CODEC.fieldOf("players").forGetter(TeamDataRecord::players),
+            UUIDUtil.CODEC.listOf().fieldOf("players").forGetter(TeamDataRecord::players),
             Codec.BOOL.fieldOf("bed_alive").forGetter(TeamDataRecord::bedAlive),
+            Codec.INT.fieldOf("gen_upgrade").forGetter(TeamDataRecord::genUpgrade),
             Vec3.CODEC.fieldOf("spawn").forGetter(TeamDataRecord::spawn),
         ).apply(it, ::TeamDataRecord)}
     }
-
+        
     override fun getBedAlive(): Boolean = bedAlive
     override fun getSpawn(): Vec3 = spawn
-    override fun getPlayers(): MutableList<Uuid> = players
+    override fun getPlayers(): MutableList<UUID> = players
 
     override fun setBedAlive(bedAlive: Boolean) {
         this.bedAlive = bedAlive
     }
 
-    override fun addPlayer(player: Uuid) {
+    override fun addPlayer(player: UUID) {
         players.add(player)
+    }
+
+    override fun getGenUpgrade(): Int = genUpgrade
+    override fun upgradeGen() {
+        genUpgrade++
     }
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder {
+private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder, TeamGeneratorHolder {
     companion object {
-        val UUIDCodec: Codec<Uuid> = Codec.STRING.xmap(Uuid::parse, Uuid::toString)
-        
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
-            Codec.unboundedMap(UUIDCodec, PlayerDataRecord.CODEC)
+            Codec.unboundedMap(UUIDUtil.CODEC, PlayerDataRecord.CODEC)
                 .fieldOf("player_data_map")
                 .forGetter(ModDataStore::player_data_map),
-                    
+
             Codec.unboundedMap(Team.CODEC, TeamDataRecord.CODEC)
                 .fieldOf("teams_map")
                 .forGetter(ModDataStore::teams_map),
 
             Codec.STRING.xmap(Duration::parseIsoString, Duration::toIsoString)
                 .fieldOf("game_timer")
-                .forGetter(ModDataStore::game_timer)
+                .forGetter(ModDataStore::game_timer),
         ).apply(it, ::ModDataStore)}
     }
     
-    private val player_data_map = HashMap<Uuid, PlayerDataRecord>()
+    private val player_data_map = HashMap<UUID, PlayerDataRecord>()
     private val teams_map = HashMap<Team, TeamDataRecord>()
     private val active_players = mutableSetOf<UUID>()
     private var prev_tick_time = TimeSource.Monotonic.markNow()
@@ -156,9 +151,9 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     private var game_period = GamePeriod.INACTIVE
     
     private constructor(
-        playerMap: Map<Uuid, PlayerDataRecord>,
+        playerMap: Map<UUID, PlayerDataRecord>,
         teamMap: Map<Team, TeamDataRecord>,
-        timer: Duration
+        timer: Duration,
     ) : this() {
         this.player_data_map.putAll(playerMap)
         this.teams_map.putAll(teamMap)
@@ -172,7 +167,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         
         timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
         timer_second = game_timer.inWholeSeconds != (game_timer + tick_delta).inWholeSeconds
-        game_timer += tick_delta
+        game_timer += tick_delta   
     }
 
     override fun getGameTime() = game_timer
@@ -199,13 +194,12 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         game_period = period
     }
 
-
-    private fun getPlayerData(id: Uuid): PlayerDataRecord {
+    private fun getPlayerData(id: UUID): PlayerDataRecord {
         return player_data_map.getOrPut(id) { PlayerDataRecord() }
     }
 
     private fun getPlayerData(player: Player): PlayerDataRecord {
-        return getPlayerData(player.uuid.toKotlinUuid())
+        return getPlayerData(player.uuid)
     }
     override fun getPlayerState(player: Player): PlayerDataRecord {
         return getPlayerData(player)
@@ -231,13 +225,13 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         teams.forEach { teams_map[it] = TeamDataRecord() }
     }
 
-    override fun addPlayer(player: Uuid, team: Team) {
+    override fun addPlayer(player: UUID, team: Team) {
         getTeam(team).addPlayer(player)
         getPlayerData(player).setTeamName(team)
     }
     
-    override fun getPlayersTeam(player: Uuid): Team = getPlayerData(player).getTeamName()
-
+    override fun getPlayersTeam(player: UUID): Team = getPlayerData(player).getTeamName()
+    
     override fun addActivePlayer(uuid: UUID) = active_players.add(uuid)
     override fun removeActivePlayer(uuid: UUID) = active_players.remove(uuid) // there could be other things to do when removing player
     override fun getActivePlayers() = active_players
@@ -245,7 +239,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 }
 
 
-class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer {
+class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer, TeamGeneratorExposer {
     companion object {
         val CODEC: MapCodec<ModDataTracker> = RecordCodecBuilder.mapCodec{ it.group(
             ModDataStore.CODEC.fieldOf("mod_data").forGetter(ModDataTracker::mod_data)
@@ -287,7 +281,7 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     override fun isPlayerDead(player: Player) = mod_data.isPlayerDead(player)
 
     override fun getBedDestroyed(team: Team): Boolean = mod_data.getBedDestroyed(team)
-    override fun getPlayersInTeam(team: Team): List<Uuid> = mod_data.getPlayersInTeam(team)
+    override fun getPlayersInTeam(team: Team): List<UUID> = mod_data.getPlayersInTeam(team)
     override fun getTeamSpawn(team: Team): Vec3 = mod_data.getTeamSpawn(team)
     override fun getActiveTeams(): List<Team> = mod_data.getActiveTeams()
     override fun setBedAlive(team: Team, state: Boolean) {
@@ -298,12 +292,12 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
         setDirty()
         mod_data.initialiseTeams(numTeams)
     } 
-    override fun addPlayer(player: Uuid, team: Team) {
+    override fun addPlayer(player: UUID, team: Team) {
         setDirty()
         mod_data.addPlayer(player, team)
     }
     
-    override fun getPlayersTeam(player: Uuid): Team = mod_data.getPlayersTeam(player)
+    override fun getPlayersTeam(player: UUID): Team = mod_data.getPlayersTeam(player)
     override fun getActivePlayers() = mod_data.getActivePlayers()
     override fun addActivePlayer(uuid: UUID): Boolean {
         setDirty()
@@ -332,4 +326,10 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     }
     override fun getNextItemStack(player: ServerPlayer, item: UpgradeItemType) = mod_data.getNextItemStack(player, item)
     override fun getTier(player: ServerPlayer, item: UpgradeItemType) = mod_data.getTier(player, item)
+
+    override fun getGenUpgrade(team: Team) = mod_data.getGenUpgrade(team)
+    override fun upgradeGen(team: Team) {
+        setDirty()
+        mod_data.upgradeGen(team)
+    }
 }

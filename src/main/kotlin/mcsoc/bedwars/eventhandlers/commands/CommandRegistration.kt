@@ -21,6 +21,10 @@ const val BOOL_ARGUMENT = "bool"
 const val UPGRADE_TYPE_ARG = "type"
 const val FIRST_POSITION_ARGUMENT = "pos1"
 const val SECOND_POSITION_ARGUMENT = "pos2"
+const val GEN_TYPE_ARG = "type"
+const val GEN_POS_ARG = "pos"
+const val GEN_TEAM_ARG = "team"
+const val GEN_ID_ARG = "id"
 
 val BEDWARS_GM_PERMISSION_NODE = Identifier.fromNamespaceAndPath(BedwarsPlugin.MOD_ID, "runner")
 val GAMEMASTER_PERMS_REQUIREMENT: (CommandSourceStack) -> Boolean = {it.permissionContext.checkPermission(BEDWARS_GM_PERMISSION_NODE, PermissionLevel.GAMEMASTERS)}
@@ -91,6 +95,47 @@ fun registerCommands() {
                 .requires(GAMEMASTER_PERMS_REQUIREMENT)
                     .then(Commands.argument(BOOL_ARGUMENT, BoolArgumentType.bool())
                     .executes(CommandActions::setProtectionState)
+                    )
+                )
+            )
+            .then(Commands.literal("generator")
+                .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR) }
+                .then(Commands.literal("add")
+                    .then(Commands.argument(GEN_TYPE_ARG, StringArgumentType.word())
+                        .suggests(GeneratorSuggestionProvider())
+                        .executes(CommandActions::addGeneratorAtPlayer)
+                        .then(Commands.argument(GEN_POS_ARG, BlockPosArgument.blockPos())
+                            .executes(CommandActions::addGenerator)
+                        )
+                    )
+                ).then(Commands.literal("add_team_gen")
+                    .then(Commands.argument(GEN_POS_ARG, BlockPosArgument.blockPos())
+                        .then(Commands.argument(GEN_TEAM_ARG, StringArgumentType.word())
+                            .suggests(TeamSuggestionProvider())
+                            .executes(CommandActions::addTeamGenerator)
+                        )
+                    )
+                )
+                .then(Commands.literal("remove")
+                    .then(Commands.argument(GEN_POS_ARG, BlockPosArgument.blockPos())
+                        .executes(CommandActions::removeGenerator)
+                    )
+                    .then(Commands.literal("id")
+                        .then(Commands.argument(GEN_ID_ARG, IntegerArgumentType.integer())
+                            .executes(CommandActions::removeGeneratorById)
+                        )
+                    )
+                )
+                .then(Commands.literal("upgrade_tiers")
+                    .then(Commands.argument(GEN_TYPE_ARG, StringArgumentType.word())
+                        .suggests(GeneratorSuggestionProvider())
+                        .executes(CommandActions::upgradeGeneratorTier)
+                    )
+                )
+                .then(Commands.literal("upgrade_team_gen")
+                    .then(Commands.argument(GEN_TEAM_ARG, StringArgumentType.word())
+                        .suggests(TeamSuggestionProvider())
+                        .executes(CommandActions::upgradeTeamGen)
                     )
                 )
             )
