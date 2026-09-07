@@ -3,7 +3,7 @@ package mcsoc.bedwars.datatrackers.configloader
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader
-import mcsoc.bedwars.utils.MapData
+
 
 @Serializable
 data class LoadedDebugConfig(

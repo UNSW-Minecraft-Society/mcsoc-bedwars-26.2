@@ -10,6 +10,7 @@ import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
 import mcsoc.bedwars.datatrackers.blockprotection.ProtectionZone
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
+import mcsoc.bedwars.datatrackers.configloader.MapData
 import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader.Companion.place
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.entities.CustomEntityType
@@ -20,7 +21,6 @@ import mcsoc.bedwars.gui.ShopGui.displayShop
 import mcsoc.bedwars.gui.ShopType
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.generators.GeneratorType
-import mcsoc.bedwars.utils.MapData
 import mcsoc.bedwars.utils.format
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.arguments.coordinates.Vec3Argument
