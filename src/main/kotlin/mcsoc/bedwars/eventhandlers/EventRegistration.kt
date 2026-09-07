@@ -25,4 +25,5 @@ fun registerEventHandlers() {
     
     registerItemCallbacks()
     registerPlayerJoinEvent()
+    registerBlockBreakEvents()
 }
