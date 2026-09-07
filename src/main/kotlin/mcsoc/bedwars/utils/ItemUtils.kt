@@ -11,3 +11,8 @@ fun applyTag(stack: ItemStack, key: String, value: String): ItemStack {
     stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag))
     return stack
 }
+
+fun hasTag(stack: ItemStack, key: String, value: String): Boolean {
+    val data = stack.get(DataComponents.CUSTOM_DATA) ?: return false
+    return data.copyTag().getString(key).orElse(null) == value
+}
