@@ -1,6 +1,7 @@
 package mcsoc.bedwars.items
 
 import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.getCardinalDirection
@@ -162,8 +163,9 @@ object CustomItemInteraction {
     }
 
     private fun placeBlockIfValid(level: Level, blockPos: BlockPos, blockState: BlockState) {
+        if (level !is ServerLevel) return
         val curBlockState = level.getBlockState(blockPos)
-        if (curBlockState.`is`(Blocks.AIR))
+        if (curBlockState.`is`(Blocks.AIR) && level.blockProtection.isBlockPlacementAllowed(blockPos))
             level.setBlockAndUpdate(blockPos, blockState)
     }
 
