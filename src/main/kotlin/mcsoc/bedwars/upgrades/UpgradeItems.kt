@@ -15,7 +15,6 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.enchantment.Enchantment
 import net.minecraft.world.item.enchantment.Enchantments
-import kotlin.uuid.toKotlinUuid
 
 
 enum class UpgradeItemType(val defaultStr: String, val fromName: (String) -> UpgradableItem) {
@@ -177,7 +176,7 @@ enum class Sword(override val material: Item) : Single, Resettable {
     
     private fun ItemStack.addSharp(player: ServerPlayer) {
         val gameState = player.level().gameState
-        val team = gameState.getPlayersTeam(player.uuid.toKotlinUuid())
+        val team = gameState.getPlayersTeam(player.uuid)
         if (gameState.getUpgrade(team, TeamUpgradeType.SHARPNESS)) {
             applyEnchant(this, Enchantments.SHARPNESS, 1, player.level())
         }
@@ -222,14 +221,14 @@ enum class Armour(val boots: Item, val leggings: Item, val chestplate: Item) : U
     
     private fun ItemStack.addProt(player: ServerPlayer) {
         val gameState = player.level().gameState
-        val team = gameState.getPlayersTeam(player.uuid.toKotlinUuid())
+        val team = gameState.getPlayersTeam(player.uuid)
         val level = gameState.getUpgrade(team, TeamUpgradeType.PROTECTION)
         applyEnchant(this, Enchantments.PROTECTION, level, player.level())
     }
     
     private fun ItemStack.addFeatherFalling(player: ServerPlayer) {
         val gameState = player.level().gameState
-        val team = gameState.getPlayersTeam(player.uuid.toKotlinUuid())
+        val team = gameState.getPlayersTeam(player.uuid)
         val level = gameState.getUpgrade(team, TeamUpgradeType.FEATHER_FALLING)
         applyEnchant(this, Enchantments.FEATHER_FALLING, level, player.level())
     }

@@ -7,6 +7,9 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import mcsoc.bedwars.entities.CustomEntityType
 import mcsoc.bedwars.gui.ShopType
 import mcsoc.bedwars.upgrades.UpgradeItemType
+import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.generators.GeneratorType
 import net.minecraft.commands.CommandSourceStack
 import java.util.concurrent.CompletableFuture
 
@@ -25,6 +28,21 @@ internal class UpgradeItemsSuggestionProvider : SuggestionProvider<CommandSource
         return builder.buildFuture()
     }
 }
+
+internal class GeneratorSuggestionProvider: SuggestionProvider<CommandSourceStack> {
+    override fun getSuggestions(context: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
+        GeneratorType.ENTRIES.forEach { builder.suggest(it.key.lowercase()) }
+		return builder.buildFuture()
+    }
+}
+
+internal class TeamSuggestionProvider: SuggestionProvider<CommandSourceStack> {
+    override fun getSuggestions(context: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
+        context.source.level.gameState.getActiveTeams().forEach { builder.suggest(it.getName()) }
+		return builder.buildFuture()
+    }
+}
+
 
 internal class EntityTypeSuggestionProvider: SuggestionProvider<CommandSourceStack> {
 	override fun getSuggestions(
