@@ -5,7 +5,9 @@
 	"mixins": [
 		"BlockPlacementMixin",
 		"SnowReplacementMixin",
-		"LevelSetBlockMixin"
+		"LevelSetBlockMixin",
+		"DisableCraftingMixin",
+		"DisableRecipeBookMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
