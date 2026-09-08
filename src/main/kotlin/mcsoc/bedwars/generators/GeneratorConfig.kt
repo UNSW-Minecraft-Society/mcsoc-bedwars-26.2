@@ -32,15 +32,16 @@ data class GeneratorItem(val item: Item, val itemsPerCycle: Int, val maxItems: I
 private val baseGenT1Items = listOf(GeneratorItem(Items.IRON_INGOT, 4 * 80, 48), GeneratorItem(Items.GOLD_INGOT, 1 * 80, 16))
 private val baseGenT3Items = baseGenT1Items + GeneratorItem(Items.EMERALD, 1, 4)
         
-sealed class GeneratorType(private val id: (GeneratorType) -> String) {
+sealed class GeneratorType(private val id_factory: (GeneratorType) -> String) {
     abstract val config: GeneratorConfig
     abstract fun getUpgrade(level: ServerLevel): Int
+    val id: String get() = this.id_factory(this)
     
     data class BASE(val team: Team): GeneratorType(::getSerialId) {
         companion object {
             internal const val prefix = "base_"
             internal fun parseSerial(serial: String): GeneratorType.BASE {
-                val team = Team.valueOf(serial.removePrefix(GeneratorType.BASE.prefix))
+                val team = Team.valueOf(serial.removePrefix(GeneratorType.BASE.prefix).uppercase())
                 return BASE(team)
             }
             
@@ -91,19 +92,23 @@ sealed class GeneratorType(private val id: (GeneratorType) -> String) {
         override fun getUpgrade(level: ServerLevel) = level.generatorState.getGeneratorUpgrade(this)
     }
     
-    companion object {        
+    companion object {
+        fun parseTypeString(str: String): GeneratorType? {
+            val str_lower = str.lowercase()
+            for (type in GeneratorType::class.sealedSubclasses) {
+                val gentype = type.objectInstance ?: continue
+                if (str_lower == gentype.id.lowercase()) return gentype
+            }
+            return null
+        }
         val CODEC: Codec<GeneratorType> = Codec.STRING.xmap(
             { value ->
-                for (type in GeneratorType::class.sealedSubclasses) {
-                    val gentype = type.objectInstance ?: continue
-                    if (value == gentype.id(gentype)) return@xmap type.objectInstance
-                }
-                when {
+                return@xmap parseTypeString(value) ?: when {
                     value.startsWith(GeneratorType.BASE.prefix) -> GeneratorType.BASE.parseSerial(value)
                     else -> error("Unknown generator type: $value")
                 }
             },
-            { type -> type.id(type)
+            { type -> type.id
             },
         )
     }

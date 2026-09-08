@@ -294,9 +294,7 @@ internal object CommandActions {
 
     fun upgradeGeneratorTier(ctx: CommandContext<CommandSourceStack>): Int {
         val type = StringArgumentType.getString(ctx, GEN_TYPE_ARG)
-        val genType = GeneratorType.ENTRIES[type.uppercase()]
-
-        if (genType == null) {
+        val genType = GeneratorType.parseTypeString(type.uppercase()) ?: run {
             ctx.source.sendFailure(Component.literal("$type is not an upgradable generator"))
             return 0
         }
@@ -319,9 +317,7 @@ internal object CommandActions {
 }
 
 private fun addGenerator(src: CommandSourceStack, pos: Vec3, type: String): Int {
-    val genType = GeneratorType.ENTRIES[type.uppercase()]
-
-    if (genType == null) {
+    val genType = GeneratorType.parseTypeString(type.uppercase()) ?: run {
         src.sendFailure(Component.literal("$type is not a valid generator type"))
         return 0
     }
