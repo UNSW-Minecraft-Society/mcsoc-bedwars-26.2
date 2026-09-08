@@ -209,9 +209,68 @@ class GameManager {
             // notify eliminate player of their kill stats - TODO
 //            player.sendSystemMessage(Component.literal("Kills: " + level_mod_data.getPlayerKills(player.uuid) + " Final Kills: " + level_mod_data.getPlayerFinalKills(player.uuid)))
 
-            // check if a team has won - urgent todo
-//            val winning_team = checkPlayersLeftOnTeam(world,world.players(), SavedModData.getPlayerTeam(player.uuid)) ?: return
-//            winGame(world, winning_team)
+            val winning_team = checkPlayersLeftOnTeam(world,level_mod_data.getPlayersTeam(player.uuid.toKotlinUuid())) ?: return
+            winGame(world, winning_team)
+        }
+
+        private fun checkPlayersLeftOnTeam(world: ServerLevel, player_down_team: Team): Team? {
+            val level_mod_data = world.gameState
+            if (level_mod_data.getGamePhase() != GamePhase.ACTIVE) return null
+            var game_is_won = true
+            var winning_team = Team.NONE
+            level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).forEach{player ->
+                val player_team = level_mod_data.getPlayersTeam(player.uuid.toKotlinUuid())
+
+                if (player_team == Team.NONE) return@forEach
+
+                if (!(level_mod_data.isPlayerEliminated(player))) {
+                    if (winning_team == Team.NONE) {
+                        winning_team = player_team
+                    } else if (player_team != winning_team) {
+                        game_is_won = false
+                    }
+                }
+            }
+
+            if (!game_is_won) return null
+            if (winning_team == Team.NONE) throw IllegalStateException()
+            return winning_team
+        }
+
+        private fun winGame(world: ServerLevel, winning_team: Team) {
+            val level_mod_data = world.gameState
+
+            // for stats branch
+//            val top_killers = level_mod_data.getActivePlayers().map { player -> Pair(world.getPlayerByUUID(player)?.scoreboardName, level_mod_data.getPlayerKills(player)) }.sortedByDescending { p -> p.second }.take(3)
+//            val top_final_killers = level_mod_data.getActivePlayers().map { player -> Pair(world.getPlayerByUUID(player)?.scoreboardName, level_mod_data.getPlayerFinalKills(player)) }.sortedByDescending { p -> p.second }.take(3)
+
+            world.server.playerList.players.forEach{player ->
+                player.connection.send(
+                    ClientboundClearTitlesPacket(true)
+                )
+                player.connection.send(
+                    ClientboundSetTitlesAnimationPacket(0, 100, 0)
+                )
+                if (level_mod_data.getPlayersTeam(player.uuid.toKotlinUuid()) == winning_team) {
+                    player.connection.send(
+                        ClientboundSetTitleTextPacket(
+                            Component.literal(ChatFormatting.YELLOW.toString() + "VICTORY!")
+                        )
+                    )
+                } else {
+                    player.connection.send(
+                        ClientboundSetTitleTextPacket(
+                            Component.literal(ChatFormatting.RED.toString() + "DEFEAT!")
+                        )
+                    )
+                }
+
+//                player.sendSystemMessage(Component.literal("Top Killers:"))
+//                for (i in 0..2) player.sendSystemMessage(Component.literal(top_killers[i].first + ": " + top_killers[i].second))
+//                player.sendSystemMessage(Component.literal("Top Final Killers"))
+//                for (i in 0..2) player.sendSystemMessage(Component.literal(top_final_killers[i].first + ": " + top_final_killers[i].second))
+            }
+            level_mod_data.setGamePhase(GamePhase.ENDED)
         }
 
         fun afterBedBreak(world: ServerLevel, breaker: ServerPlayer, team: Team) {
