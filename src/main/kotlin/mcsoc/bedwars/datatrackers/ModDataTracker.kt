@@ -125,7 +125,7 @@ private class TeamDataRecord(
 private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder, TeamGeneratorHolder {
     companion object {
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
-            Codec.unboundedMap(UUIDUtil.CODEC, PlayerDataRecord.CODEC)
+            Codec.unboundedMap(UUIDUtil.STRING_CODEC, PlayerDataRecord.CODEC)
                 .fieldOf("player_data_map")
                 .forGetter(ModDataStore::player_data_map),
 
