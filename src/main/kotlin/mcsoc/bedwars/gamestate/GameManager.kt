@@ -4,6 +4,7 @@ import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.utils.Team
 import net.minecraft.ChatFormatting
 import net.minecraft.core.BlockPos
@@ -113,7 +114,7 @@ class GameManager {
             val level_mod_data = player.level().gameState
             if (level_mod_data.getGamePhase() != GamePhase.ACTIVE) return
 
-            val player_team = level_mod_data.getPlayersTeam(player.uuid.toKotlinUuid())
+            val player_team = level_mod_data.getPlayersTeam(player.uuid)
             val bed_destroyed = level_mod_data.getBedDestroyed(player_team)
 
             // bedhunt code for kill tracking, to be updated
@@ -159,7 +160,7 @@ class GameManager {
 
             player.setGameMode(GameType.SPECTATOR)
 
-            if (!level_mod_data.getBedDestroyed(level_mod_data.getPlayersTeam(player.uuid.toKotlinUuid()))) {
+            if (!level_mod_data.getBedDestroyed(level_mod_data.getPlayersTeam(player.uuid))) {
                 // tp above map
 //                player.teleportTo(base_position.x.toDouble(), base_position.y.toDouble(), base_position.z.toDouble())
 
@@ -209,7 +210,7 @@ class GameManager {
             // notify eliminate player of their kill stats - TODO
 //            player.sendSystemMessage(Component.literal("Kills: " + level_mod_data.getPlayerKills(player.uuid) + " Final Kills: " + level_mod_data.getPlayerFinalKills(player.uuid)))
 
-            val winning_team = checkPlayersLeftOnTeam(world,level_mod_data.getPlayersTeam(player.uuid.toKotlinUuid())) ?: return
+            val winning_team = checkPlayersLeftOnTeam(world,level_mod_data.getPlayersTeam(player.uuid)) ?: return
             winGame(world, winning_team)
         }
 
@@ -219,7 +220,7 @@ class GameManager {
             var game_is_won = true
             var winning_team = Team.NONE
             level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).forEach{player ->
-                val player_team = level_mod_data.getPlayersTeam(player.uuid.toKotlinUuid())
+                val player_team = level_mod_data.getPlayersTeam(player.uuid)
 
                 if (player_team == Team.NONE) return@forEach
 
@@ -251,7 +252,7 @@ class GameManager {
                 player.connection.send(
                     ClientboundSetTitlesAnimationPacket(0, 100, 0)
                 )
-                if (level_mod_data.getPlayersTeam(player.uuid.toKotlinUuid()) == winning_team) {
+                if (level_mod_data.getPlayersTeam(player.uuid) == winning_team) {
                     player.connection.send(
                         ClientboundSetTitleTextPacket(
                             Component.literal(ChatFormatting.YELLOW.toString() + "VICTORY!")
@@ -286,7 +287,7 @@ class GameManager {
             level_mod_data.setBedAlive(team, false)
 
             level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).forEach { p ->
-                if (level_mod_data.getPlayersTeam(p.uuid.toKotlinUuid()) == team) {
+                if (level_mod_data.getPlayersTeam(p.uuid) == team) {
                     p.connection.send(
                         ClientboundSetTitleTextPacket(
                             Component.literal(ChatFormatting.RED.toString() + "BED DESTROYED")
@@ -309,7 +310,7 @@ class GameManager {
             if (level_mod_data.getGamePhase() == GamePhase.INACTIVE) return
 
             val player_manager = world.server.playerList
-
+            world.generatorState.tick()
 
             level_mod_data.tick()
 

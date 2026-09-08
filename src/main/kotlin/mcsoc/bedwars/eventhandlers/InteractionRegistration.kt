@@ -33,7 +33,7 @@ fun onBedBreakAttempt() {
             return@register true
         }
 
-        val player_team = level.gameState.getPlayersTeam(player.uuid.toKotlinUuid())
+        val player_team = level.gameState.getPlayersTeam(player.uuid)
         level.gameState.getActiveTeams().forEach { team ->
             // get team bed position
             // val team_pos = level.gameState.getTeamBasePosition(team)
