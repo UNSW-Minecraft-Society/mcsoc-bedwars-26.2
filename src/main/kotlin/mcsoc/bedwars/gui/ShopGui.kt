@@ -171,6 +171,7 @@ object ShopGui {
                 if (products !is Array<ShopProduct>) return
                 for ((slotIndex, product) in PRODUCT_SLOT_INDEX zip products) {
                     if (product is PlayerSpecificShopProduct) product.player = player
+                    if (product is PlayerSpecificShopProduct) product.setShopPlayer(player)
                     gui.setSlot(slotIndex, GuiElementBuilder(product.getItemStack())
                         .addLoreLine(Component.literal("Cost: ${product.getItemCost()}"))
                         .setCallback(product.getClickCallback()))

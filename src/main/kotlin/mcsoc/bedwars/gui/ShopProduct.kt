@@ -76,7 +76,7 @@ class EmptyShopProduct : ShopProduct() {
  * player-specific upgrades). `setPlayer` needs to be called to initialize the player it before this class is used.
  */
 interface PlayerSpecificShopProduct {
-    var player: ServerPlayer
+    fun setShopPlayer(player: ServerPlayer)
 }
 
 /**
@@ -151,10 +151,10 @@ class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
     constructor(items: Map<Team, Item>, count: Int, currency: Item, price: Int) : this(
         items.mapValues { ItemStackTemplate(it.value, count) },currency, price)
 
-    override fun getItemStack(): ItemStack {
+    override fun setShopPlayer(player: ServerPlayer) {
         val gameState = player.level().gameState
         val team = gameState.getPlayersTeam(player.uuid)
-        return templates.getValue(team).create()
+        setItemStack(templates.getValue(team))
     }
 }
 
@@ -165,7 +165,7 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
     private val playerUpgrade: UpgradeItemType
     private val currencies: Array<Item>
     private val prices: Array<Int>
-    override lateinit var player: ServerPlayer
+    private lateinit var player: ServerPlayer
 
     constructor(playerUpgrade: UpgradeItemType, currencies: Array<Item>, prices: Array<Int>) {
         this.playerUpgrade = playerUpgrade
@@ -195,12 +195,17 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
         if (tier >= currencies.size) return null
         return ItemStack(currencies[tier], prices[tier])
     }
+
+    override fun setShopPlayer(player: ServerPlayer) {
+        this.player = player
+    }
+
 }
 
 abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
     protected var teamUpgrade: TeamUpgradeType<T>
     protected var displayItem: Item
-    override lateinit var player: ServerPlayer
+    private lateinit var player: ServerPlayer
 
     constructor(teamUpgrade: TeamUpgradeType<T>, displayItem: Item) {
         this.teamUpgrade = teamUpgrade
@@ -218,6 +223,10 @@ abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
                 return true
             })
         }
+    }
+
+    override fun setShopPlayer(player: ServerPlayer) {
+        this.player = player
     }
 
     protected fun getUpgradeState(): T {
