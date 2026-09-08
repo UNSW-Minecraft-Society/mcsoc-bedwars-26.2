@@ -141,7 +141,7 @@ open class ShopItem : ShopProduct {
 
 class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
     private val templates: Map<Team, ItemStackTemplate>
-    override lateinit var player: ServerPlayer
+    private lateinit var player: ServerPlayer
 
     constructor(templates: Map<Team, ItemStackTemplate>, currency: Item, price: Int) : super(
         templates[Team.NONE] ?: ItemStackTemplate(Items.BARRIER), currency, price) {
