@@ -32,11 +32,24 @@ data class GeneratorItem(val item: Item, val itemsPerCycle: Int, val maxItems: I
 private val baseGenT1Items = listOf(GeneratorItem(Items.IRON_INGOT, 4 * 80, 48), GeneratorItem(Items.GOLD_INGOT, 1 * 80, 16))
 private val baseGenT3Items = baseGenT1Items + GeneratorItem(Items.EMERALD, 1, 4)
         
-sealed interface GeneratorType {
-    val config: GeneratorConfig
-    fun getUpgrade(level: ServerLevel): Int
+sealed class GeneratorType(private val id: (GeneratorType) -> String) {
+    abstract val config: GeneratorConfig
+    abstract fun getUpgrade(level: ServerLevel): Int
     
-    data class BASE(val team: Team): GeneratorType {
+    data class BASE(val team: Team): GeneratorType(::getSerialId) {
+        companion object {
+            internal const val prefix = "base_"
+            internal fun parseSerial(serial: String): GeneratorType.BASE {
+                val team = Team.valueOf(serial.removePrefix(GeneratorType.BASE.prefix))
+                return BASE(team)
+            }
+            
+            private fun getSerialId(type: GeneratorType): String {
+                if (type !is GeneratorType.BASE) return ""
+                return prefix + type.team.name
+            }
+        }
+        
         override val config = GeneratorConfig(
             GeneratorKind.Upgradable(
                 listOf(
@@ -52,7 +65,7 @@ sealed interface GeneratorType {
         override fun getUpgrade(level: ServerLevel) = level.gameState.getGenUpgrade(team)
     }
     
-    data object DIAMOND: GeneratorType {
+    data object DIAMOND: GeneratorType({"diamond"}) {
         override val config = GeneratorConfig(
             GeneratorKind.Upgradable(
                 mapOf(0 to listOf(GeneratorItem(Items.DIAMOND, 1, 8))),
@@ -65,7 +78,7 @@ sealed interface GeneratorType {
         override fun getUpgrade(level: ServerLevel) = level.generatorState.getGeneratorUpgrade(this)
     }
     
-    data object EMERALD: GeneratorType {
+    data object EMERALD: GeneratorType({"emerald"}) {
         override val config = GeneratorConfig(
             GeneratorKind.Upgradable(
                 mapOf(0 to listOf(GeneratorItem(Items.EMERALD, 1, 4))),
@@ -78,29 +91,19 @@ sealed interface GeneratorType {
         override fun getUpgrade(level: ServerLevel) = level.generatorState.getGeneratorUpgrade(this)
     }
     
-    companion object {
-        val ENTRIES = mapOf("DIAMOND" to DIAMOND, "EMERALD" to EMERALD)
-        
+    companion object {        
         val CODEC: Codec<GeneratorType> = Codec.STRING.xmap(
             { value ->
+                for (type in GeneratorType::class.sealedSubclasses) {
+                    val gentype = type.objectInstance ?: continue
+                    if (value == gentype.id(gentype)) return@xmap type.objectInstance
+                }
                 when {
-                    value == "diamond" -> DIAMOND
-                    value == "emerald" -> EMERALD
-                    value.startsWith("base_") -> {
-                        val team = Team.entries.first {
-                            it.getName() == value.removePrefix("base_")
-                        }
-                        BASE(team)
-                    }
+                    value.startsWith(GeneratorType.BASE.prefix) -> GeneratorType.BASE.parseSerial(value)
                     else -> error("Unknown generator type: $value")
                 }
             },
-            { type ->
-                when (type) {
-                    DIAMOND -> "diamond"
-                    EMERALD -> "emerald"
-                    is BASE -> "base_${type.team.getName()}"
-                }
+            { type -> type.id(type)
             },
         )
     }
