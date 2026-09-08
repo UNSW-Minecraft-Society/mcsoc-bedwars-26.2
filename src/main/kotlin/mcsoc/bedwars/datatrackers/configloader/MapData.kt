@@ -33,7 +33,7 @@ private sealed class LoadedGeneratorType(val name: String, protected val type: G
                 .associateBy(LoadedGeneratorType::name)
                 .mapValues<String, LoadedGeneratorType, (Team?) -> LoadedGeneratorType> { i -> { _ -> i.value}}
                 .toMutableMap()
-                .also { it[Base.NAME] = {team -> Base(team ?: throw IllegalArgumentException("Base GeneratorType must requires team"))} }
+                .also { it[Base.NAME] = {team -> Base(team ?: throw IllegalArgumentException("Base GeneratorType requires team"))} }
         }
         fun valueOf(id: String, team: Team? = null): LoadedGeneratorType = (REGISTRY[id] ?: throw IllegalArgumentException("Unknown LevelDataType: \"$id\""))(team)
     }
