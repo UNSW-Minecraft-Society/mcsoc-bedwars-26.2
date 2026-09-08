@@ -60,16 +60,24 @@ object ShopGui {
                  // These are ShopPlayerUpgrades
                  ShopPlayerUpgrade(UpgradeItemType.ARMOUR,
                      arrayOf(Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
-                     arrayOf(3, 4, 5)),
+                     arrayOf(3, 4, 5),
+                     arrayOf("Chainmail Armor", "Iron Armor", "Diamond Armor")
+                 ),
                  ShopPlayerUpgrade(UpgradeItemType.SWORD,
                      arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND),
-                     arrayOf(3, 4, 5)),
+                     arrayOf(3, 4, 5),
+                     arrayOf("Stone Sword", "Iron Sword", "Diamond Sword")
+                 ),
                  ShopPlayerUpgrade(UpgradeItemType.PICKAXE,
                      arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
-                     arrayOf(1, 2, 3, 4)),
+                     arrayOf(1, 2, 3, 4),
+                     arrayOf("Wooden Pickaxe", "Iron Pickaxe", "Golden Pickaxe", "Diamond Pickaxe")
+                 ),
                  ShopPlayerUpgrade(UpgradeItemType.AXE,
                      arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
-                     arrayOf(1, 2, 3, 4)),
+                     arrayOf(1, 2, 3, 4),
+                     arrayOf("Wooden Axe", "Stone Axe", "Iron Axe", "Diamond Axe")
+                 ),
 
 
                  // These are ShopItems
@@ -113,35 +121,38 @@ object ShopGui {
                  EmptyShopProduct(),
                  IntShopTeamUpgrade(TeamUpgradeType.PROTECTION, Items.SHIELD,
                      Array(4) {Items.DIAMOND},
-                     arrayOf(2,3,4,5)
+                     arrayOf(2,3,4,5),
+                     "Protection"
                  ),
                  IntShopTeamUpgrade(TeamUpgradeType.FEATHER_FALLING, Items.FEATHER,
                      Array(2) {Items.DIAMOND},
-                     arrayOf(1,2)
+                     arrayOf(1,2),
+                     "Feather Falling"
                  ),
                  EmptyShopProduct(),
 
                  EmptyShopProduct(),
                  IntShopTeamUpgrade(TeamUpgradeType.HASTE, Items.GOLDEN_PICKAXE,
                      Array(2) {Items.DIAMOND},
-                     arrayOf(2,3)
+                     arrayOf(2,3),
+                     "Haste"
                  ),
                  EmptyShopProduct(),
                  EmptyShopProduct(),
 
                  EmptyShopProduct(),
-                 BooleanShopTeamUpgrade(TeamUpgradeType.SHARPNESS, Items.IRON_SWORD, Items.DIAMOND, 12),
-                 BooleanShopTeamUpgrade(TeamUpgradeType.HEAL_POOL, Items.GOLDEN_APPLE, Items.DIAMOND, 8),
+                 BooleanShopTeamUpgrade(TeamUpgradeType.SHARPNESS, Items.IRON_SWORD, Items.DIAMOND, 12, "Sharpness"),
+                 BooleanShopTeamUpgrade(TeamUpgradeType.HEAL_POOL, Items.GOLDEN_APPLE, Items.DIAMOND, 8, "Heal Pool"),
                  EmptyShopProduct(),
 
                  EmptyShopProduct(),
-                 ShopTrapUpgrade(TrapUpgrade.BLINDNESS, Items.DYE.black, Items.DIAMOND, 4),
-                 ShopTrapUpgrade(TrapUpgrade.COUNTER, Items.POTION, Items.DIAMOND, 4),
+                 ShopTrapUpgrade(TrapUpgrade.BLINDNESS, Items.DYE.black, Items.DIAMOND, 4, "Blindness Trap"),
+                 ShopTrapUpgrade(TrapUpgrade.COUNTER, Items.POTION, Items.DIAMOND, 4, "Counter Trap"),
                  EmptyShopProduct(),
 
                  EmptyShopProduct(),
-                 ShopTrapUpgrade(TrapUpgrade.REVEAL, Items.ENDER_EYE, Items.DIAMOND, 2),
-                 ShopTrapUpgrade(TrapUpgrade.MINING, Items.ELDER_GUARDIAN_SPAWN_EGG, Items.DIAMOND, 4),
+                 ShopTrapUpgrade(TrapUpgrade.REVEAL, Items.ENDER_EYE, Items.DIAMOND, 2, "Reveal Trap"),
+                 ShopTrapUpgrade(TrapUpgrade.MINING, Items.ELDER_GUARDIAN_SPAWN_EGG, Items.DIAMOND, 4, "Mining Fatigue Trap"),
                  EmptyShopProduct(),
 
                  EmptyShopProduct(),
@@ -166,9 +177,11 @@ object ShopGui {
                 if (products !is Array<ShopProduct>) return
                 for ((slotIndex, product) in PRODUCT_SLOT_INDEX zip products) {
                     if (product is PlayerSpecificShopProduct) product.setShopPlayer(player)
-                    gui.setSlot(slotIndex, GuiElementBuilder(product.getItemStack())
+                    val element = GuiElementBuilder(product.getItemStack())
                         .addLoreLine(Component.literal("Cost: ${product.getItemCost()}"))
-                        .setCallback(product.getClickCallback()))
+                        .setCallback(product.getClickCallback())
+                    if (product.getProductName() != null) element.setName(product.getProductName())
+                    gui.setSlot(slotIndex, element)
                 }
             }
 
