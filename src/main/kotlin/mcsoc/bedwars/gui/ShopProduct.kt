@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStackTemplate
 import net.minecraft.world.item.Items
 
 val DEFAULT_TEAM = Team.BLACK
+val EMPTY_STACK = Items.AIR.defaultInstance
 
 /**
  * Abstract class for storing data on shop products.
@@ -58,6 +59,16 @@ abstract class ShopProduct {
             return false
         }
     }
+}
+
+class EmptyShopProduct : ShopProduct() {
+    override fun getItemStack(): ItemStack = EMPTY_STACK
+
+    override fun getClickCallback(): GuiElement.ClickCallback = GuiElement.ClickCallback {
+        index, clickType, action, gui ->
+    }
+
+    override fun getItemCost(): ItemStack? = null
 }
 
 /**
@@ -130,6 +141,7 @@ open class ShopItem : ShopProduct {
 
 class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
     private val templates: Map<Team, ItemStackTemplate>
+    private lateinit var player: ServerPlayer
 
     constructor(templates: Map<Team, ItemStackTemplate>, currency: Item, price: Int) : super(
         templates[Team.NONE] ?: ItemStackTemplate(Items.BARRIER), currency, price) {
@@ -163,7 +175,7 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
 
     override fun getItemStack(): ItemStack {
         val gameState = player.level().gameState
-        return gameState.getNextItemStack(player, playerUpgrade) ?: Items.STAINED_GLASS_PANE.lightGray.defaultInstance
+        return gameState.getNextItemStack(player, playerUpgrade) ?: EMPTY_STACK
     }
 
     override fun getClickCallback(): GuiElement.ClickCallback {
@@ -193,7 +205,7 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
 abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
     protected var teamUpgrade: TeamUpgradeType<T>
     protected var displayItem: Item
-    protected lateinit var player: ServerPlayer
+    private lateinit var player: ServerPlayer
 
     constructor(teamUpgrade: TeamUpgradeType<T>, displayItem: Item) {
         this.teamUpgrade = teamUpgrade
@@ -203,6 +215,7 @@ abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
     override fun getClickCallback(): GuiElement.ClickCallback {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player ?: return@ClickCallback
+            if (!isUpgradable()) return@ClickCallback
             val gameState = player.level().gameState
             val team = gameState.getPlayersTeam(player.uuid)
             purchaseUnit(player, fun(): Boolean {
@@ -221,6 +234,8 @@ abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
         val team = gameState.getPlayersTeam(player.uuid)
         return gameState.getUpgrade(team, teamUpgrade)
     }
+
+    protected abstract fun isUpgradable(): Boolean
 }
 
 class BooleanShopTeamUpgrade : ShopTeamUpgrade<Boolean> {
@@ -236,15 +251,17 @@ class BooleanShopTeamUpgrade : ShopTeamUpgrade<Boolean> {
         return if (!getUpgradeState())
             ItemStack(displayItem)
         else
-            Items.STAINED_GLASS_PANE.lightGray.defaultInstance
+            EMPTY_STACK
     }
 
     override fun getItemCost(): ItemStack? {
-        return if (!getUpgradeState())
+        return if (isUpgradable())
             ItemStack(currency, price)
         else
             null
     }
+
+    override fun isUpgradable(): Boolean = !getUpgradeState()
 
 }
 
@@ -258,14 +275,15 @@ class IntShopTeamUpgrade : ShopTeamUpgrade<Int> {
     }
 
     override fun getItemStack(): ItemStack {
-        val nextTier = getUpgradeState()
-        if (currencies.lastIndex < nextTier) return Items.STAINED_GLASS_PANE.lightGray.defaultInstance
-        return ItemStack(displayItem, nextTier)
+        if (!isUpgradable()) return EMPTY_STACK
+        return ItemStack(displayItem, getUpgradeState() + 1)
     }
 
     override fun getItemCost(): ItemStack? {
         val nextTier = getUpgradeState()
         return currencies.getOrNull(nextTier)?.let { prices.getOrNull(nextTier)?.let { count -> ItemStack(it, count) } }
     }
+
+    override fun isUpgradable(): Boolean = currencies.lastIndex >= getUpgradeState()
 
 }

@@ -7,6 +7,7 @@ import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorExposer
 import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorHolder
 import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorState
 import kotlinx.serialization.Serializable
+import mcsoc.bedwars.datatrackers.generatordata.InvalidTeamException
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.server.level.ServerPlayer
@@ -284,7 +285,7 @@ private class ModDataStore() : PlayerStateHolder, TeamStateHolder, Ticker, Playe
     }
 
     override fun getTeam(team: Team): TeamDataRecord {
-        return teams_map[team] ?: throw Exception("Invalid team")
+        return teams_map[team] ?: throw InvalidTeamException()
     }
 
     override fun getActiveTeams(): List<Team> = teams_map.keys.toList()
