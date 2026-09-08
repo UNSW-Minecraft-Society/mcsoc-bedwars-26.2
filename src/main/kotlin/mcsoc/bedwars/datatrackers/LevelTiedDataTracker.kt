@@ -1,7 +1,6 @@
 @file:JvmName("LevelData")
 package mcsoc.bedwars.datatrackers
 
-import com.mojang.datafixers.util.Unit
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -13,12 +12,6 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.util.datafix.DataFixTypes
 import net.minecraft.world.level.saveddata.SavedData
 import net.minecraft.world.level.saveddata.SavedDataType
-import java.util.EnumMap
-import java.util.EnumSet
-import java.util.Optional
-import kotlin.reflect.KClass
-import kotlin.reflect.cast
-import kotlin.reflect.safeCast
 
 
 // each tracker should extend this class
