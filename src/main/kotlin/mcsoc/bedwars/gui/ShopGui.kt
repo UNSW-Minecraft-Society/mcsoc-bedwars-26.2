@@ -11,6 +11,7 @@ import eu.pb4.sgui.api.gui.SimpleGui
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.generatordata.InvalidTeamException
 import mcsoc.bedwars.upgrades.TeamUpgradeType
+import mcsoc.bedwars.upgrades.TrapUpgrade
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.utils.Team
 import net.minecraft.ChatFormatting
@@ -129,24 +130,18 @@ object ShopGui {
                  EmptyShopProduct(),
 
                  EmptyShopProduct(),
-                 BooleanShopTeamUpgrade(TeamUpgradeType.SHARPNESS, Items.IRON_SWORD,
-                     Items.DIAMOND,
-                     12
-                 ),
-                 BooleanShopTeamUpgrade(TeamUpgradeType.HEAL_POOL, Items.GOLDEN_APPLE,
-                     Items.DIAMOND,
-                     8
-                 ),
+                 BooleanShopTeamUpgrade(TeamUpgradeType.SHARPNESS, Items.IRON_SWORD, Items.DIAMOND, 12),
+                 BooleanShopTeamUpgrade(TeamUpgradeType.HEAL_POOL, Items.GOLDEN_APPLE, Items.DIAMOND, 8),
                  EmptyShopProduct(),
 
                  EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
+                 ShopTrapUpgrade(TrapUpgrade.BLINDNESS, Items.DYE.black, Items.DIAMOND, 4),
+                 ShopTrapUpgrade(TrapUpgrade.COUNTER, Items.POTION, Items.DIAMOND, 4),
                  EmptyShopProduct(),
 
                  EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
+                 ShopTrapUpgrade(TrapUpgrade.REVEAL, Items.ENDER_EYE, Items.DIAMOND, 2),
+                 ShopTrapUpgrade(TrapUpgrade.MINING, Items.ELDER_GUARDIAN_SPAWN_EGG, Items.DIAMOND, 4),
                  EmptyShopProduct(),
 
                  EmptyShopProduct(),

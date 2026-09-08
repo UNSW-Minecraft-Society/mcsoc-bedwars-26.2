@@ -5,6 +5,7 @@ import eu.pb4.sgui.api.elements.GuiElement
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.upgrades.TeamUpgradeType
+import mcsoc.bedwars.upgrades.TrapUpgrade
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.utils.Team
 import net.minecraft.network.chat.Component
@@ -285,5 +286,58 @@ class IntShopTeamUpgrade : ShopTeamUpgrade<Int> {
     }
 
     override fun isUpgradable(): Boolean = currencies.lastIndex >= getUpgradeState()
+
+}
+
+class ShopTrapUpgrade : ShopProduct, PlayerSpecificShopProduct {
+    private val trapUpgrade: TrapUpgrade
+    private val displayItem: Item
+    private val currency: Item
+    private val price: Int
+    private lateinit var player: ServerPlayer
+
+    constructor(trapUpgrade: TrapUpgrade, displayItem: Item, currency: Item, price: Int) : super() {
+        this.trapUpgrade = trapUpgrade
+        this.displayItem = displayItem
+        this.currency = currency
+        this.price = price
+    }
+
+    override fun getItemStack(): ItemStack {
+        return if (!isTrapActive())
+            ItemStack(displayItem)
+        else
+            EMPTY_STACK
+    }
+
+    override fun getClickCallback(): GuiElement.ClickCallback {
+        return GuiElement.ClickCallback { index, clickType, action, gui ->
+            val player = gui.player ?: return@ClickCallback
+            if (isTrapActive()) return@ClickCallback
+            val gameState = player.level().gameState
+            val team = gameState.getPlayersTeam(player.uuid)
+            purchaseUnit(player, fun(): Boolean {
+                gameState.addTrap(team, trapUpgrade)
+                return true
+            })
+        }
+    }
+
+    override fun getItemCost(): ItemStack? {
+        return if (!isTrapActive())
+            ItemStack(currency, price)
+        else
+            null
+    }
+
+    override fun setShopPlayer(player: ServerPlayer) {
+        this.player = player
+    }
+
+    private fun isTrapActive(): Boolean {
+        val gameState = player.level().gameState
+        val team = gameState.getPlayersTeam(player.uuid)
+        return gameState.getTraps(team).contains(trapUpgrade)
+    }
 
 }
