@@ -4,6 +4,8 @@ import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.generatorState
+import mcsoc.bedwars.utils.Team
 import net.minecraft.ChatFormatting
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Holder
@@ -15,9 +17,14 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.damagesource.DamageSource
+import net.minecraft.world.effect.MobEffectInstance
+import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.LightningBolt
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
 import net.minecraft.world.level.GameType
+import net.minecraft.world.level.Level
 import net.minecraft.world.level.gamerules.GameRules
 import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.toKotlinUuid
@@ -107,7 +114,7 @@ class GameManager {
             val level_mod_data = player.level().gameState
             if (level_mod_data.getGamePhase() != GamePhase.ACTIVE) return
 
-            val player_team = level_mod_data.getPlayersTeam(player.uuid.toKotlinUuid())
+            val player_team = level_mod_data.getPlayersTeam(player.uuid)
             val bed_destroyed = level_mod_data.getBedDestroyed(player_team)
 
             val killer = player.killCredit
@@ -136,7 +143,7 @@ class GameManager {
 
             player.setGameMode(GameType.SPECTATOR)
 
-            if (!level_mod_data.getBedDestroyed(level_mod_data.getPlayersTeam(player.uuid.toKotlinUuid()))) {
+            if (!level_mod_data.getBedDestroyed(level_mod_data.getPlayersTeam(player.uuid))) {
                 // tp above map
 //                player.teleportTo(base_position.x.toDouble(), base_position.y.toDouble(), base_position.z.toDouble())
 
@@ -162,7 +169,7 @@ class GameManager {
             }
         }
 
-        fun eliminatePlayer(player: ServerPlayer) {
+        private fun eliminatePlayer(player: ServerPlayer) {
             val level_mod_data = player.level().gameState
             val player_death_position = level_mod_data.getPlayerDeathPosition(player)
 
@@ -186,9 +193,99 @@ class GameManager {
             // notify eliminated player of their stats - change to align more closely to hypixel later
             player.sendSystemMessage(Component.literal("Kills: " + level_mod_data.getPlayerKills(player) + " Final Kills: " + level_mod_data.getPlayerFinalKills(player) + " Deaths: " + level_mod_data.getPlayerDeaths(player)))
 
-            // check if a team has won - urgent todo
-//            val winning_team = checkPlayersLeftOnTeam(world,world.players(), SavedModData.getPlayerTeam(player.uuid)) ?: return
-//            winGame(world, winning_team)
+            val winning_team = checkPlayersLeftOnTeam(world,level_mod_data.getPlayersTeam(player.uuid)) ?: return
+            winGame(world, winning_team)
+        }
+
+        private fun checkPlayersLeftOnTeam(world: ServerLevel, player_down_team: Team): Team? {
+            val level_mod_data = world.gameState
+            if (level_mod_data.getGamePhase() != GamePhase.ACTIVE) return null
+            var game_is_won = true
+            var winning_team = Team.NONE
+            level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).forEach{player ->
+                val player_team = level_mod_data.getPlayersTeam(player.uuid)
+
+                if (player_team == Team.NONE) return@forEach
+
+                if (!(level_mod_data.isPlayerEliminated(player))) {
+                    if (winning_team == Team.NONE) {
+                        winning_team = player_team
+                    } else if (player_team != winning_team) {
+                        game_is_won = false
+                    }
+                }
+            }
+
+            if (!game_is_won) return null
+            if (winning_team == Team.NONE) throw IllegalStateException()
+            return winning_team
+        }
+
+        private fun winGame(world: ServerLevel, winning_team: Team) {
+            val level_mod_data = world.gameState
+
+            // for stats branch
+//            val top_killers = level_mod_data.getActivePlayers().map { player -> Pair(world.getPlayerByUUID(player)?.scoreboardName, level_mod_data.getPlayerKills(player)) }.sortedByDescending { p -> p.second }.take(3)
+//            val top_final_killers = level_mod_data.getActivePlayers().map { player -> Pair(world.getPlayerByUUID(player)?.scoreboardName, level_mod_data.getPlayerFinalKills(player)) }.sortedByDescending { p -> p.second }.take(3)
+
+            world.server.playerList.players.forEach{player ->
+                player.connection.send(
+                    ClientboundClearTitlesPacket(true)
+                )
+                player.connection.send(
+                    ClientboundSetTitlesAnimationPacket(0, 100, 0)
+                )
+                if (level_mod_data.getPlayersTeam(player.uuid) == winning_team) {
+                    player.connection.send(
+                        ClientboundSetTitleTextPacket(
+                            Component.literal(ChatFormatting.YELLOW.toString() + "VICTORY!")
+                        )
+                    )
+                } else {
+                    player.connection.send(
+                        ClientboundSetTitleTextPacket(
+                            Component.literal(ChatFormatting.RED.toString() + "DEFEAT!")
+                        )
+                    )
+                }
+
+//                player.sendSystemMessage(Component.literal("Top Killers:"))
+//                for (i in 0..2) player.sendSystemMessage(Component.literal(top_killers[i].first + ": " + top_killers[i].second))
+//                player.sendSystemMessage(Component.literal("Top Final Killers"))
+//                for (i in 0..2) player.sendSystemMessage(Component.literal(top_final_killers[i].first + ": " + top_final_killers[i].second))
+            }
+            level_mod_data.setGamePhase(GamePhase.ENDED)
+        }
+
+        fun afterBedBreak(world: ServerLevel, breaker: ServerPlayer, team: Team) {
+            val level_mod_data = world.gameState
+
+            // Remnant bedhunt code to prevent afterBedBreak being called repeatedly after a bed is broken
+            // Should not be needed if afterBedBreak is correctly called... after a bed break is registered
+            // If bed breaking is detected every tick, something like this will be needed
+            // if (!SavedModData.isTeamBaseIntact(team)) return
+
+            // note for myself later in kill stats, add a way to track bed breaks + attribute void final kills to bed breaker
+
+            level_mod_data.setBedAlive(team, false)
+
+            level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).forEach { p ->
+                if (level_mod_data.getPlayersTeam(p.uuid) == team) {
+                    p.connection.send(
+                        ClientboundSetTitleTextPacket(
+                            Component.literal(ChatFormatting.RED.toString() + "BED DESTROYED")
+                        )
+                    )
+
+                }
+                p.connection.send(
+                    ClientboundSoundPacket(
+                        Holder.direct(SoundEvents.ENDER_DRAGON_GROWL),
+                        SoundSource.MASTER, p.x, p.y, p.z, 1.0F, 1.0F, world.getRandom().nextLong())
+                )
+
+                p.sendSystemMessage(Component.literal(team.name + " bed has been destroyed!"))
+            }
         }
 
         fun tick(world: ServerLevel) {
@@ -196,7 +293,7 @@ class GameManager {
             if (level_mod_data.getGamePhase() == GamePhase.INACTIVE) return
 
             val player_manager = world.server.playerList
-
+            world.generatorState.tick()
 
             level_mod_data.tick()
 

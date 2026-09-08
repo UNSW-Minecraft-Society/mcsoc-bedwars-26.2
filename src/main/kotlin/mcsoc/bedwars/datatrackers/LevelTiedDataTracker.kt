@@ -1,0 +1,91 @@
+@file:JvmName("LevelData")
+package mcsoc.bedwars.datatrackers
+
+import com.mojang.serialization.Codec
+import com.mojang.serialization.MapCodec
+import com.mojang.serialization.codecs.RecordCodecBuilder
+import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
+import mcsoc.bedwars.datatrackers.generatordata.GeneratorDataTracker
+import net.minecraft.resources.Identifier
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.util.datafix.DataFixTypes
+import net.minecraft.world.level.saveddata.SavedData
+import net.minecraft.world.level.saveddata.SavedDataType
+
+
+// each tracker should extend this class
+abstract class LevelTiedData {
+    companion object {                
+        internal val CODEC: Codec<LevelTiedData> = LevelDataType.CODEC.dispatch(
+            { inst -> inst.type },
+            { type -> type.codec }
+        )
+    }
+    internal var isDirty: Boolean = false
+    protected fun setDirty() {
+        this.isDirty = true
+    }
+    
+    abstract val type: LevelDataType<*>
+}
+
+// codec can be null, indicating that the datatype should be level-tied but not saved
+sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>?, val default: T) {
+    companion object {
+        private val REGISTRY: Map<String, LevelDataType<*>> by lazy {
+            LevelDataType::class.sealedSubclasses
+                .mapNotNull { it.objectInstance }
+                .associateBy { it.id }
+        }
+        fun fromId(id: String): LevelDataType<*> = REGISTRY[id] ?: throw IllegalArgumentException("Unknown LevelDataType: \"$id\"")
+            
+        val CODEC: Codec<LevelDataType<*>> = Codec.STRING.xmap(::fromId, LevelDataType<*>::id)
+    }
+    internal val codec: MapCodec<T> = codec ?: MapCodec.unit(default)
+    
+    object GameState : LevelDataType<ModDataTracker>("game_state", ModDataTracker.CODEC, ModDataTracker())
+    object BlockProtection: LevelDataType<BlockProtectionTracker>("block_protection", BlockProtectionTracker.CODEC, BlockProtectionTracker())
+    object GeneratorState : LevelDataType<GeneratorDataTracker>("generator_state", GeneratorDataTracker.CODEC, GeneratorDataTracker())
+    // put another enum value for each tracked data type
+}
+
+private class LevelTiedDataTracker() : SavedData() {
+    private val tracked_data: MutableMap<LevelDataType<*>, LevelTiedData> = mutableMapOf()
+    constructor(map: Map<LevelDataType<*>, LevelTiedData>) : this() {
+        tracked_data.putAll(map)
+    }
+    
+    companion object {
+        private val CODEC: Codec<LevelTiedDataTracker> = RecordCodecBuilder.create{it.group(
+            Codec.unboundedMap(LevelDataType.CODEC, LevelTiedData.CODEC)
+                .fieldOf("level_data")
+                .forGetter(LevelTiedDataTracker::tracked_data)
+        ).apply(it, ::LevelTiedDataTracker)}
+        
+        private val TYPE = SavedDataType<LevelTiedDataTracker>(
+            Identifier.fromNamespaceAndPath(BedwarsPlugin.MOD_ID, "saved_level_data"),
+            ::LevelTiedDataTracker, CODEC, DataFixTypes.LEVEL
+        )
+        fun getLevelData(level: ServerLevel): LevelTiedDataTracker = level.dataStorage.computeIfAbsent(TYPE)
+    }
+    override fun isDirty(): Boolean = tracked_data.values.any(LevelTiedData::isDirty)
+    override fun setDirty(dirty: Boolean) {
+        super.setDirty(dirty)
+        for (tracker in tracked_data.values) {
+            tracker.isDirty = dirty
+        }
+    }
+    
+    fun getDataOfType(type: LevelDataType<*>): LevelTiedData {
+        return this.tracked_data.getOrPut(type){type.default}
+    }
+}
+
+private val ServerLevel.levelTiedData get() = LevelTiedDataTracker.getLevelData(this)
+
+
+val ServerLevel.gameState: ModDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GameState) as ModDataTracker
+val ServerLevel.blockProtection: BlockProtectionTracker get() = levelTiedData.getDataOfType(LevelDataType.BlockProtection) as BlockProtectionTracker
+val ServerLevel.generatorState: GeneratorDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GeneratorState) as GeneratorDataTracker
+// put other level-tied data getters here
