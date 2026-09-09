@@ -235,9 +235,16 @@ class GameManager {
         private fun winGame(world: ServerLevel, winning_team: Team) {
             val level_mod_data = world.gameState
 
-            // for stats branch
-//            val top_killers = level_mod_data.getActivePlayers().map { player -> Pair(world.getPlayerByUUID(player)?.scoreboardName, level_mod_data.getPlayerKills(player)) }.sortedByDescending { p -> p.second }.take(3)
-//            val top_final_killers = level_mod_data.getActivePlayers().map { player -> Pair(world.getPlayerByUUID(player)?.scoreboardName, level_mod_data.getPlayerFinalKills(player)) }.sortedByDescending { p -> p.second }.take(3)
+            val stats_list = level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).map { p ->
+                Component.literal(
+                    p.name.toString()
+                            + " - Kills: "
+                            + level_mod_data.getPlayerKills(p)
+                            + " - Final Kills: " + level_mod_data.getPlayerFinalKills(p)
+                            + " - Deaths: " + level_mod_data.getPlayerDeaths(p)
+                            + " - Beds Destroyed: " + level_mod_data.getPlayerBedsDestroyed(p)
+                )
+            }
 
             world.server.playerList.players.forEach{player ->
                 player.connection.send(
@@ -260,10 +267,9 @@ class GameManager {
                     )
                 }
 
-//                player.sendSystemMessage(Component.literal("Top Killers:"))
-//                for (i in 0..2) player.sendSystemMessage(Component.literal(top_killers[i].first + ": " + top_killers[i].second))
-//                player.sendSystemMessage(Component.literal("Top Final Killers"))
-//                for (i in 0..2) player.sendSystemMessage(Component.literal(top_final_killers[i].first + ": " + top_final_killers[i].second))
+                stats_list.forEach{stats_message ->
+                    player.sendSystemMessage(stats_message)
+                }
             }
             level_mod_data.setGamePhase(GamePhase.ENDED)
         }
@@ -276,8 +282,8 @@ class GameManager {
             // If bed breaking is detected every tick, something like this will be needed
             // if (!SavedModData.isTeamBaseIntact(team)) return
 
-            // note for myself later in kill stats, add a way to track bed breaks + attribute void final kills to bed breaker
-
+            level_mod_data.setBedBreaker(team, breaker.uuid)
+            level_mod_data.setPlayerBedsDestroyed(breaker, level_mod_data.getPlayerBedsDestroyed(breaker) + 1)
             level_mod_data.setBedAlive(team, false)
 
             level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).forEach { p ->

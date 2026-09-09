@@ -73,6 +73,7 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
     private var kills: Int = 0
     private var final_kills: Int = 0
     private var deaths: Int = 0
+    private var beds_destroyed: Int = 0
 
     private constructor(
         life_state: LifeState,
@@ -150,6 +151,10 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
         return deaths
     }
 
+    override fun getBedsDestroyed(): Int {
+        return beds_destroyed
+    }
+
     override fun setKills(value: Int) {
         kills = value
     }
@@ -161,6 +166,10 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
     override fun setDeaths(value: Int) {
         deaths = value
     }
+
+    override fun setBedsDestroyed(value: Int) {
+        beds_destroyed = value
+    }
 }
 
 private class TeamDataRecord(
@@ -168,6 +177,7 @@ private class TeamDataRecord(
     private var bedAlive: Boolean = true,
     private var genUpgrade: Int = 0,
     private val spawn: Vec3 = Vec3(0.0, 0.0, 0.0),
+    private var bedBreaker: UUID? = null,
 ) : TeamStateRecord, TeamGeneratorState, TeamUpgradesState {
     companion object {
         val UUID_LIST_CODEC: Codec<MutableList<Uuid>> = UUIDUtil.CODEC.listOf().xmap(
@@ -180,6 +190,7 @@ private class TeamDataRecord(
             Codec.BOOL.fieldOf("bed_alive").forGetter(TeamDataRecord::bedAlive),
             Codec.INT.fieldOf("gen_upgrade").forGetter(TeamDataRecord::genUpgrade),
             Vec3.CODEC.fieldOf("spawn").forGetter(TeamDataRecord::spawn),
+            UUIDUtil.CODEC.fieldOf("bed_breaker").forGetter(TeamDataRecord::bedBreaker),
         ).apply(it, ::TeamDataRecord)}
 
         private const val PLAYER_RANGE = 15
@@ -221,11 +232,17 @@ private class TeamDataRecord(
     }
 
     override fun getBedAlive(): Boolean = bedAlive
+    override fun getBedBreaker(): UUID? = bedBreaker
+
     override fun getSpawn(): Vec3 = spawn
     override fun getPlayers(): MutableList<UUID> = players
 
     override fun setBedAlive(bedAlive: Boolean) {
         this.bedAlive = bedAlive
+    }
+
+    override fun setBedBreaker(bedBreaker: UUID) {
+        this.bedBreaker = bedBreaker
     }
 
     override fun addPlayer(player: UUID) {
@@ -456,6 +473,8 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     override fun setPlayerEliminated(player: Player) = mod_data.setPlayerEliminated(player)
 
     override fun getBedDestroyed(team: Team): Boolean = mod_data.getBedDestroyed(team)
+    override fun getBedBreaker(team: Team): UUID? = mod_data.getBedBreaker(team)
+
     override fun getPlayersInTeam(team: Team): List<UUID> = mod_data.getPlayersInTeam(team)
     override fun getTeamSpawn(team: Team): Vec3 = mod_data.getTeamSpawn(team)
     override fun getActiveTeams(): List<Team> = mod_data.getActiveTeams()
@@ -463,6 +482,9 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
         setDirty()
         mod_data.setBedAlive(team, state)
     }
+
+    override fun setBedBreaker(team: Team, player: UUID) = mod_data.setBedBreaker(team, player)
+
     override fun initialiseTeams(numTeams: Int) {
         setDirty()
         mod_data.initialiseTeams(numTeams)
@@ -521,7 +543,10 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     override fun getPlayerKills(player: ServerPlayer): Int = mod_data.getPlayerKills(player)
     override fun getPlayerFinalKills(player: ServerPlayer): Int = mod_data.getPlayerFinalKills(player)
     override fun getPlayerDeaths(player: ServerPlayer): Int = mod_data.getPlayerDeaths(player)
+    override fun getPlayerBedsDestroyed(player: ServerPlayer): Int = mod_data.getPlayerBedsDestroyed(player)
+
     override fun setPlayerKills(player: ServerPlayer, value: Int) = mod_data.setPlayerKills(player, value)
     override fun setPlayerFinalKills(player: ServerPlayer, value: Int) = mod_data.setPlayerFinalKills(player, value)
     override fun setPlayerDeaths(player: ServerPlayer, value: Int) = mod_data.setPlayerDeaths(player, value)
+    override fun setPlayerBedsDestroyed(player: ServerPlayer, value: Int) = mod_data.setPlayerBedsDestroyed(player, value)
 }
