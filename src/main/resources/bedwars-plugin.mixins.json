@@ -9,7 +9,8 @@
 		"SnowReplacementMixin",
 		"LevelSetBlockMixin",
 		"DisableCraftingMixin",
-		"DisableRecipeBookMixin"
+		"DisableRecipeBookMixin",
+		"PickupMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
