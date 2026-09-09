@@ -40,7 +40,6 @@ import org.lwjgl.system.MathUtil
 import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 import kotlin.math.roundToInt
-import kotlin.uuid.toKotlinUuid
 
 const val FIREBALL_SPEED = 1.0
 const val BRIDGE_EGG_OFFSET = -0.5
@@ -89,7 +88,7 @@ object CustomItemInteraction {
         if (!gameState.isPlayerAlive(player))
             return InteractionResult.PASS
         val type = item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
-        val team = gameState.getPlayersTeam(player.uuid.toKotlinUuid())
+        val team = gameState.getPlayersTeam(player.uuid)
         BedwarsPlugin.LOGGER.info("Item has $CUSTOM_ITEM_TAG $type")
         when (type) {
             CustomItemTypes.FIREBALL.value -> return useFireballEffect(player, level, item)
@@ -113,7 +112,7 @@ object CustomItemInteraction {
 
         val type = projectile.item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
         BedwarsPlugin.LOGGER.info("Entity has $CUSTOM_ITEM_TAG $type")
-        val team = gameState.getPlayersTeam(owner.uuid.toKotlinUuid())
+        val team = gameState.getPlayersTeam(owner.uuid)
         when (type) {
             CustomItemTypes.BRIDGE_EGG.value -> return tickBridgeEggEffect(level, projectile, team)
         }
@@ -133,7 +132,7 @@ object CustomItemInteraction {
 
         val type = projectile.item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
         BedwarsPlugin.LOGGER.info("Entity has $CUSTOM_ITEM_TAG $type")
-        val team = gameState.getPlayersTeam(owner.uuid.toKotlinUuid())
+        val team = gameState.getPlayersTeam(owner.uuid)
         when (type) {
             CustomItemTypes.BALL_OF_BUGS.value -> return doBallOfBugsEffect(level, projectile, team, hitResult)
         }
@@ -226,7 +225,7 @@ object CustomItemInteraction {
         if (level !is ServerLevel)
             return InteractionResult.PASS
         fun isEnemy(otherPlayer: Player): Boolean {
-            val otherTeam = level.gameState.getPlayersTeam(otherPlayer.uuid.toKotlinUuid())
+            val otherTeam = level.gameState.getPlayersTeam(otherPlayer.uuid)
             return (otherTeam != Team.NONE && otherTeam != team)
         }
         fun getDistance(otherPlayer: Entity): Double {
