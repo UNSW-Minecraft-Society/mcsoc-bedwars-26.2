@@ -118,6 +118,9 @@ class GameManager {
             val bed_destroyed = level_mod_data.getBedDestroyed(player_team)
 
             val killer = player.killCredit
+
+            // Need to playtest see if final kill off void death transfers loot
+
             if (killer is ServerPlayer) {
                 level_mod_data.setPlayerKills(killer, level_mod_data.getPlayerKills(killer) + 1)
 
@@ -125,12 +128,16 @@ class GameManager {
                     level_mod_data.setPlayerFinalKills(killer, level_mod_data.getPlayerFinalKills(killer) + 1)
                 }
 
-                // Insert something to transfer currency items (iron, gold, diamonds, emeralds) to killer - TODO
+                player.inventory.forEach{ stack ->
+                    if (!stack.isEmpty) {
+                        if (stack.item in arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD)) {
+                            killer.inventory.add(stack)
+                        }
+                    }
+                }
             }
 
             // Downgrade or like reset player item upgrades on death
-
-
             player.inventory.clearContent()
             level_mod_data.downgradeItems(player)
 
