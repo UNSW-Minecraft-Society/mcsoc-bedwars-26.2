@@ -147,6 +147,10 @@ class GameManager {
 //                }
 //            }
 
+
+            player.inventory.clearContent()
+            level_mod_data.downgradeItems(player)
+
             // store player's death position to summon lightning later. Due to the nature of this event handler,
             // all players are forced to enter "DEAD" state upon death.
             level_mod_data.setPlayerDead(player, player.position())
