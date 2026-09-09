@@ -117,7 +117,7 @@ class GameManager {
             val player_team = level_mod_data.getPlayersTeam(player.uuid)
             val bed_destroyed = level_mod_data.getBedDestroyed(player_team)
 
-            val killer = player.killCredit
+            var killer = player.killCredit
 
             // Need to playtest see if final kill off void death transfers loot
 
@@ -135,6 +135,10 @@ class GameManager {
                         }
                     }
                 }
+            } else if (bed_destroyed) {
+                killer = player.level().getPlayerByUUID(level_mod_data.getBedBreaker(player_team) ?: throw IllegalArgumentException("Cannot destroy bed without breaker?")) as ServerPlayer
+                level_mod_data.setPlayerKills(killer, level_mod_data.getPlayerKills(killer) + 1)
+                level_mod_data.setPlayerFinalKills(killer, level_mod_data.getPlayerFinalKills(killer) + 1)
             }
 
             // Downgrade or like reset player item upgrades on death
