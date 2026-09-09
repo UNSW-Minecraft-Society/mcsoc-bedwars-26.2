@@ -5,7 +5,11 @@ import net.minecraft.nbt.CompoundTag
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.component.CustomData
 import net.minecraft.ChatFormatting
+import net.minecraft.core.Holder
 import net.minecraft.network.chat.Component
+import net.minecraft.world.item.Item
+import net.minecraft.world.item.ItemStackTemplate
+import net.minecraft.world.item.Items
 import net.minecraft.world.item.component.ItemLore
 
 fun applyTag(stack: ItemStack, key: String, value: String): ItemStack {

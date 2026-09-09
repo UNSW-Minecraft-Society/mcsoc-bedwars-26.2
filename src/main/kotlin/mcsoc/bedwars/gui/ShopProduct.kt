@@ -89,30 +89,13 @@ interface PlayerSpecificShopProduct {
 /**
  * Class for storing data on default item shop products.
  */
-open class ShopItem : ShopProduct {
-    protected var itemTemplate: ItemStackTemplate
-    protected lateinit var stack: ItemStack
+abstract class AbstractShopItem : ShopProduct {
     protected val currency: Item
     protected val price: Int
 
-    constructor(template: ItemStackTemplate, currency: Item, price: Int) {
-        this.itemTemplate = template
+    constructor(currency: Item, price: Int) {
         this.currency = currency
         this.price = price
-    }
-    constructor(item: Item, count: Int, currency: Item, price: Int) : this(ItemStackTemplate(item, count),
-        currency, price)
-
-    private fun resolveItemStackTemplate(): ItemStack {
-        if (!this::stack.isInitialized) {
-            BedwarsPlugin.LOGGER.info("creating")
-            this.stack = itemTemplate.create()
-        }
-        return this.stack.copy()
-    }
-
-    override fun getItemStack(): ItemStack {
-        return resolveItemStackTemplate()
     }
 
     override fun getClickCallback(): GuiElement.ClickCallback {
@@ -135,7 +118,30 @@ open class ShopItem : ShopProduct {
     }
 
     override fun getProductName(): Component {
-        return stack.hoverName
+        return getItemStack().hoverName
+    }
+}
+
+open class ShopItem : AbstractShopItem {
+    protected lateinit var stack: ItemStack
+    protected var itemTemplate: ItemStackTemplate
+
+    constructor(template: ItemStackTemplate, currency: Item, price: Int) : super(currency, price) {
+        this.itemTemplate = template
+    }
+    constructor(item: Item, count: Int, currency: Item, price: Int) : this(ItemStackTemplate(item, count),
+        currency, price)
+
+    private fun resolveItemStackTemplate(): ItemStack {
+        if (!this::stack.isInitialized) {
+            BedwarsPlugin.LOGGER.info("creating")
+            this.stack = itemTemplate.create()
+        }
+        return this.stack.copy()
+    }
+
+    override fun getItemStack(): ItemStack {
+        return resolveItemStackTemplate()
     }
 
     protected fun setItemStack(stack: ItemStack) {
@@ -147,7 +153,16 @@ open class ShopItem : ShopProduct {
         if (!this::stack.isInitialized) this.itemTemplate = itemTemplate
         else setItemStack(itemTemplate.create())
     }
+}
 
+class ShopCustomItem : AbstractShopItem {
+    protected var stackCreate: () -> ItemStack
+
+    constructor(stackCreate: () -> ItemStack, currency: Item, price: Int) : super(currency, price) {
+        this.stackCreate = stackCreate
+    }
+
+    override fun getItemStack() = stackCreate()
 }
 
 class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
