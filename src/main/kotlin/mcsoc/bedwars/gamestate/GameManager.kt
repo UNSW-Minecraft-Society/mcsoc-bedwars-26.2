@@ -144,6 +144,7 @@ class GameManager {
             // Downgrade or like reset player item upgrades on death
             player.inventory.clearContent()
             level_mod_data.downgradeItems(player)
+            level_mod_data.setPlayerDeaths(player, level_mod_data.getPlayerDeaths(player) + 1)
 
             // store player's death position to summon lightning later. Due to the nature of this event handler,
             // all players are forced to enter "DEAD" state upon death.
