@@ -98,6 +98,7 @@ class GameManager {
             world.generatorState.tick()
             val level_mod_data = world.gameState
             level_mod_data.tick()
+            level_mod_data.tickTeams(world)
             val time = level_mod_data.getGameTime()
             if (level_mod_data.getTimerSecond()) {
                 if (level_mod_data.getGamePhase() == GamePhase.STARTING) {

@@ -4,6 +4,9 @@ import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.SuggestionProvider
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
+import mcsoc.bedwars.entities.CustomEntityType
+import mcsoc.bedwars.gui.ShopType
+import mcsoc.bedwars.items.CustomItemTypes
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.gameState
@@ -15,6 +18,7 @@ import java.util.concurrent.CompletableFuture
 internal class ExampleSuggestionProvider: SuggestionProvider<CommandSourceStack> {
 	override fun getSuggestions(ctx: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
 		builder.suggest(ctx.source.textName)
+		UpgradeItemType.entries.forEach { builder.suggest(it.name.lowercase()) }
 		return builder.buildFuture()
 	}
 }
@@ -38,4 +42,35 @@ internal class TeamSuggestionProvider: SuggestionProvider<CommandSourceStack> {
         context.source.level.gameState.getActiveTeams().forEach { builder.suggest(it.getName()) }
 		return builder.buildFuture()
     }
+}
+
+
+internal class CustomItemsSuggestionsProvider : SuggestionProvider<CommandSourceStack> {
+    override fun getSuggestions(
+        context: CommandContext<CommandSourceStack>,
+        builder: SuggestionsBuilder
+    ): CompletableFuture<Suggestions> {
+        CustomItemTypes.entries.forEach { builder.suggest(it.name.lowercase()) }
+        return builder.buildFuture()
+    }
+}
+
+internal class EntityTypeSuggestionProvider: SuggestionProvider<CommandSourceStack> {
+	override fun getSuggestions(
+		context: CommandContext<CommandSourceStack>,
+		builder: SuggestionsBuilder
+	): CompletableFuture<Suggestions?>? {
+		CustomEntityType.entries.forEach { builder.suggest(it.name.lowercase()) }
+		return builder.buildFuture()
+	}
+}
+
+internal class ShopTypeSuggestionProvider: SuggestionProvider<CommandSourceStack> {
+	override fun getSuggestions(
+		context: CommandContext<CommandSourceStack?>,
+		builder: SuggestionsBuilder
+	): CompletableFuture<Suggestions> {
+		ShopType.entries.forEach { builder.suggest(it.name.lowercase()) }
+		return builder.buildFuture()
+	}
 }
