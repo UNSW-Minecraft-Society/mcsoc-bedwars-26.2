@@ -122,35 +122,18 @@ abstract class AbstractShopItem : ShopProduct {
 }
 
 open class ShopItem : AbstractShopItem {
+    protected val item: Item
+    protected val count: Int
     protected lateinit var stack: ItemStack
-    protected var itemTemplate: ItemStackTemplate
+//    protected var itemTemplate: ItemStackTemplate
 
-    constructor(template: ItemStackTemplate, currency: Item, price: Int) : super(currency, price) {
-        this.itemTemplate = template
-    }
-    constructor(item: Item, count: Int, currency: Item, price: Int) : this(ItemStackTemplate(item, count),
-        currency, price)
-
-    private fun resolveItemStackTemplate(): ItemStack {
-        if (!this::stack.isInitialized) {
-            BedwarsPlugin.LOGGER.info("creating")
-            this.stack = itemTemplate.create()
-        }
-        return this.stack.copy()
+    constructor(item: Item, count: Int, currency: Item, price: Int) : super(currency, price) {
+        this.item = item
+        this.count = count
     }
 
     override fun getItemStack(): ItemStack {
-        return resolveItemStackTemplate()
-    }
-
-    protected fun setItemStack(stack: ItemStack) {
-        this.itemTemplate = ItemStackTemplate(stack.item, stack.count)
-        this.stack = stack
-    }
-
-    protected fun setItemStack(itemTemplate: ItemStackTemplate) {
-        if (!this::stack.isInitialized) this.itemTemplate = itemTemplate
-        else setItemStack(itemTemplate.create())
+        return ItemStack(item, count)
     }
 }
 
@@ -181,21 +164,21 @@ class ShopPlayerCustomItem : AbstractShopItem, PlayerSpecificShopProduct {
 }
 
 class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
-    private val templates: Map<Team, ItemStackTemplate>
-    private lateinit var player: ServerPlayer
+    private val items: Map<Team, Item>
+    private lateinit var team: Team
 
-    constructor(templates: Map<Team, ItemStackTemplate>, currency: Item, price: Int) : super(
-        templates[Team.NONE] ?: ItemStackTemplate(Items.BARRIER), currency, price) {
-        this.templates = templates
+    constructor(items: Map<Team, Item>, count: Int, currency: Item, price: Int) : super(
+        items[Team.NONE] ?: Items.AIR, count, currency, price) {
+        this.items = items
     }
 
-    constructor(items: Map<Team, Item>, count: Int, currency: Item, price: Int) : this(
-        items.mapValues { ItemStackTemplate(it.value, count) },currency, price)
+    override fun getItemStack(): ItemStack {
+        return items[team]?.let { ItemStack(it, count) } ?: EMPTY_STACK
+    }
 
     override fun setShopPlayer(player: ServerPlayer) {
         val gameState = player.level().gameState
-        val team = gameState.getPlayersTeam(player.uuid)
-        setItemStack(templates.getValue(team))
+        team = gameState.getPlayersTeam(player.uuid)
     }
 }
 

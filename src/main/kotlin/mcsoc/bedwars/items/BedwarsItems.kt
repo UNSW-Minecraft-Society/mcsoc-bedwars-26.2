@@ -42,7 +42,7 @@ object BedwarsItems {
     }
 
     fun knockbackStickItemStack(level: ServerLevel): ItemStack {
-        val stack = enchantedItemStack(Items.BREEZE_ROD, Enchantments.KNOCKBACK, 4, level)
+        val stack = enchantedItemStack(Items.BREEZE_ROD, Enchantments.KNOCKBACK, 2, level)
         renameItem(stack, "Knockback Stick")
         return stack
     }
