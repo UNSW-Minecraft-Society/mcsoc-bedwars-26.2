@@ -3,9 +3,13 @@ package mcsoc.bedwars.items
 import mcsoc.bedwars.utils.addItemLore
 import mcsoc.bedwars.utils.applyTag
 import mcsoc.bedwars.utils.renameItem
+import net.minecraft.core.Holder
 import net.minecraft.core.component.DataComponents
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
+import net.minecraft.world.item.alchemy.Potion
+import net.minecraft.world.item.alchemy.PotionContents
+import net.minecraft.world.item.alchemy.Potions
 
 const val BEDWARS_ITEM_TAG = "bedwars_item"
 const val CUSTOM_ITEM_TAG = "bedwars_custom_item"
@@ -20,6 +24,12 @@ enum class CustomItemTypes(val value: String) {
 }
 
 object BedwarsItems {
+    fun potionItemStack(potion: Holder<Potion>): ItemStack {
+        val stack = Items.POTION.defaultInstance
+        stack.set(DataComponents.POTION_CONTENTS, PotionContents(potion))
+        return stack
+    }
+
     fun fireballItemStack(): ItemStack {
         val stack = Items.FIRE_CHARGE.defaultInstance
         applyTag(stack, BEDWARS_ITEM_TAG, CustomItemTypes.FIREBALL.value)

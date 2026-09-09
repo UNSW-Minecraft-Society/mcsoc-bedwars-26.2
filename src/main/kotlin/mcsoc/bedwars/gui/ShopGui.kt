@@ -26,6 +26,7 @@ import net.minecraft.world.inventory.Slot
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStackTemplate
 import net.minecraft.world.item.Items
+import net.minecraft.world.item.alchemy.Potions
 import net.minecraft.world.item.enchantment.Enchantments
 import java.util.UUID
 
@@ -83,9 +84,9 @@ object ShopGui {
                  EmptyShopProduct(),
 
                  // These are ShopItems
-                 ShopItem(Items.SHEARS, 1, Items.IRON_INGOT, 30),
-                 ShopItem(Items.STICK, 1, Items.GOLD_INGOT, 10),
-                 EmptyShopProduct(),
+                 ShopItem(Items.SHEARS, 1, Items.IRON_INGOT, 15),
+                 ShopItem(Items.STICK, 1, Items.GOLD_INGOT, 5),
+                 ShopItem(Items.WATER_BUCKET, 1, Items.GOLD_INGOT, 6),
                  EmptyShopProduct(),
                  EmptyShopProduct(),
 
@@ -102,22 +103,22 @@ object ShopGui {
                  ShopItem(Items.OBSIDIAN, 4, Items.EMERALD, 4),
                  ShopItem(Items.OAK_PLANKS, 16, Items.GOLD_INGOT, 6),
 
-                 ShopItem(Items.LADDER, 16, Items.IRON_INGOT, 16),
-                 ShopItem(Items.WATER_BUCKET, 1, Items.EMERALD, 2),
-                 ShopItem(Items.GOLDEN_APPLE, 1, Items.GOLD_INGOT, 3),
-                 ShopItem(Items.IRON_GOLEM_SPAWN_EGG, 2, Items.IRON_INGOT, 150),
+                 ShopItem(Items.LADDER, 16, Items.IRON_INGOT, 4),
+                 ShopItem(Items.WIND_CHARGE, 1, Items.GOLD_INGOT, 24),
+                 ShopCustomItem(BedwarsItems::popupTowerItemStack, Items.GOLD_INGOT, 24),
+                 ShopCustomItem(BedwarsItems::bridgeEggItemStack, Items.EMERALD, 1),
                  ShopItem(Items.ENDER_PEARL, 1, Items.EMERALD, 4),
 
-                 ShopCustomItem(BedwarsItems::bridgeEggItemStack, Items.IRON_INGOT, 48),
                  ShopCustomItem(BedwarsItems::ballOfBugsItemStack, Items.GOLD_INGOT, 2),
                  ShopCustomItem(BedwarsItems::fireballItemStack, Items.IRON_INGOT, 36),
-                 ShopCustomItem(BedwarsItems::instantTNTItemStack, Items.GOLD_INGOT, 12),
-                 ShopCustomItem(BedwarsItems::popupTowerItemStack, Items.GOLD_INGOT, 12),
-
-                 ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
-                 ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
-                 ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
+                 ShopCustomItem(BedwarsItems::instantTNTItemStack, Items.GOLD_INGOT, 8),
+                 ShopItem(Items.IRON_GOLEM_SPAWN_EGG, 2, Items.IRON_INGOT, 120),
                  EmptyShopProduct(),
+
+                 ShopItem(Items.GOLDEN_APPLE, 1, Items.GOLD_INGOT, 3),
+                 ShopCustomItem({BedwarsItems.potionItemStack(Potions.LEAPING)}, Items.EMERALD, 1),
+                 ShopCustomItem({BedwarsItems.potionItemStack(Potions.SWIFTNESS)}, Items.EMERALD, 1),
+                 ShopCustomItem({BedwarsItems.potionItemStack(Potions.INVISIBILITY)}, Items.EMERALD, 2),
                  EmptyShopProduct(),
              ),
              ShopType.TEAM_SHOP to arrayOf(
