@@ -119,4 +119,8 @@ class GeneratorDataTracker : LevelTiedData, GeneratorsExposer {
         generator_data.placeGenerators(server)
     }
     fun removeTimerEntities() = generator_data.removeTimerEntities()
+    override fun clearGenerators() {
+        setDirty()
+        generator_data.clearGenerators()
+    }
 }

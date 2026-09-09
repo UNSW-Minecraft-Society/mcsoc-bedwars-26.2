@@ -21,6 +21,7 @@ import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup
+import net.minecraft.core.BlockPos
 import net.minecraft.resources.ResourceKey
 import net.minecraft.world.effect.MobEffect
 import net.minecraft.world.effect.MobEffectInstance
@@ -100,15 +101,17 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
 private class TeamDataRecord(
     private val players: MutableList<UUID> = mutableListOf(),
     private var bedAlive: Boolean = true,
+    private var bedPosition: BlockPos = BlockPos(0, 0, 0),
     private var genUpgrade: Int = 0,
-    private val spawn: Vec3 = Vec3(0.0, 0.0, 0.0),
+    private var spawn: Vec3 = Vec3(0.0, 0.0, 0.0)
 ) : TeamStateRecord, TeamGeneratorState, TeamUpgradesState {
     companion object {
         val CODEC: Codec<TeamDataRecord> = RecordCodecBuilder.create { it.group(
             UUIDUtil.CODEC.listOf().fieldOf("players").forGetter(TeamDataRecord::players),
             Codec.BOOL.fieldOf("bed_alive").forGetter(TeamDataRecord::bedAlive),
+            BlockPos.CODEC.fieldOf("bed_position").forGetter(TeamDataRecord::bedPosition),
             Codec.INT.fieldOf("gen_upgrade").forGetter(TeamDataRecord::genUpgrade),
-            Vec3.CODEC.fieldOf("spawn").forGetter(TeamDataRecord::spawn),
+            Vec3.CODEC.fieldOf("spawn").forGetter(TeamDataRecord::spawn)
         ).apply(it, ::TeamDataRecord)}
 
         private const val PLAYER_RANGE = 15
@@ -186,6 +189,14 @@ private class TeamDataRecord(
 
     override fun addTrap(type: TrapUpgrade) {
         traps.add(type)
+    }
+    
+    override fun getBedPosition(): BlockPos = bedPosition
+    override fun setSpawn(pos: Vec3) {
+        spawn = pos
+    }
+    override fun setBedPosition(pos: BlockPos) {
+        bedPosition = pos
     }
 }
 
@@ -285,7 +296,7 @@ private class ModDataStore() : PlayerStateHolder, TeamStateHolder, Ticker, Playe
     }
 
     override fun getTeam(team: Team): TeamDataRecord {
-        return teams_map[team] ?: throw InvalidTeamException()
+        return teams_map[team] ?: throw InvalidTeamException(team)
     }
 
     override fun getActiveTeams(): List<Team> = teams_map.keys.toList()
@@ -426,4 +437,14 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     override fun popTrap(team: Team) = mod_data.popTrap(team)
     override fun getTraps(team: Team) = mod_data.getTraps(team)
     override fun addTrap(team: Team, type: TrapUpgrade) = mod_data.addTrap(team, type)
+    
+    override fun getTeamBedPosition(team: Team): BlockPos = mod_data.getTeamBedPosition(team)
+    override fun setTeamSpawn(team: Team, pos: Vec3) {
+        setDirty()
+        mod_data.setTeamSpawn(team, pos)
+    }
+    override fun setTeamBedPosition(team: Team, pos: BlockPos) {
+        setDirty()
+        mod_data.setTeamBedPosition(team, pos)
+    }
 }

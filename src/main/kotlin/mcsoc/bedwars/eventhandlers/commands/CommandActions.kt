@@ -136,8 +136,7 @@ internal object CommandActions {
     // Will need to make a new command that stores a number of teams in future - refer to bedhunt
     // for template
     fun assignTeams(ctx: CommandContext<CommandSourceStack>): Int {
-        val input = IntegerArgumentType.getInteger(ctx, "number_of_teams")
-        TeamEffects.createTeamsWithPlayers(ctx.source.level, input)
+        TeamEffects.createTeamsWithPlayers(ctx.source.level)
         return 1
     }
 
@@ -154,6 +153,7 @@ internal object CommandActions {
     }
 
     fun start(ctx: CommandContext<CommandSourceStack>): Int {
+        placeMap(ctx)
         GameManager.setupGame(ctx.source.level, ctx.source.position)
         return 1
     }

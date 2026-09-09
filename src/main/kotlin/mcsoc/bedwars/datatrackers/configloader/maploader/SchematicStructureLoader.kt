@@ -8,6 +8,7 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
 import com.sk89q.worldedit.fabric.FabricAdapter
 import com.sk89q.worldedit.function.operation.Operation
 import com.sk89q.worldedit.function.operation.Operations
+import com.sk89q.worldedit.math.transform.AffineTransform
 import com.sk89q.worldedit.session.ClipboardHolder
 import com.sk89q.worldedit.world.World
 import mcsoc.bedwars.BedwarsPlugin
@@ -20,11 +21,15 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.div
+import kotlin.math.PI
+import kotlin.math.round
+import kotlin.math.roundToInt
 
 const val MAP_DIRECTORY_NAME = "maps"
 
 data class LoadedSchematic(
     val pos: BlockPos,
+    val rot: Double,
     val schematic: Clipboard, 
 )
 
@@ -34,7 +39,7 @@ class SchematicStructureLoader(
     
     val schematic_queue: ArrayDeque<LoadedSchematic> = ArrayDeque()
     
-    override fun loadStructure(structure_name: String, pos: BlockPos): Boolean {
+    override fun loadStructure(structure_name: String, pos: BlockPos, rot: Double): Boolean {
         val map_path: Path = structures_directory / "$structure_name.schem"
         val format = ClipboardFormats.findByPath(map_path) ?: run {
             BedwarsPlugin.LOGGER.error("Unable to locate map at \"{}\"!", map_path)
@@ -44,7 +49,7 @@ class SchematicStructureLoader(
         val file = File(map_path.toString())
         return try {
             format.getReader(FileInputStream(file)).use{
-                schematic_queue.add(LoadedSchematic(pos, it.read()))
+                schematic_queue.add(LoadedSchematic(pos, rot, it.read()))
                 true
             }
         } catch (e: IOException) {
@@ -63,6 +68,7 @@ class SchematicStructureLoader(
                 val schematic = schematic_queue.removeFirstOrNull() ?: return
                 try {
                     val operation: Operation = ClipboardHolder(schematic.schematic)
+                        .also{ it.transform = AffineTransform().rotateY(round(schematic.rot * 180 / PI)) }
                         .createPaste(session)
                         .to(FabricAdapter.get().adapt(schematic.pos))
                         .copyBiomes(true)

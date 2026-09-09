@@ -33,8 +33,8 @@ abstract class StructureLoader {
             return loaders_map.getOrPut(this.dimension()){getNewLoader(this.dimension())}
         }
         
-        fun Level.place(structure: String, pos: BlockPos): CompletableFuture<Boolean> {
-            return this.getStructureLoader().queueStructure(structure, pos)
+        fun Level.place(structure: String, pos: BlockPos, rot: Double = 0.0): CompletableFuture<Boolean> {
+            return this.getStructureLoader().queueStructure(structure, pos, rot)
         }
         
         fun initialise() {
@@ -48,15 +48,13 @@ abstract class StructureLoader {
         this.level_key = level_key
         if (StructureLoader.loaders_map[level_key] != null) throw IndexOutOfBoundsException("Cannot register multiple schematic loaders per world!")
         StructureLoader.loaders_map[level_key] = this
-        ServerTickEvents.END_SERVER_TICK.register{
-            placeQueuedStructures(it)
-        }
+        ServerTickEvents.END_SERVER_TICK.register(::placeQueuedStructures)
     }
     
-    internal abstract fun loadStructure(structure_name: String, pos: BlockPos): Boolean
-    fun queueStructure(structure_name: String, pos: BlockPos): CompletableFuture<Boolean> {
+    internal abstract fun loadStructure(structure_name: String, pos: BlockPos, rot: Double): Boolean
+    fun queueStructure(structure_name: String, pos: BlockPos, rot: Double): CompletableFuture<Boolean> {
         return CompletableFuture.supplyAsync {
-            loadStructure(structure_name, pos)
+            loadStructure(structure_name, pos, rot)
         }
     }
     

@@ -17,6 +17,7 @@ import net.minecraft.sounds.SoundSource
 import net.minecraft.world.level.GameType
 import kotlin.time.Duration.Companion.minutes
 
+
 val DEATHMATCH_TIME = 10.minutes // change if i'm wrong
 const val BORDER_SIZE: Double = 300.0 // change if needed
 
@@ -30,8 +31,7 @@ class GameManager {
 
             val start_block_pos = BlockPos.containing(start_pos)
 
-            // later add a command that can modify number of teams (seperate to assign_teams)
-            TeamEffects.createTeamsWithPlayers(level, 2)
+            TeamEffects.createTeamsWithPlayers(level)
             // TODO val map = level_mod_data.getLoadedMapData()
 
             // set difficulty to peaceful/easy maybe?
@@ -42,6 +42,17 @@ class GameManager {
             worldborder.size = BORDER_SIZE
 
             // distribute players to teams + reset player stuff
+            for (team in level_mod_data.getActiveTeams()) {
+                val spawn = level_mod_data.getTeamSpawn(team)
+                for (player in level_mod_data.getPlayersInTeam(team)) {
+                    val player = level.server.playerList.getPlayer(player) ?: continue
+                    player.teleportTo(
+                        level, spawn.x, spawn.y, spawn.z, 
+                        setOf(), 0F, 0F, true
+                    )
+                    player.setGameMode(GameType.SURVIVAL)
+                }
+            }
 
             // generate map?
 
@@ -49,21 +60,22 @@ class GameManager {
             level_mod_data.setGamePhase(GamePhase.STARTING)
         }
 
-        fun endGame(world: ServerLevel) {
+        fun endGame(level: ServerLevel) {
             // Triggered by command or on win condition, clean up stuff
-            val level_mod_data = world.gameState
+            val level_mod_data = level.gameState
             level_mod_data.clearActivePlayers()
+            level.generatorState.clearGenerators()
             // clear teams - todo
 
             level_mod_data.setGamePhase(GamePhase.INACTIVE)
             level_mod_data.setGamePeriod(GamePeriod.INACTIVE)
-            for (player in world.players()) {
+            for (player in level.players()) {
                 // p.teleportTo(x, y, z) tp to lobby coordinates... figure out later
                 player.setGameMode(GameType.SPECTATOR)
             }
 
-            world.worldBorder.size = 59999968.0
-            world.worldBorder.setCenter(0.0, 0.0)
+            level.worldBorder.size = ServerLevel.ACROSS_THE_WHOLE_WORLD.toDouble()
+            level.worldBorder.setCenter(0.0, 0.0)
         }
 
         private fun start(world: ServerLevel) {

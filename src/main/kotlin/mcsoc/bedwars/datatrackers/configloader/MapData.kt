@@ -10,6 +10,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
+import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader.Companion.place
 import mcsoc.bedwars.datatrackers.gameState
@@ -18,13 +19,20 @@ import mcsoc.bedwars.entities.CustomEntityType
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.CylindricalBlockPos
+import mcsoc.bedwars.utils.CylindricalBlockPos.Companion.toCylindricalBlockPos
+import mcsoc.bedwars.utils.FLOAT_PI
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.BlockPos
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.phys.Vec3
+import kotlin.math.PI
 import kotlin.reflect.KClass
 
 
+private fun CylindricalBlockPos.relToMapOrigin(island_origin: BlockPos, island_pos: CylindricalBlockPos): BlockPos =
+    rotated(FLOAT_PI - island_pos.angle).toBlockPos(island_origin)
+    
+    
 private sealed class LoadedGeneratorType(val name: String, protected val type: GeneratorType) {
     companion object {
         private val REGISTRY: Map<String, (Team?) -> LoadedGeneratorType> by lazy {
@@ -76,7 +84,10 @@ private interface Island {
     
     fun place(level: ServerLevel, origin: BlockPos): BlockPos {
         val pos = cpos.toBlockPos(origin)
-        level.place(structure, pos)
+        BedwarsPlugin.LOGGER.info("island at")
+        BedwarsPlugin.LOGGER.info("  cpos: {}", cpos)
+        BedwarsPlugin.LOGGER.info("  pos : {}", pos)
+        level.place(structure, pos, PI - cpos.angle)
         
         for (zone in protection_zones) {
             level.blockProtection.registerProtectionZone(zone.c1.offset(pos), zone.c2.offset(pos))
@@ -87,13 +98,13 @@ private interface Island {
 }
 
 private interface GeneratorIsland : Island {
-    val generators: Iterable<Pair<LoadedGeneratorType, BlockPos>>
+    val generators: Iterable<Pair<LoadedGeneratorType, CylindricalBlockPos>>
 
     override fun place(level: ServerLevel, origin: BlockPos): BlockPos {
         val pos = super.place(level, origin)
         for (generator_pos in generators) {
             val generator = generator_pos.first
-            generator.place(level, generator_pos.second.offset(pos))
+            generator.place(level, generator_pos.second.relToMapOrigin(pos, cpos))
         }
         return pos
     } 
@@ -108,23 +119,27 @@ private data class IslandData(
 private data class GeneratorIslandData(
     override val cpos: CylindricalBlockPos = CylindricalBlockPos(),
     override val structure: String = "default",
-    override val generators: Iterable<Pair<LoadedGeneratorType, BlockPos>> = listOf(Pair(LoadedGeneratorType.Diamond, BlockPos(0, 0, 0))),
+    override val generators: Iterable<Pair<LoadedGeneratorType, CylindricalBlockPos>> = listOf(Pair(LoadedGeneratorType.Diamond, CylindricalBlockPos(0F, 0F, 0))),
     override val protection_zones: Iterable<ProtectionZoneData> = listOf(ProtectionZoneData())
 ) : GeneratorIsland
 
 private data class BaseIslandData(
     override val cpos: CylindricalBlockPos = CylindricalBlockPos(),
     override val structure: String = "default",
-    override val generators: Iterable<Pair<LoadedGeneratorType, BlockPos>> = listOf(Pair(LoadedGeneratorType.Base(Team.RED), BlockPos(0, -2, 0))),
+    override val generators: Iterable<Pair<LoadedGeneratorType, CylindricalBlockPos>> = listOf(Pair(LoadedGeneratorType.Base(Team.RED), CylindricalBlockPos(0F, -2F, 0))),
     override val protection_zones: Iterable<ProtectionZoneData> = listOf(ProtectionZoneData()),
-    val shops: Iterable<Pair<LoadedShopkeeper, BlockPos>> = listOf(Pair(LoadedShopkeeper.PERSONAL, BlockPos(2, 0, 0))),
+    val shops: Iterable<Pair<LoadedShopkeeper, CylindricalBlockPos>> = listOf(Pair(LoadedShopkeeper.PERSONAL, CylindricalBlockPos(2F, 0F, 0))),
+    val spawn_position: CylindricalBlockPos = CylindricalBlockPos(0F, 0F, 0),
+    val bed_position: CylindricalBlockPos = CylindricalBlockPos(0F, 0F, 0),
     val team: Team = Team.RED
 ) : GeneratorIsland {
     override fun place(level: ServerLevel, origin: BlockPos): BlockPos {
         val pos = super.place(level, origin)
+        level.gameState.setTeamSpawn(team, Vec3.atBottomCenterOf(spawn_position.relToMapOrigin(pos, cpos)))
+        level.gameState.setTeamBedPosition(team, bed_position.relToMapOrigin(pos, cpos))
         for (shop_pos in shops) {
             val shop = shop_pos.first
-            shop.place(level, shop_pos.second.offset(pos))
+            shop.place(level, shop_pos.second.relToMapOrigin(pos, cpos))
         }
         return pos
     }
@@ -140,7 +155,7 @@ data class MapData private constructor(
     private val misc_islands: List<@Serializable(with=IslandDataSerialiser::class) IslandData>,
 ) {
     constructor() : this(
-        GeneratorIslandData(generators = listOf(Pair(LoadedGeneratorType.Emerald, BlockPos(0, 0, 0)))), 
+        GeneratorIslandData(generators = listOf(Pair(LoadedGeneratorType.Emerald, CylindricalBlockPos(0F, 0F, 0)))), 
         listOf(BaseIslandData()), 
         listOf(GeneratorIslandData()), 
         listOf(IslandData())
@@ -249,28 +264,28 @@ private object GeneratorTypeSerialiser: KSerializer<LoadedGeneratorType> {
     }
 }
 
-private object GeneratorPositionSerialiser: KSerializer<Pair<LoadedGeneratorType, BlockPos>> {
+private object GeneratorPositionSerialiser: KSerializer<Pair<LoadedGeneratorType, CylindricalBlockPos>> {
     override val descriptor = buildClassSerialDescriptor("GeneratorIslandData") {
         element("generator", GeneratorTypeSerialiser.descriptor)
-        element("pos", BlockPosSerialiser.descriptor)
+        element("pos", CylindricalBlockPos.serializer().descriptor)
     }
     
-    override fun serialize(encoder: Encoder, value: Pair<LoadedGeneratorType, BlockPos>) {
+    override fun serialize(encoder: Encoder, value: Pair<LoadedGeneratorType, CylindricalBlockPos>) {
         encoder.encodeStructure(descriptor) {
             encodeSerializableElement(descriptor, 0, GeneratorTypeSerialiser, value.first)
-            encodeSerializableElement(descriptor, 1, BlockPosSerialiser, value.second)
+            encodeSerializableElement(descriptor, 1, CylindricalBlockPos.serializer(), value.second)
         }
     }
     
-    override fun deserialize(decoder: Decoder): Pair<LoadedGeneratorType, BlockPos> = decoder.decodeStructure(descriptor) {
+    override fun deserialize(decoder: Decoder): Pair<LoadedGeneratorType, CylindricalBlockPos> = decoder.decodeStructure(descriptor) {
         var type: LoadedGeneratorType = LoadedGeneratorType.Emerald
-        var pos: BlockPos = BlockPos(0, 0, 0)
+        var pos: CylindricalBlockPos = CylindricalBlockPos(0F, 0F, 0)
         
         while (true) {
             when (val index = decodeElementIndex(descriptor)) {
                 CompositeDecoder.DECODE_DONE -> break
                 0 -> type = decodeSerializableElement(descriptor, index, GeneratorTypeSerialiser)
-                1 -> pos = decodeSerializableElement(descriptor, index, BlockPosSerialiser)
+                1 -> pos = decodeSerializableElement(descriptor, index, CylindricalBlockPos.serializer())
                 else -> error("Unexpected index: $index")
             }
         }
@@ -354,28 +369,28 @@ private object GeneratorIslandDataSerialiser: KSerializer<GeneratorIslandData> {
     }
 }
 
-private object ShopkeeperPositionSerialiser: KSerializer<Pair<LoadedShopkeeper, BlockPos>> {
+private object ShopkeeperPositionSerialiser: KSerializer<Pair<LoadedShopkeeper, CylindricalBlockPos>> {
     override val descriptor = buildClassSerialDescriptor("GeneratorIslandData") {
         element<String>("type")
-        element("pos", BlockPosSerialiser.descriptor)
+        element("pos", CylindricalBlockPos.serializer().descriptor)
     }
     
-    override fun serialize(encoder: Encoder, value: Pair<LoadedShopkeeper, BlockPos>) {
+    override fun serialize(encoder: Encoder, value: Pair<LoadedShopkeeper, CylindricalBlockPos>) {
         encoder.encodeStructure(descriptor) {
             encodeStringElement(descriptor, 0, value.first.name.lowercase())
-            encodeSerializableElement(descriptor, 1, BlockPosSerialiser, value.second)
+            encodeSerializableElement(descriptor, 1, CylindricalBlockPos.serializer(), value.second)
         }
     }
     
-    override fun deserialize(decoder: Decoder): Pair<LoadedShopkeeper, BlockPos> = decoder.decodeStructure(descriptor) {
+    override fun deserialize(decoder: Decoder): Pair<LoadedShopkeeper, CylindricalBlockPos> = decoder.decodeStructure(descriptor) {
         var type: LoadedShopkeeper = LoadedShopkeeper.PERSONAL
-        var pos: BlockPos = BlockPos(0, 0, 0)
+        var pos: CylindricalBlockPos = CylindricalBlockPos(0F, 0F, 0)
         
         while (true) {
             when (val index = decodeElementIndex(descriptor)) {
                 CompositeDecoder.DECODE_DONE -> break
                 0 -> type = LoadedShopkeeper.valueOf(decodeStringElement(descriptor, index).uppercase())
-                1 -> pos = decodeSerializableElement(descriptor, index, BlockPosSerialiser)
+                1 -> pos = decodeSerializableElement(descriptor, index, CylindricalBlockPos.serializer())
                 else -> error("Unexpected index: $index")
             }
         }
@@ -390,6 +405,8 @@ private object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
         element("generators", ListSerializer(GeneratorPositionSerialiser).descriptor)
         element("shopkeepers", ListSerializer(ShopkeeperPositionSerialiser).descriptor)
         element<String>("team")
+        element("spawn_position", CylindricalBlockPos.serializer().descriptor)
+        element("bed_position", CylindricalBlockPos.serializer().descriptor)
         element("protection_zones", ListSerializer(ProtectionZoneData.serializer()).descriptor)
     }
     
@@ -400,7 +417,9 @@ private object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
             encodeSerializableElement(descriptor, 2, ListSerializer(GeneratorPositionSerialiser), value.generators.toList())
             encodeSerializableElement(descriptor, 3, ListSerializer(ShopkeeperPositionSerialiser), value.shops.toList())
             encodeStringElement(descriptor, 4, value.team.name.lowercase())
-            encodeSerializableElement(descriptor, 5, ListSerializer(ProtectionZoneData.serializer()), value.protection_zones.toList())
+            encodeSerializableElement(descriptor, 5, CylindricalBlockPos.serializer(), value.spawn_position)
+            encodeSerializableElement(descriptor, 6, CylindricalBlockPos.serializer(), value.bed_position)
+            encodeSerializableElement(descriptor, 7, ListSerializer(ProtectionZoneData.serializer()), value.protection_zones.toList())
         }
     }
     
@@ -411,6 +430,8 @@ private object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
         var generators = default.generators
         var protection_zones = default.protection_zones
         var shops = default.shops
+        var spawn_pos = default.spawn_position
+        var bed_pos = default.bed_position
         var team = default.team
         
         while (true) {
@@ -421,12 +442,14 @@ private object BaseIslandDataSerialiser: KSerializer<BaseIslandData> {
                 2 -> generators = decodeSerializableElement(descriptor, index, ListSerializer(GeneratorPositionSerialiser))
                 3 -> shops = decodeSerializableElement(descriptor, index, ListSerializer(ShopkeeperPositionSerialiser))
                 4 -> team = Team.valueOf(decodeStringElement(descriptor, index).uppercase())
-                5 -> protection_zones = decodeSerializableElement(descriptor, index, ListSerializer(ProtectionZoneData.serializer()))
+                5 -> spawn_pos = decodeSerializableElement(descriptor, index, CylindricalBlockPos.serializer())
+                6 -> bed_pos = decodeSerializableElement(descriptor, index, CylindricalBlockPos.serializer())
+                7 -> protection_zones = decodeSerializableElement(descriptor, index, ListSerializer(ProtectionZoneData.serializer()))
                 else -> error("Unexpected index: $index")
             }
         }
         
         val teamed_generators = generators.map{Pair(LoadedGeneratorType.Base(team), it.second)}
-        BaseIslandData(cpos, structure, teamed_generators, listOf(), shops, team)
+        BaseIslandData(cpos, structure, teamed_generators, listOf(), shops, spawn_pos, bed_pos, team)
     }
 }
