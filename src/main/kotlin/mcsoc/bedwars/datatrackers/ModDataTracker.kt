@@ -407,8 +407,17 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     }
 
     override fun <T> getUpgrade(team: Team, type: TeamUpgradeType<T>) = mod_data.getUpgrade(team, type)
-    override fun <T> upgrade(team: Team, type: TeamUpgradeType<T>) = mod_data.upgrade(team, type)
-    override fun popTrap(team: Team) = mod_data.popTrap(team)
+    override fun <T> upgrade(team: Team, type: TeamUpgradeType<T>) {
+        setDirty()
+        mod_data.upgrade(team, type)
+    }
     override fun getTraps(team: Team) = mod_data.getTraps(team)
-    override fun addTrap(team: Team, type: TrapUpgrade) = mod_data.addTrap(team, type)
+    override fun popTrap(team: Team): TrapUpgrade? {
+        setDirty()
+        return mod_data.popTrap(team)
+    }
+    override fun addTrap(team: Team, type: TrapUpgrade) {
+        setDirty()
+        mod_data.addTrap(team, type)
+    }
 }
