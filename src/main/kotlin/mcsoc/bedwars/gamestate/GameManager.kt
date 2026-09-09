@@ -313,6 +313,7 @@ class GameManager {
             world.generatorState.tick()
 
             level_mod_data.tick()
+            level_mod_data.tickTeams(world)
 
             if (level_mod_data.getTimerTick()) {
                 level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).forEach { player ->
