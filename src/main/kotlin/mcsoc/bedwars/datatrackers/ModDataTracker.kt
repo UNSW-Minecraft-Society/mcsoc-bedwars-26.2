@@ -3,11 +3,10 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorExposer
-import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorHolder
-import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorState
-import kotlinx.serialization.Serializable
-import mcsoc.bedwars.datatrackers.generatordata.InvalidTeamException
+import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorExposer
+import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorHolder
+import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorState
+import mcsoc.bedwars.datatrackers.generatorstate.InvalidTeamException
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.server.level.ServerPlayer
@@ -21,8 +20,6 @@ import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup
-import net.minecraft.resources.ResourceKey
-import net.minecraft.world.effect.MobEffect
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.player.Player
