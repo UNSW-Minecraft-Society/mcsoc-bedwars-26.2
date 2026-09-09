@@ -24,6 +24,7 @@ const val UPGRADE_TYPE_ARG = "type"
 const val ENTITY_TYPE_ARG = "type2"
 const val SHOP_TYPE_ARG = "type3"
 const val POSITION_ARG = "pos"
+const val CUSTOM_ITEM_ARG = "custom_item"
 const val FIRST_POSITION_ARGUMENT = "pos1"
 const val SECOND_POSITION_ARGUMENT = "pos2"
 const val GEN_TYPE_ARG = "type"
@@ -142,6 +143,13 @@ fun registerCommands() {
                         .suggests(TeamSuggestionProvider())
                         .executes(CommandActions::upgradeTeamGen)
                     )
+                )
+            )
+            .then(Commands.literal("give_custom_item")
+                .requires {it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)}
+                .then(Commands.argument(CUSTOM_ITEM_ARG, StringArgumentType.word())
+                    .suggests(CustomItemsSuggestionsProvider())
+                    .executes(CommandActions::giveCustomItem)
                 )
             )
             .then(Commands.literal("open_shop_gui").executes(CommandActions::openShop)
