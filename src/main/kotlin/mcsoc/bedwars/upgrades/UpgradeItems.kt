@@ -3,6 +3,7 @@ package mcsoc.bedwars.upgrades
 import com.mojang.serialization.Codec
 import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.utils.applyEnchant
 import mcsoc.bedwars.utils.applyTag
 import mcsoc.bedwars.utils.hasTag
 import net.minecraft.core.registries.Registries
@@ -238,8 +239,3 @@ enum class Armour(val boots: Item, val leggings: Item, val chestplate: Item) : U
     }
 }
 
-private fun applyEnchant(item: ItemStack, ench: ResourceKey<Enchantment>, enchLevel: Int, level: ServerLevel) {
-    if (enchLevel < 0) return
-    val ench = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(ench)
-    item.enchant(ench, enchLevel)
-}

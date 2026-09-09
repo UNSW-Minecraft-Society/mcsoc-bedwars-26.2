@@ -85,15 +85,15 @@ object ShopGui {
 
                  // These are ShopItems
                  ShopItem(Items.SHEARS, 1, Items.IRON_INGOT, 15),
-                 ShopItem(Items.STICK, 1, Items.GOLD_INGOT, 5),
+                 ShopPlayerCustomItem({player -> BedwarsItems.knockbackStickItemStack(player.level())}, Items.GOLD_INGOT, 5),
                  ShopItem(Items.WATER_BUCKET, 1, Items.GOLD_INGOT, 6),
                  EmptyShopProduct(),
                  EmptyShopProduct(),
 
                  ShopItem(Items.ARROW, 16, Items.GOLD_INGOT, 2),
                  ShopItem(Items.BOW, 1, Items.GOLD_INGOT, 12),
-                 ShopItem(Items.BOW, 1, Items.GOLD_INGOT, 24),
-                 ShopItem(Items.BOW, 1, Items.EMERALD, 6),
+                 ShopPlayerCustomItem({player -> BedwarsItems.powerBowItemStack(player.level())}, Items.GOLD_INGOT, 24),
+                 ShopPlayerCustomItem({player -> BedwarsItems.punchBowItemStack(player.level())}, Items.EMERALD, 6),
                  EmptyShopProduct(),
 
                  ShopTeamItem(Team.entries.associateWith { Items.WOOL.pick(it.dyeColour) },
@@ -131,7 +131,7 @@ object ShopGui {
                  EmptyShopProduct(),
                  IntShopTeamUpgrade(TeamUpgradeType.PROTECTION, Items.SHIELD,
                      Array(4) {Items.DIAMOND},
-                     arrayOf(2,3,4,5),
+                     arrayOf(5,10,20,30),
                      "Protection"
                  ),
                  IntShopTeamUpgrade(TeamUpgradeType.FEATHER_FALLING, Items.FEATHER,
@@ -147,8 +147,8 @@ object ShopGui {
                  EmptyShopProduct(),
 
                  EmptyShopProduct(),
-                 BooleanShopTeamUpgrade(TeamUpgradeType.SHARPNESS, Items.IRON_SWORD, Items.DIAMOND, 12, "Sharpness"),
-                 BooleanShopTeamUpgrade(TeamUpgradeType.HEAL_POOL, Items.GOLDEN_APPLE, Items.DIAMOND, 8, "Heal Pool"),
+                 BooleanShopTeamUpgrade(TeamUpgradeType.SHARPNESS, Items.IRON_SWORD, Items.DIAMOND, 8, "Sharpness"),
+                 BooleanShopTeamUpgrade(TeamUpgradeType.HEAL_POOL, Items.GOLDEN_APPLE, Items.DIAMOND, 3, "Heal Pool"),
                  EmptyShopProduct(),
                  EmptyShopProduct(),
 
@@ -159,14 +159,14 @@ object ShopGui {
                  EmptyShopProduct(),
 
                  EmptyShopProduct(),
-                 ShopTrapUpgrade(TrapUpgrade.BLINDNESS, Items.DYE.black, Items.DIAMOND, 4, "Blindness Trap"),
-                 ShopTrapUpgrade(TrapUpgrade.COUNTER, Items.POTION, Items.DIAMOND, 4, "Counter Trap"),
+                 ShopTrapUpgrade(TrapUpgrade.BLINDNESS, Items.DYE.black, Items.DIAMOND, 2, "Blindness Trap"),
+                 ShopTrapUpgrade(TrapUpgrade.COUNTER, Items.POTION, Items.DIAMOND, 2, "Counter Trap"),
                  EmptyShopProduct(),
                  EmptyShopProduct(),
 
                  EmptyShopProduct(),
                  ShopTrapUpgrade(TrapUpgrade.REVEAL, Items.ENDER_EYE, Items.DIAMOND, 2, "Reveal Trap"),
-                 ShopTrapUpgrade(TrapUpgrade.MINING, Items.ELDER_GUARDIAN_SPAWN_EGG, Items.DIAMOND, 4, "Mining Fatigue Trap"),
+                 ShopTrapUpgrade(TrapUpgrade.MINING, Items.ELDER_GUARDIAN_SPAWN_EGG, Items.DIAMOND, 2, "Mining Fatigue Trap"),
                  EmptyShopProduct(),
                  EmptyShopProduct(),
 

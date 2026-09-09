@@ -165,6 +165,22 @@ class ShopCustomItem : AbstractShopItem {
     override fun getItemStack() = stackCreate()
 }
 
+
+class ShopPlayerCustomItem : AbstractShopItem, PlayerSpecificShopProduct {
+    protected var stackCreate: (ServerPlayer) -> ItemStack
+    private lateinit var player: ServerPlayer
+
+    constructor(stackCreate: (ServerPlayer) -> ItemStack, currency: Item, price: Int) : super(currency, price) {
+        this.stackCreate = stackCreate
+    }
+
+    override fun getItemStack() = stackCreate(player)
+
+    override fun setShopPlayer(player: ServerPlayer) {
+        this.player = player
+    }
+}
+
 class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
     private val templates: Map<Team, ItemStackTemplate>
     private lateinit var player: ServerPlayer

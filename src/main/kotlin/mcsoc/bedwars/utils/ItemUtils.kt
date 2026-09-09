@@ -6,11 +6,15 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.component.CustomData
 import net.minecraft.ChatFormatting
 import net.minecraft.core.Holder
+import net.minecraft.core.registries.Registries
 import net.minecraft.network.chat.Component
+import net.minecraft.resources.ResourceKey
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStackTemplate
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.component.ItemLore
+import net.minecraft.world.item.enchantment.Enchantment
 
 fun applyTag(stack: ItemStack, key: String, value: String): ItemStack {
     val tag = CompoundTag()
@@ -46,3 +50,10 @@ fun addItemLore(stack: ItemStack, value: Component): ItemStack {
 fun addItemLore(stack: ItemStack, description: String): ItemStack = addItemLore(
     stack, Component.literal(description)
 )
+
+
+fun applyEnchant(item: ItemStack, ench: ResourceKey<Enchantment>, enchLevel: Int, level: ServerLevel) {
+    if (enchLevel < 0) return
+    val ench = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(ench)
+    item.enchant(ench, enchLevel)
+}
