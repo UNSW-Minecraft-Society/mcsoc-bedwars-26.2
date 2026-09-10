@@ -3,10 +3,13 @@ package mcsoc.bedwars.gamestate
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
+import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.utils.Team
+import mcsoc.bedwars.utils.toBlockPos
 import net.minecraft.ChatFormatting
+import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Holder
 import net.minecraft.core.Position
@@ -17,17 +20,14 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.damagesource.DamageSource
-import net.minecraft.world.effect.MobEffectInstance
-import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.LightningBolt
-import net.minecraft.world.item.ItemStack
+import net.minecraft.world.entity.Relative
 import net.minecraft.world.item.Items
 import net.minecraft.world.level.GameType
-import net.minecraft.world.level.Level
 import net.minecraft.world.level.gamerules.GameRules
+import net.minecraft.world.phys.Vec3
 import kotlin.time.Duration.Companion.minutes
-import kotlin.uuid.toKotlinUuid
 
 
 val DEATHMATCH_TIME = 10.minutes // change if i'm wrong
@@ -36,14 +36,16 @@ const val RESPAWN_TIME: Int = 5
 
 class GameManager {
     companion object {
-        fun setupGame(level: ServerLevel, start_pos: Position) {
+        fun setupGame(map_name: String, level: ServerLevel, start_pos: BlockPos) {
+            
             val level_mod_data = level.gameState
             if (level_mod_data.getGamePhase() != GamePhase.INACTIVE) {
                 endGame(level)
             }
-
-            val start_block_pos = BlockPos.containing(start_pos)
-
+            
+            BedwarsConfigData.placeMap(map_name, level, start_pos)
+            level_mod_data.map_centre = start_pos
+            
             TeamEffects.createTeamsWithPlayers(level)
             // TODO val map = level_mod_data.getLoadedMapData()
 
@@ -51,7 +53,8 @@ class GameManager {
             // maybe disable mob spawning
 
             val worldborder = level.worldBorder
-            worldborder.setCenter(start_block_pos.x.toDouble(), start_block_pos.z.toDouble())
+            val pos = Vec3.atBottomCenterOf(start_pos)
+            worldborder.setCenter(pos.x(), pos.z())
             worldborder.size = BORDER_SIZE
 
             // distribute players to teams + reset player stuff
@@ -63,7 +66,7 @@ class GameManager {
                         level, spawn.x, spawn.y, spawn.z, 
                         setOf(), 0F, 0F, true
                     )
-                    player.setGameMode(GameType.SURVIVAL)
+                    player.lookAt(EntityAnchorArgument.Anchor.EYES, pos)
                 }
             }
 
@@ -87,7 +90,6 @@ class GameManager {
             level_mod_data.setGamePhase(GamePhase.INACTIVE)
             level_mod_data.setGamePeriod(GamePeriod.INACTIVE)
             for (player in level.players()) {
-                // p.teleportTo(x, y, z) tp to lobby coordinates... figure out later
                 player.setGameMode(GameType.SPECTATOR)
             }
 
@@ -95,9 +97,9 @@ class GameManager {
             level.worldBorder.setCenter(0.0, 0.0)
         }
 
-        private fun start(world: ServerLevel) {
-            val player_manager = world.server.playerList
-            val level_mod_data = world.gameState
+        private fun start(level: ServerLevel) {
+            val player_manager = level.server.playerList
+            val level_mod_data = level.gameState
             for (player_uuid in level_mod_data.getActivePlayers()) {
                 val player = player_manager.getPlayer(player_uuid) ?: continue
                 player.connection.send(
@@ -109,9 +111,12 @@ class GameManager {
                     ClientboundSoundPacket(
                         Holder.direct(SoundEvents.BLAZE_SHOOT),
                         SoundSource.MASTER, player.x, player.y, player.z,
-                        1.0F, 1.0F, world.getRandom().nextLong()
+                        1.0F, 1.0F, level.getRandom().nextLong()
                     )
                 )
+                player.setGameMode(GameType.SURVIVAL)
+                val spawn = level_mod_data.getTeamSpawn(level_mod_data.getPlayersTeam(player.uuid))
+                player.teleportTo(spawn.x, spawn.y, spawn.z)
             }
             // tp players to spawn points
             // start generators
@@ -173,7 +178,8 @@ class GameManager {
 
             if (!level_mod_data.getBedDestroyed(level_mod_data.getPlayersTeam(player.uuid))) {
                 // tp above map
-//                player.teleportTo(base_position.x.toDouble(), base_position.y.toDouble(), base_position.z.toDouble())
+                val respawn_position: Vec3 = Vec3.atBottomCenterOf(level_mod_data.map_centre.offset(0, 30, 0))
+                player.teleportTo(respawn_position.x, respawn_position.y, respawn_position.z)
 
                 level_mod_data.setPlayerRespawning(player)
                 level_mod_data.resetPlayerRespawnTime(player)
@@ -341,8 +347,10 @@ class GameManager {
 
                         if (seconds_left == 0) {
                             // tp player to base location for respawn
-//                            val base_position = SavedModData.getTeamBasePosition(SavedModData.getPlayerTeam(uuid))
-//                            player.teleportTo(base_position.x.toDouble(), base_position.y.toDouble(), base_position.z.toDouble())
+                            val centre = Vec3.atBottomCenterOf(level_mod_data.map_centre)
+                            val spawn = level_mod_data.getTeamSpawn(level_mod_data.getPlayersTeam(player.uuid))
+                            player.teleportTo(spawn.x, spawn.y, spawn.z)
+                            player.lookAt(EntityAnchorArgument.Anchor.EYES, centre)
 
                             player.setGameMode(GameType.SURVIVAL)
                             level_mod_data.setPlayerAlive(player)

@@ -158,8 +158,10 @@ internal object CommandActions {
     }
 
     fun start(ctx: CommandContext<CommandSourceStack>): Int {
-        placeMap(ctx)
-        GameManager.setupGame(ctx.source.level, ctx.source.position)
+        val map_name = StringArgumentType.getString(ctx, MAP_NAME_ARGUMENT)
+        val pos = BlockPosArgument.getLoadedBlockPos(ctx, POSITION_ARGUMENT)
+        
+        GameManager.setupGame(map_name, ctx.source.level, pos)
         return 1
     }
 

@@ -8,6 +8,8 @@ import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorExposer
 import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorHolder
 import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorState
 import mcsoc.bedwars.datatrackers.generatordata.InvalidTeamException
+import mcsoc.bedwars.datatrackers.mapdata.LoadedMapExposer
+import mcsoc.bedwars.datatrackers.mapdata.LoadedMapHolder
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.server.level.ServerPlayer
@@ -22,14 +24,13 @@ import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup
 import net.minecraft.core.BlockPos
-import net.minecraft.resources.ResourceKey
-import net.minecraft.world.effect.MobEffect
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.saveddata.SavedData
 import java.util.UUID
 import net.minecraft.world.phys.Vec3
+import java.util.Optional
 import kotlin.math.ceil
 import kotlin.uuid.Uuid
 import kotlin.uuid.toJavaUuid
@@ -181,8 +182,11 @@ private class TeamDataRecord(
     private var bedPosition: BlockPos = BlockPos(0, 0, 0),
     private var genUpgrade: Int = 0,
     private var spawn: Vec3 = Vec3(0.0, 0.0, 0.0),
-    private var bedBreaker: UUID? = null,
+    bedBreakerOptional: Optional<UUID> = Optional.empty()
 ) : TeamStateRecord, TeamGeneratorState, TeamUpgradesState {
+    private var bedBreaker: UUID?
+    init { bedBreaker = bedBreakerOptional.orElse(null) }
+    
     companion object {
         val UUID_LIST_CODEC: Codec<MutableList<Uuid>> = UUIDUtil.CODEC.listOf().xmap(
             { it.map(UUID::toKotlinUuid).toMutableList() },
@@ -195,7 +199,7 @@ private class TeamDataRecord(
             BlockPos.CODEC.fieldOf("bed_position").forGetter(TeamDataRecord::bedPosition),
             Codec.INT.fieldOf("gen_upgrade").forGetter(TeamDataRecord::genUpgrade),
             Vec3.CODEC.fieldOf("spawn").forGetter(TeamDataRecord::spawn),
-            UUIDUtil.CODEC.fieldOf("bed_breaker").forGetter(TeamDataRecord::bedBreaker),
+            UUIDUtil.CODEC.optionalFieldOf("bed_breaker").forGetter{Optional.ofNullable(it.bedBreaker)},
         ).apply(it, ::TeamDataRecord)}
 
         private const val PLAYER_RANGE = 15
@@ -291,7 +295,8 @@ private class TeamDataRecord(
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder, PlayerTimeHolder, PlayerStatsHolder, TeamGeneratorHolder, TeamUpgradesHolder  {
+private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder, PlayerTimeHolder, PlayerStatsHolder, TeamGeneratorHolder, TeamUpgradesHolder,
+    LoadedMapHolder {
     companion object {
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
             Codec.unboundedMap(UUIDUtil.STRING_CODEC, PlayerDataRecord.CODEC)
@@ -305,6 +310,10 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
             Codec.STRING.xmap(Duration::parseIsoString, Duration::toIsoString)
                 .fieldOf("game_timer")
                 .forGetter(ModDataStore::game_timer),
+                    
+            BlockPos.CODEC
+                .fieldOf("map_centre")
+                .forGetter(ModDataStore::map_centre),
         ).apply(it, ::ModDataStore)}
     }
     
@@ -318,15 +327,18 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     private var timer_second = false
     private var game_phase = GamePhase.INACTIVE
     private var game_period = GamePeriod.INACTIVE
+    override var map_centre: BlockPos = BlockPos(0, 0, 0)
     
     private constructor(
         playerMap: Map<UUID, PlayerDataRecord>,
         teamMap: Map<Team, TeamDataRecord>,
         timer: Duration,
+        map_centre: BlockPos
     ) : this() {
         this.player_data_map.putAll(playerMap)
         this.teams_map.putAll(teamMap)
         this.game_timer = timer
+        this.map_centre = map_centre
     }
 
 
@@ -349,7 +361,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     }
 
     fun tickTeams(level: ServerLevel) {
-        teams_map.values.forEach { it.tick(level) }
+        getActiveTeams().forEach { teams_map[it]?.tick(level) }
     }
 
     override fun getGameTime() = game_timer
@@ -427,7 +439,8 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 }
 
 
-class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer, PlayerTimeExposer, PlayerStatsExposer, TeamGeneratorExposer, TeamUpgradesExposer {
+class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer, PlayerTimeExposer, PlayerStatsExposer, TeamGeneratorExposer, TeamUpgradesExposer,
+    LoadedMapExposer {
     companion object {
         val CODEC: MapCodec<ModDataTracker> = RecordCodecBuilder.mapCodec{ it.group(
             ModDataStore.CODEC.fieldOf("mod_data").forGetter(ModDataTracker::mod_data)
@@ -440,6 +453,10 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
         this.mod_data = mod_data
     }
     internal constructor() : this(ModDataStore())
+    
+    override var map_centre 
+        get() = mod_data.map_centre
+        set(v) { mod_data.map_centre = v }
 
     override fun tick() {
         setDirty()

@@ -81,13 +81,14 @@ private interface Island {
     val cpos: CylindricalBlockPos
     val structure: String
     val protection_zones: Iterable<ProtectionZoneData>
+    open val rotation: (Float) -> Double get() = {0.0}
     
     fun place(level: ServerLevel, origin: BlockPos): BlockPos {
         val pos = cpos.toBlockPos(origin)
         BedwarsPlugin.LOGGER.info("island at")
         BedwarsPlugin.LOGGER.info("  cpos: {}", cpos)
         BedwarsPlugin.LOGGER.info("  pos : {}", pos)
-        level.place(structure, pos, PI - cpos.angle)
+        level.place(structure, pos, rotation(cpos.angle))
         
         for (zone in protection_zones) {
             level.blockProtection.registerProtectionZone(zone.c1.offset(pos), zone.c2.offset(pos))
@@ -133,6 +134,7 @@ private data class BaseIslandData(
     val bed_position: CylindricalBlockPos = CylindricalBlockPos(0F, 0F, 0),
     val team: Team = Team.RED
 ) : GeneratorIsland {
+    override val rotation: (Float) -> Double get() = {2 * PI - it}
     override fun place(level: ServerLevel, origin: BlockPos): BlockPos {
         val pos = super.place(level, origin)
         level.gameState.setTeamSpawn(team, Vec3.atBottomCenterOf(spawn_position.relToMapOrigin(pos, cpos)))

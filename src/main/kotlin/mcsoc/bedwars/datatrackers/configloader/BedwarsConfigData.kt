@@ -2,7 +2,11 @@ package mcsoc.bedwars.datatrackers.configloader
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader
+import mcsoc.bedwars.datatrackers.gameState
+import net.minecraft.core.BlockPos
+import net.minecraft.server.level.ServerLevel
 
 
 @Serializable
@@ -37,6 +41,16 @@ data class LoadedMapConfig(
 interface BedwarsConfigExposer {
     val debug: Boolean
     val map_data: Map<String, MapData>
+    
+    fun placeMap(map_name: String, level: ServerLevel, pos: BlockPos): Boolean {
+        return map_data[map_name]?.let {
+            it.place(level, pos)
+            true
+        } ?: run{
+            BedwarsPlugin.LOGGER.error("Map Loading Error: No map exists with id $map_name")
+            false
+        }
+    }
 }
 
 object BedwarsConfigData : BedwarsConfigExposer {

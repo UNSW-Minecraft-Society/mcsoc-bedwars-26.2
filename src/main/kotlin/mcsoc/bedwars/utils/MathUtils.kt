@@ -13,6 +13,7 @@ import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
+import net.minecraft.core.Position
 import net.minecraft.core.Vec3i
 import net.minecraft.world.level.block.Mirror
 import net.minecraft.world.level.block.Rotation
@@ -86,7 +87,7 @@ object CylindricalBlockPosSerialiser: KSerializer<CylindricalBlockPos> {
 }
 
 
-fun Vec3.toBlockPos(): BlockPos = BlockPos.containing(this)
+fun Position.toBlockPos(): BlockPos = BlockPos.containing(this)
 fun Vec3.toCardinalDirection(): Direction = Direction.getApproximateNearest(this.horizontal())
 fun Vec3i.rotate(rotation: Rotation): Vec3i = StructureTemplate.transform(BlockPos(this), Mirror.NONE, rotation, BlockPos.ZERO)
 
