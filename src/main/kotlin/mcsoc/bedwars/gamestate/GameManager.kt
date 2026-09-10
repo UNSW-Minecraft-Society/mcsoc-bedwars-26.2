@@ -396,7 +396,7 @@ class GameManager {
             val time = level_mod_data.getGameTime()
             if (level_mod_data.getTimerSecond()) {
                 if (level_mod_data.getGamePhase() == GamePhase.STARTING) {
-                    if (time.inWholeSeconds.toInt() == 10) {
+                    if (time.inWholeSeconds.toInt() >= 10) {
                         start(world)
                     } else {
                         val time_left = (10.0 - time.inWholeSeconds).toInt()
