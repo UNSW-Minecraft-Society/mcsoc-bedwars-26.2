@@ -4,9 +4,9 @@ import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.Team
-import mcsoc.bedwars.utils.getCardinalDirection
-import mcsoc.bedwars.utils.rotateVec
-import mcsoc.bedwars.utils.vecToBlockPos
+import mcsoc.bedwars.utils.rotate
+import mcsoc.bedwars.utils.toCardinalDirection
+import mcsoc.bedwars.utils.toBlockPos
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.core.GlobalPos
@@ -14,7 +14,6 @@ import net.minecraft.core.Vec3i
 import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
-import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
@@ -26,9 +25,7 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.entity.projectile.Projectile
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile
-import net.minecraft.world.item.CompassItem
 import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.Items
 import net.minecraft.world.item.component.LodestoneTracker
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.Blocks
@@ -36,10 +33,10 @@ import net.minecraft.world.level.block.Rotation
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.phys.HitResult
 import net.minecraft.world.phys.Vec3
-import org.lwjgl.system.MathUtil
 import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 import kotlin.math.roundToInt
+
 
 const val FIREBALL_SPEED = 1.0
 const val BRIDGE_EGG_OFFSET = -0.5
@@ -169,7 +166,7 @@ object CustomItemInteraction {
     }
 
     private fun placeBlockIfValid(level: Level, pos: Vec3, blockState: BlockState) {
-        placeBlockIfValid(level, vecToBlockPos(pos), blockState)
+        placeBlockIfValid(level, pos.toBlockPos(), blockState)
     }
 
     private fun tickBridgeEggEffect(level: Level, egg: ThrowableItemProjectile, team: Team): InteractionResult {
@@ -194,7 +191,7 @@ object CustomItemInteraction {
     }
 
     private fun usePopupTowerEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, team: Team): InteractionResult {
-        val direction = getCardinalDirection(player.lookAngle)
+        val direction = player.lookAngle.toCardinalDirection()
         val rotation = when (direction) {
             Direction.NORTH -> Rotation.COUNTERCLOCKWISE_90
             Direction.EAST -> Rotation.NONE
@@ -204,14 +201,14 @@ object CustomItemInteraction {
         }
         if (hitResult !is HitResult)
             return InteractionResult.PASS
-        val centerPos = vecToBlockPos(hitResult.location)
+        val centerPos = hitResult.location.toBlockPos()
         val woolBlockState = Blocks.WOOL.pick(team.dyeColour).defaultBlockState()
         val ladderBlockState = Blocks.LADDER.defaultBlockState().rotate(Rotation.COUNTERCLOCKWISE_90).rotate(rotation)
         for (offset in POPUP_TOWER_WOOL_OFFSETS) {
-            placeBlockIfValid(level, centerPos.offset(rotateVec(offset,rotation)), woolBlockState)
+            placeBlockIfValid(level, centerPos.offset(offset.rotate(rotation)), woolBlockState)
         }
         for (offset in POPUP_TOWER_LADDER_OFFSETS) {
-            placeBlockIfValid(level, centerPos.offset(rotateVec(offset,rotation)), ladderBlockState)
+            placeBlockIfValid(level, centerPos.offset(offset.rotate(rotation)), ladderBlockState)
         }
         if (!player.isCreative) item.count -= 1
         player.playSound(SoundEvents.ITEM_PICKUP, 1.0f, 1.0f)
@@ -232,18 +229,17 @@ object CustomItemInteraction {
             return player.position().subtract(otherPlayer.position()).length()
         }
 //        val nearestEnemy = level.players().filter { isEnemy(it) }.minByOrNull { getDistance(it) }
-        val nearestEnemy = level.allEntities.filter { !it.`is`(player) }.minByOrNull { getDistance(it) }
-        BedwarsPlugin.LOGGER.info("Found ${level.allEntities.count()}, with the nearest ${nearestEnemy?.type.toString()}")
-        if (nearestEnemy != null) {
-            val enemyPos = GlobalPos.of(level.dimension(), vecToBlockPos(nearestEnemy.position()))
-            val distance = player.position().subtract(nearestEnemy.position()).length()
-            item.set(DataComponents.LODESTONE_TRACKER, LodestoneTracker(Optional.of(enemyPos),true))
-            player.sendSystemMessage(Component.literal("Enemy ${distance.roundToInt()} blocks away."))
-            return InteractionResult.SUCCESS
-        } else {
-            item.set(DataComponents.LODESTONE_TRACKER, LodestoneTracker(Optional.ofNullable(null),false))
+        val nearestEnemy = level.allEntities.filter { !it.`is`(player) }.minByOrNull { getDistance(it) } ?: run {
+            item.set(DataComponents.LODESTONE_TRACKER, LodestoneTracker(Optional.ofNullable(null), false))
             player.sendSystemMessage(Component.literal("No enemy player found."))
             return InteractionResult.PASS
         }
+
+        val enemyPos = GlobalPos.of(level.dimension(), nearestEnemy.position().toBlockPos())
+        val distance = player.position().subtract(nearestEnemy.position()).length()
+        item.set(DataComponents.LODESTONE_TRACKER, LodestoneTracker(Optional.of(enemyPos), true))
+        player.sendSystemMessage(Component.literal("Enemy ${distance.roundToInt()} blocks away."))
+        return InteractionResult.SUCCESS
+        
     }
 }

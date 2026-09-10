@@ -197,21 +197,7 @@ internal object CommandActions {
             player.sendSystemMessage(Component.literal("$input is not a valid custom item"))
             return 0
         }
-        return when (type) {
-            CustomItemTypes.BALL_OF_BUGS -> tryAddItem(ctx.source.player, BedwarsItems.ballOfBugsItemStack())
-            CustomItemTypes.BRIDGE_EGG -> tryAddItem(ctx.source.player, BedwarsItems.bridgeEggItemStack())
-            CustomItemTypes.FIREBALL -> tryAddItem(ctx.source.player, BedwarsItems.fireballItemStack())
-            CustomItemTypes.INSTANT_TNT -> tryAddItem(ctx.source.player, BedwarsItems.instantTNTItemStack())
-            CustomItemTypes.PLAYER_TRACKER -> tryAddItem(ctx.source.player, BedwarsItems.playerTrackerItemStack())
-            CustomItemTypes.POPUP_TOWER -> tryAddItem(ctx.source.player, BedwarsItems.popupTowerItemStack())
-        }
-    }
-
-    private fun tryAddItem(player: ServerPlayer?, item: ItemStack): Int {
-        if (player is ServerPlayer && player.addItem(item))
-            return 1
-        else
-            return 0
+        return type.giveToPlayer(ctx.source.player)
     }
 
     fun resetUpgrades(ctx: CommandContext<CommandSourceStack>): Int {

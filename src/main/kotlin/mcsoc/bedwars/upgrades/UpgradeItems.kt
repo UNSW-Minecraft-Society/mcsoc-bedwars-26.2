@@ -1,9 +1,8 @@
 package mcsoc.bedwars.upgrades
 
 import com.mojang.serialization.Codec
-import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.gameState
-import mcsoc.bedwars.utils.applyTag
+import mcsoc.bedwars.utils.withTag
 import mcsoc.bedwars.utils.hasTag
 import net.minecraft.core.registries.Registries
 import net.minecraft.resources.ResourceKey
@@ -48,13 +47,13 @@ internal interface Single : UpgradableItem {
     val material: Item
 
     override fun createStack(player: ServerPlayer): ItemStack {
-        return applyTag(ItemStack(material), "bedwars_item", type.name)
+        return ItemStack(material).withTag("bedwars_item", type.name)
     }
 
     override fun applyTo(player: ServerPlayer) {
         val stack = createStack(player)
         for (slot in 0 until player.inventory.containerSize) {
-            if (hasTag(player.inventory.getItem(slot), "bedwars_item", type.name)) {
+            if (player.inventory.getItem(slot).hasTag("bedwars_item", type.name)) {
                 player.inventory.setItem(slot, stack)
                 return
             }
@@ -213,7 +212,7 @@ enum class Armour(val boots: Item, val leggings: Item, val chestplate: Item) : U
     }
     
     private fun setTo(player: ServerPlayer, slot: EquipmentSlot, material: Item) {
-        val item = applyTag(ItemStack(material), "bedwars_item", type.name)
+        val item = ItemStack(material).withTag("bedwars_item", type.name)
         item.addProt(player)
         if (slot == EquipmentSlot.FEET) item.addFeatherFalling(player)
         player.setItemSlot(slot, item)
