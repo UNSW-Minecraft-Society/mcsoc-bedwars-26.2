@@ -58,6 +58,8 @@ dependencies {
 	// toml and yaml support
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
     include("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+	implementation("com.akuleshov7:ktoml-source:0.7.1")
+    include("com.akuleshov7:ktoml-source:0.7.1")
 	implementation("com.akuleshov7:ktoml-core:0.7.1")
     include("com.akuleshov7:ktoml-core:0.7.1")
 	implementation("com.akuleshov7:ktoml-file:0.7.1")
