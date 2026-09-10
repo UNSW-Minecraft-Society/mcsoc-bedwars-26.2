@@ -129,39 +129,34 @@ class GameManager {
             val player_team = level_mod_data.getPlayersTeam(player.uuid)
             val bed_destroyed = level_mod_data.getBedDestroyed(player_team)
 
-            // bedhunt code for kill tracking, to be updated
-//            if (death_source.entity is ServerPlayer) {
-//                val killer = death_source.entity as ServerPlayer
-//                level_mod_data.setPlayerKills(killer.uuid, level_mod_data.getPlayerKills(killer.uuid) + 1)
-//
-//                if (!should_respawn) {
-//                    level_mod_data.setPlayerFinalKills(killer.uuid, level_mod_data.getPlayerFinalKills(killer.uuid) + 1)
-//                }
-//            }
+            var killer = player.killCredit
 
-            // used in bedhunt to drop player inventory on death - can probably be removed here, although, maybe this should ensure if player died to void
-            // maybe money (gold, iron diamonds emeralds) transfer to killer? I'm leaving this code here for reference in case we need to index
-            // over a player's inventory to do something like this. Note this could probably be moved into the eliminate player function as
-            // it was only originally here to make the player drop items at death location
-//            if (!should_respawn) {
-//                player.inventory.forEachIndexed { i, stack ->
-//                    if (!stack.isEmpty) {
-//                        val vanishingCurse = player.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.VANISHING_CURSE)
-//
-//                        // Check if the item stack contains the Curse of Vanishing
-//                        if (EnchantmentHelper.getItemEnchantmentLevel(vanishingCurse, stack) > 0) {
-//                            player.inventory.setItem(i, ItemStack.EMPTY);
-//                        } else {
-//                            player.drop(stack, true, false);
-//                            player.inventory.setItem(i, ItemStack.EMPTY);
-//                        }
-//                    }
-//                }
-//            }
+            // Need to playtest see if final kill off void death transfers loot
 
+            if (killer is ServerPlayer) {
+                level_mod_data.setPlayerKills(killer, level_mod_data.getPlayerKills(killer) + 1)
 
+                if (bed_destroyed) {
+                    level_mod_data.setPlayerFinalKills(killer, level_mod_data.getPlayerFinalKills(killer) + 1)
+                }
+
+                player.inventory.forEach{ stack ->
+                    if (!stack.isEmpty) {
+                        if (stack.item in arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD)) {
+                            killer.inventory.add(stack)
+                        }
+                    }
+                }
+            } else if (bed_destroyed) {
+                killer = player.level().getPlayerByUUID(level_mod_data.getBedBreaker(player_team) ?: throw IllegalArgumentException("Cannot destroy bed without breaker?")) as ServerPlayer
+                level_mod_data.setPlayerKills(killer, level_mod_data.getPlayerKills(killer) + 1)
+                level_mod_data.setPlayerFinalKills(killer, level_mod_data.getPlayerFinalKills(killer) + 1)
+            }
+
+            // Downgrade or like reset player item upgrades on death
             player.inventory.clearContent()
             level_mod_data.downgradeItems(player)
+            level_mod_data.setPlayerDeaths(player, level_mod_data.getPlayerDeaths(player) + 1)
 
             // store player's death position to summon lightning later. Due to the nature of this event handler,
             // all players are forced to enter "DEAD" state upon death.
@@ -223,8 +218,8 @@ class GameManager {
             world.players().forEach { p ->
                 p.sendSystemMessage(Component.literal(player.scoreboardName + " has been eliminated!"))
             }
-            // notify eliminate player of their kill stats - TODO
-//            player.sendSystemMessage(Component.literal("Kills: " + level_mod_data.getPlayerKills(player.uuid) + " Final Kills: " + level_mod_data.getPlayerFinalKills(player.uuid)))
+            // notify eliminated player of their stats - change to align more closely to hypixel later
+            player.sendSystemMessage(Component.literal("Kills: " + level_mod_data.getPlayerKills(player) + " Final Kills: " + level_mod_data.getPlayerFinalKills(player) + " Deaths: " + level_mod_data.getPlayerDeaths(player)))
 
             val winning_team = checkPlayersLeftOnTeam(world,level_mod_data.getPlayersTeam(player.uuid)) ?: return
             winGame(world, winning_team)
@@ -257,9 +252,16 @@ class GameManager {
         private fun winGame(world: ServerLevel, winning_team: Team) {
             val level_mod_data = world.gameState
 
-            // for stats branch
-//            val top_killers = level_mod_data.getActivePlayers().map { player -> Pair(world.getPlayerByUUID(player)?.scoreboardName, level_mod_data.getPlayerKills(player)) }.sortedByDescending { p -> p.second }.take(3)
-//            val top_final_killers = level_mod_data.getActivePlayers().map { player -> Pair(world.getPlayerByUUID(player)?.scoreboardName, level_mod_data.getPlayerFinalKills(player)) }.sortedByDescending { p -> p.second }.take(3)
+            val stats_list = level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).map { p ->
+                Component.literal(
+                    p.name.toString()
+                            + " - Kills: "
+                            + level_mod_data.getPlayerKills(p)
+                            + " - Final Kills: " + level_mod_data.getPlayerFinalKills(p)
+                            + " - Deaths: " + level_mod_data.getPlayerDeaths(p)
+                            + " - Beds Destroyed: " + level_mod_data.getPlayerBedsDestroyed(p)
+                )
+            }
 
             world.server.playerList.players.forEach{player ->
                 player.connection.send(
@@ -282,10 +284,9 @@ class GameManager {
                     )
                 }
 
-//                player.sendSystemMessage(Component.literal("Top Killers:"))
-//                for (i in 0..2) player.sendSystemMessage(Component.literal(top_killers[i].first + ": " + top_killers[i].second))
-//                player.sendSystemMessage(Component.literal("Top Final Killers"))
-//                for (i in 0..2) player.sendSystemMessage(Component.literal(top_final_killers[i].first + ": " + top_final_killers[i].second))
+                stats_list.forEach{stats_message ->
+                    player.sendSystemMessage(stats_message)
+                }
             }
             level_mod_data.setGamePhase(GamePhase.ENDED)
         }
@@ -298,8 +299,8 @@ class GameManager {
             // If bed breaking is detected every tick, something like this will be needed
             // if (!SavedModData.isTeamBaseIntact(team)) return
 
-            // note for myself later in kill stats, add a way to track bed breaks + attribute void final kills to bed breaker
-
+            level_mod_data.setBedBreaker(team, breaker.uuid)
+            level_mod_data.setPlayerBedsDestroyed(breaker, level_mod_data.getPlayerBedsDestroyed(breaker) + 1)
             level_mod_data.setBedAlive(team, false)
 
             level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).forEach { p ->
