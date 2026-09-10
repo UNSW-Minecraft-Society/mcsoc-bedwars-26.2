@@ -27,6 +27,7 @@ fun registerEventHandlers() {
     registerItemCallbacks()
     registerEntityCallbacks()
     registerBlockBreakEvents()
+    registerBlockUseEvents()
     registerAfterDeathEvent()
     registerAfterRespawnEvent()
 }
