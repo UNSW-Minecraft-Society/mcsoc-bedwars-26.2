@@ -10,8 +10,6 @@ import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.Team
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.MinecraftServer
-import net.minecraft.world.entity.Display
-import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
 

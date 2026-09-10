@@ -29,9 +29,9 @@ const val BOOL_ARGUMENT = "bool"
 const val UPGRADE_TYPE_ARG = "type"
 const val ENTITY_TYPE_ARG = "type2"
 const val SHOP_TYPE_ARG = "type3"
+const val CUSTOM_ITEM_ARG = "custom_item"
 
 const val GEN_TYPE_ARG = "type"
-const val GEN_POS_ARG = "pos"
 const val GEN_TEAM_ARG = "team"
 const val GEN_ID_ARG = "id"
 
@@ -64,8 +64,7 @@ fun registerCommands() {
             )
             .then(Commands.literal("end")
                 .requires(GAMEMASTER_PERMS_REQUIREMENT)
-                .executes(CommandActions::end)
-            )
+                .executes(CommandActions::end))
             .then(Commands.literal("join")
             .executes(CommandActions::join)
             )
@@ -136,12 +135,12 @@ fun registerCommands() {
                     .then(Commands.argument(GEN_TYPE_ARG, StringArgumentType.word())
                         .suggests(GeneratorSuggestionProvider())
                         .executes(CommandActions::addGeneratorAtPlayer)
-                        .then(Commands.argument(GEN_POS_ARG, BlockPosArgument.blockPos())
+                        .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
                             .executes(CommandActions::addGenerator)
                         )
                     )
                 ).then(Commands.literal("add_team_gen")
-                    .then(Commands.argument(GEN_POS_ARG, BlockPosArgument.blockPos())
+                    .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
                         .then(Commands.argument(GEN_TEAM_ARG, StringArgumentType.word())
                             .suggests(TeamSuggestionProvider())
                             .executes(CommandActions::addTeamGenerator)
@@ -149,7 +148,7 @@ fun registerCommands() {
                     )
                 )
                 .then(Commands.literal("remove")
-                    .then(Commands.argument(GEN_POS_ARG, BlockPosArgument.blockPos())
+                    .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
                         .executes(CommandActions::removeGenerator)
                     )
                     .then(Commands.literal("id")
@@ -169,6 +168,13 @@ fun registerCommands() {
                         .suggests(TeamSuggestionProvider())
                         .executes(CommandActions::upgradeTeamGen)
                     )
+                )
+            )
+            .then(Commands.literal("give_custom_item")
+                .requires {it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)}
+                .then(Commands.argument(CUSTOM_ITEM_ARG, StringArgumentType.word())
+                    .suggests(CustomItemsSuggestionsProvider())
+                    .executes(CommandActions::giveCustomItem)
                 )
             )
             .then(Commands.literal("open_shop_gui").executes(CommandActions::openShop)

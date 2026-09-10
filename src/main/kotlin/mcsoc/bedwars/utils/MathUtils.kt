@@ -12,10 +12,18 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
 import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.core.Vec3i
+import net.minecraft.world.level.block.Mirror
+import net.minecraft.world.level.block.Rotation
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate
+import net.minecraft.world.phys.Vec3
+import kotlin.math.absoluteValue
 import net.minecraft.world.phys.AABB
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.floor
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -78,6 +86,12 @@ object CylindricalBlockPosSerialiser: KSerializer<CylindricalBlockPos> {
         CylindricalBlockPos(radius, angle, height)
     }
 }
+
+
+fun roundVec(vector: Vec3): Vec3i = BlockPos.containing(vector)
+fun vecToBlockPos(vector: Vec3): BlockPos = BlockPos.containing(vector)
+fun getCardinalDirection(vector: Vec3): Direction = Direction.getApproximateNearest(vector.horizontal())
+fun rotateVec(vector: Vec3i, rotation: Rotation): Vec3i = StructureTemplate.transform(BlockPos(vector), Mirror.NONE, rotation, BlockPos.ZERO)
 
 
 val AABB_CODEC: Codec<AABB> = RecordCodecBuilder.create {inst -> inst.group(

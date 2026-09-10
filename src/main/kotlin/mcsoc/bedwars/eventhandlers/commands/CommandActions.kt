@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.items.BedwarsItems
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
@@ -17,6 +18,7 @@ import mcsoc.bedwars.entities.CustomEntityType
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.gamestate.GameManager
+import mcsoc.bedwars.items.CustomItemTypes
 import mcsoc.bedwars.gui.ShopGui.displayShop
 import mcsoc.bedwars.gui.ShopType
 import mcsoc.bedwars.upgrades.UpgradeItemType
@@ -27,8 +29,11 @@ import net.minecraft.commands.arguments.coordinates.Vec3Argument
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.network.chat.TextColor
 import net.minecraft.world.phys.AABB
+import net.minecraft.world.item.ItemStack
+import kotlin.uuid.toKotlinUuid
 import net.minecraft.world.phys.Vec3
 
 
@@ -162,6 +167,7 @@ internal object CommandActions {
         GameManager.endGame(ctx.source.level)
         return 1
     }
+
     fun upgradeItem(ctx: CommandContext<CommandSourceStack>): Int {
         val player = ctx.source.player ?: run {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
@@ -177,6 +183,35 @@ internal object CommandActions {
 
         ctx.source.level.gameState.upgradeItem(player, type)
         return 1
+    }
+
+    fun giveCustomItem(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player ?: run {
+            ctx.source.sendFailure(Component.literal("Command must be run by a player"))
+            return 0
+        }
+        val input = StringArgumentType.getString(ctx, CUSTOM_ITEM_ARG)
+        val type = try {
+            CustomItemTypes.valueOf(input.uppercase())
+        } catch (e: IllegalArgumentException) {
+            player.sendSystemMessage(Component.literal("$input is not a valid custom item"))
+            return 0
+        }
+        return when (type) {
+            CustomItemTypes.BALL_OF_BUGS -> tryAddItem(ctx.source.player, BedwarsItems.ballOfBugsItemStack())
+            CustomItemTypes.BRIDGE_EGG -> tryAddItem(ctx.source.player, BedwarsItems.bridgeEggItemStack())
+            CustomItemTypes.FIREBALL -> tryAddItem(ctx.source.player, BedwarsItems.fireballItemStack())
+            CustomItemTypes.INSTANT_TNT -> tryAddItem(ctx.source.player, BedwarsItems.instantTNTItemStack())
+            CustomItemTypes.PLAYER_TRACKER -> tryAddItem(ctx.source.player, BedwarsItems.playerTrackerItemStack())
+            CustomItemTypes.POPUP_TOWER -> tryAddItem(ctx.source.player, BedwarsItems.popupTowerItemStack())
+        }
+    }
+
+    private fun tryAddItem(player: ServerPlayer?, item: ItemStack): Int {
+        if (player is ServerPlayer && player.addItem(item))
+            return 1
+        else
+            return 0
     }
 
     fun resetUpgrades(ctx: CommandContext<CommandSourceStack>): Int {
@@ -266,20 +301,21 @@ internal object CommandActions {
 
     fun addGenerator(ctx: CommandContext<CommandSourceStack>): Int {
         val genArg = StringArgumentType.getString(ctx, GEN_TYPE_ARG)
-        val bpos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above()
+        val bpos: BlockPos = BlockPosArgument.getBlockPos(ctx, POSITION_ARGUMENT).above()
         val pos = Vec3.atBottomCenterOf(bpos)
         return addGenerator(ctx.source, pos, genArg)
     }
 
     fun addTeamGenerator(ctx: CommandContext<CommandSourceStack>): Int {
         val teamArg = StringArgumentType.getString(ctx, GEN_TEAM_ARG)
-        val bpos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above()
+        val bpos: BlockPos = BlockPosArgument.getBlockPos(ctx, POSITION_ARGUMENT
+        ).above()
         val pos = Vec3.atBottomCenterOf(bpos)
         return addGeneratorTeam(ctx.source, pos, teamArg)
     }
 
     fun removeGenerator(ctx: CommandContext<CommandSourceStack>): Int {
-        val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, GEN_POS_ARG).above()
+        val pos: BlockPos = BlockPosArgument.getBlockPos(ctx, POSITION_ARGUMENT).above()
         ctx.source.level.generatorState.removeGenerator(Vec3.atBottomCenterOf(pos))
         ctx.source.sendSystemMessage(Component.literal("removed generator"))
         return 1

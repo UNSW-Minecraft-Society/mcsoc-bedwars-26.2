@@ -5,9 +5,12 @@ import eu.pb4.sgui.api.elements.GuiElement
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.upgrades.TeamUpgradeType
+import mcsoc.bedwars.upgrades.TrapUpgrade
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.utils.Team
+import mcsoc.bedwars.utils.romanNumeralMap
 import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.MutableComponent
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.entity.player.Player
@@ -33,6 +36,8 @@ abstract class ShopProduct {
      */
     abstract fun getClickCallback(): GuiElement.ClickCallback
     abstract fun getItemCost(): ItemStack?
+
+    abstract fun getProductName(): Component?
 
     /**
      * Handles purchasing logic, returns true if purchase successful.
@@ -69,6 +74,8 @@ class EmptyShopProduct : ShopProduct() {
     }
 
     override fun getItemCost(): ItemStack? = null
+
+    override fun getProductName(): Component? = null
 }
 
 /**
@@ -82,30 +89,13 @@ interface PlayerSpecificShopProduct {
 /**
  * Class for storing data on default item shop products.
  */
-open class ShopItem : ShopProduct {
-    protected var itemTemplate: ItemStackTemplate
-    protected lateinit var stack: ItemStack
+abstract class AbstractShopItem : ShopProduct {
     protected val currency: Item
     protected val price: Int
 
-    constructor(template: ItemStackTemplate, currency: Item, price: Int) {
-        this.itemTemplate = template
+    constructor(currency: Item, price: Int) {
         this.currency = currency
         this.price = price
-    }
-    constructor(item: Item, count: Int, currency: Item, price: Int) : this(ItemStackTemplate(item, count),
-        currency, price)
-
-    private fun resolveItemStackTemplate(): ItemStack {
-        if (!this::stack.isInitialized) {
-            BedwarsPlugin.LOGGER.info("creating")
-            this.stack = itemTemplate.create()
-        }
-        return this.stack.copy()
-    }
-
-    override fun getItemStack(): ItemStack {
-        return resolveItemStackTemplate()
     }
 
     override fun getClickCallback(): GuiElement.ClickCallback {
@@ -127,6 +117,33 @@ open class ShopItem : ShopProduct {
         return ItemStack(currency, price)
     }
 
+    override fun getProductName(): Component {
+        return getItemStack().hoverName
+    }
+}
+
+open class ShopItem : AbstractShopItem {
+    protected lateinit var stack: ItemStack
+    protected var itemTemplate: ItemStackTemplate
+
+    constructor(template: ItemStackTemplate, currency: Item, price: Int) : super(currency, price) {
+        this.itemTemplate = template
+    }
+    constructor(item: Item, count: Int, currency: Item, price: Int) : this(ItemStackTemplate(item, count),
+        currency, price)
+
+    private fun resolveItemStackTemplate(): ItemStack {
+        if (!this::stack.isInitialized) {
+            BedwarsPlugin.LOGGER.info("creating")
+            this.stack = itemTemplate.create()
+        }
+        return this.stack.copy()
+    }
+
+    override fun getItemStack(): ItemStack {
+        return resolveItemStackTemplate()
+    }
+
     protected fun setItemStack(stack: ItemStack) {
         this.itemTemplate = ItemStackTemplate(stack.item, stack.count)
         this.stack = stack
@@ -136,7 +153,16 @@ open class ShopItem : ShopProduct {
         if (!this::stack.isInitialized) this.itemTemplate = itemTemplate
         else setItemStack(itemTemplate.create())
     }
+}
 
+class ShopCustomItem : AbstractShopItem {
+    protected var stackCreate: () -> ItemStack
+
+    constructor(stackCreate: () -> ItemStack, currency: Item, price: Int) : super(currency, price) {
+        this.stackCreate = stackCreate
+    }
+
+    override fun getItemStack() = stackCreate()
 }
 
 class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
@@ -166,11 +192,13 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
     private val currencies: Array<Item>
     private val prices: Array<Int>
     private lateinit var player: ServerPlayer
+    private val names: Array<String>
 
-    constructor(playerUpgrade: UpgradeItemType, currencies: Array<Item>, prices: Array<Int>) {
+    constructor(playerUpgrade: UpgradeItemType, currencies: Array<Item>, prices: Array<Int>, names: Array<String>) : super() {
         this.playerUpgrade = playerUpgrade
         this.currencies = currencies
         this.prices = prices
+        this.names = names
     }
 
     override fun getItemStack(): ItemStack {
@@ -192,8 +220,15 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
     override fun getItemCost(): ItemStack? {
         val gameState = player.level().gameState
         val tier = gameState.getTier(player, playerUpgrade)
-        if (tier >= currencies.size) return null
-        return ItemStack(currencies[tier], prices[tier])
+        return if (tier >= currencies.size) null
+        else  ItemStack(currencies[tier], prices[tier])
+    }
+
+    override fun getProductName(): Component? {
+        val gameState = player.level().gameState
+        val tier = gameState.getTier(player, playerUpgrade)
+        return if (tier >= currencies.size) null
+        else Component.literal(names[tier])
     }
 
     override fun setShopPlayer(player: ServerPlayer) {
@@ -241,11 +276,17 @@ abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
 class BooleanShopTeamUpgrade : ShopTeamUpgrade<Boolean> {
     private var currency: Item
     private var price: Int
+    private val name: Component
 
-    constructor(teamUpgrade: TeamUpgradeType<Boolean>, displayItem: Item, currency: Item, price: Int) : super(teamUpgrade, displayItem) {
+    constructor(teamUpgrade: TeamUpgradeType<Boolean>, displayItem: Item, currency: Item, price: Int, name: Component) : super(teamUpgrade, displayItem) {
         this.currency = currency
         this.price = price
+        this.name = name
     }
+
+    constructor(teamUpgrade: TeamUpgradeType<Boolean>, displayItem: Item, currency: Item, price: Int, name: String) : this(
+        teamUpgrade, displayItem, currency, price, Component.literal(name)
+    )
 
     override fun getItemStack(): ItemStack {
         return if (!getUpgradeState())
@@ -255,10 +296,13 @@ class BooleanShopTeamUpgrade : ShopTeamUpgrade<Boolean> {
     }
 
     override fun getItemCost(): ItemStack? {
-        return if (isUpgradable())
-            ItemStack(currency, price)
-        else
-            null
+        return if (isUpgradable()) ItemStack(currency, price)
+        else null
+    }
+
+    override fun getProductName(): Component? {
+        return if (isUpgradable()) name
+        else null
     }
 
     override fun isUpgradable(): Boolean = !getUpgradeState()
@@ -268,10 +312,12 @@ class BooleanShopTeamUpgrade : ShopTeamUpgrade<Boolean> {
 class IntShopTeamUpgrade : ShopTeamUpgrade<Int> {
     private val currencies: Array<Item>
     private val prices: Array<Int>
+    private val baseName: String
 
-    constructor(teamUpgrade: TeamUpgradeType<Int>, displayItem: Item, currencies: Array<Item>, prices: Array<Int>) : super(teamUpgrade, displayItem) {
+    constructor(teamUpgrade: TeamUpgradeType<Int>, displayItem: Item, currencies: Array<Item>, prices: Array<Int>, baseName: String) : super(teamUpgrade, displayItem) {
         this.currencies = currencies
         this.prices = prices
+        this.baseName = baseName
     }
 
     override fun getItemStack(): ItemStack {
@@ -284,6 +330,71 @@ class IntShopTeamUpgrade : ShopTeamUpgrade<Int> {
         return currencies.getOrNull(nextTier)?.let { prices.getOrNull(nextTier)?.let { count -> ItemStack(it, count) } }
     }
 
+    override fun getProductName(): Component? {
+        return if (!isUpgradable()) null
+        else Component.literal(baseName + romanNumeralMap[getUpgradeState() + 1])
+    }
+
     override fun isUpgradable(): Boolean = currencies.lastIndex >= getUpgradeState()
+
+}
+
+class ShopTrapUpgrade : ShopProduct, PlayerSpecificShopProduct {
+    private val trapUpgrade: TrapUpgrade
+    private val displayItem: Item
+    private val currency: Item
+    private val price: Int
+    private lateinit var player: ServerPlayer
+    private val name: Component
+
+    constructor(trapUpgrade: TrapUpgrade, displayItem: Item, currency: Item, price: Int, name: Component) : super() {
+        this.trapUpgrade = trapUpgrade
+        this.displayItem = displayItem
+        this.currency = currency
+        this.price = price
+        this.name = name
+    }
+
+    constructor(trapUpgrade: TrapUpgrade, displayItem: Item, currency: Item, price: Int, name: String) : this(
+        trapUpgrade, displayItem, currency, price, Component.literal(name)
+    )
+
+    override fun getItemStack(): ItemStack {
+        return if (!isTrapActive()) ItemStack(displayItem)
+        else EMPTY_STACK
+    }
+
+    override fun getClickCallback(): GuiElement.ClickCallback {
+        return GuiElement.ClickCallback { index, clickType, action, gui ->
+            val player = gui.player ?: return@ClickCallback
+            if (isTrapActive()) return@ClickCallback
+            val gameState = player.level().gameState
+            val team = gameState.getPlayersTeam(player.uuid)
+            purchaseUnit(player, fun(): Boolean {
+                gameState.addTrap(team, trapUpgrade)
+                return true
+            })
+        }
+    }
+
+    override fun getItemCost(): ItemStack? {
+        return if (!isTrapActive()) ItemStack(currency, price)
+        else null
+    }
+
+    override fun getProductName(): Component? {
+        return if (isTrapActive()) null
+        else name
+    }
+
+    override fun setShopPlayer(player: ServerPlayer) {
+        this.player = player
+    }
+
+    private fun isTrapActive(): Boolean {
+        val gameState = player.level().gameState
+        val team = gameState.getPlayersTeam(player.uuid)
+        return gameState.getTraps(team).contains(trapUpgrade)
+    }
 
 }

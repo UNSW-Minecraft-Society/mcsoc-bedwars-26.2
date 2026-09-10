@@ -47,7 +47,7 @@ internal interface TeamStateExposer {
 internal interface TeamStateHolder : TeamStateExposer {
     fun getTeam(team: Team): TeamStateRecord
 
-    override fun getBedDestroyed(team: Team): Boolean = getTeam(team).getBedAlive()
+    override fun getBedDestroyed(team: Team): Boolean = !getTeam(team).getBedAlive()
     override fun getTeamSpawn(team: Team): Vec3 = getTeam(team).getSpawn()
     override fun setTeamSpawn(team: Team, pos: Vec3) = getTeam(team).setSpawn(pos)
     override fun getTeamBedPosition(team: Team): BlockPos = getTeam(team).getBedPosition()

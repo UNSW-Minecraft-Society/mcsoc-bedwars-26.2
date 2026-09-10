@@ -29,4 +29,7 @@ fun registerEventHandlers() {
     registerEntityCallbacks()
     registerPlayerJoinEvent()
     registerBlockBreakEvents()
+    AfterDeathEvent()
+    AfterRespawnEvent()
+    onBedBreakAttempt()
 }
