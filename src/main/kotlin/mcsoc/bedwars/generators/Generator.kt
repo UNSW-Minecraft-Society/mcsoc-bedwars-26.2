@@ -19,7 +19,6 @@ import net.minecraft.world.level.Level
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
 
-private const val PLAYER_RANGE = 15
 private const val ITEM_SPAWN_HEIGHT = 2.0
 
 // cycle time in ticks
@@ -75,7 +74,7 @@ internal open class Generator(val location: Vec3, val levelKey: ResourceKey<Leve
             val expected = (currentTick / cycle * item.itemsPerCycle).toInt()
 
             if (generated >= expected) continue
-            if (!hasSpace(level, item.maxItems, item.item) || !playersInRange()) {
+            if (!hasSpace(level, item.maxItems, item.item)) {
                 curCycleItems.removeIf { it.first == item } 
                 curCycleItems.add(item to expected)
                 continue
@@ -103,11 +102,6 @@ internal open class Generator(val location: Vec3, val levelKey: ResourceKey<Leve
         )
 
         return nearby.filter { it.item.item == item }.sumOf { it.item.count } < max
-    }
-    
-    private fun playersInRange(): Boolean {
-        val active = level.gameState.getActivePlayers().mapNotNull { level.getPlayerByUUID(it) }
-        return active.any { it.position().distanceTo(location) < PLAYER_RANGE }
     }
 
     private fun generateItem(level: ServerLevel, item: Item) {

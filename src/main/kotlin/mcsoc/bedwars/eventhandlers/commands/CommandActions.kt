@@ -33,7 +33,6 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.network.chat.TextColor
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.item.ItemStack
-import kotlin.uuid.toKotlinUuid
 import net.minecraft.world.phys.Vec3
 
 

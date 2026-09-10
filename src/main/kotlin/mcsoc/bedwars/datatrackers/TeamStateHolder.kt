@@ -3,6 +3,7 @@ package mcsoc.bedwars.datatrackers
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.BlockPos
 import net.minecraft.world.phys.Vec3
+import net.minecraft.world.scores.Scoreboard
 import java.util.UUID
 
 internal interface TeamStateRecord {
@@ -36,8 +37,8 @@ internal interface TeamStateExposer {
     fun setTeamSpawn(team: Team, pos: Vec3) 
     fun setTeamBedPosition(team: Team, pos: BlockPos)
     fun setBedBreaker(team: Team, player: UUID)
-    fun addPlayer(player: UUID, team: Team)
-    fun initialiseTeams(teams: Set<Team>)
+    fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?)
+    fun initialiseTeams(teams: Set<Team>, scoreboard: Scoreboard)
 
     fun getPlayersTeam(player: UUID): Team
     

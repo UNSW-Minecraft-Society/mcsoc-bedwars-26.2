@@ -1,4 +1,4 @@
-package mcsoc.bedwars.datatrackers.generatordata
+package mcsoc.bedwars.datatrackers.generatorstate
 
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec

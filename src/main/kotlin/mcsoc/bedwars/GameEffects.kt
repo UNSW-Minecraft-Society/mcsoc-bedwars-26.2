@@ -1,10 +1,8 @@
 package mcsoc.bedwars
 
-import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.Team
 import net.minecraft.server.level.ServerLevel
-import net.minecraft.server.level.ServerPlayer
 
 // replace with config
 // useful if method for switching teams is added
@@ -20,7 +18,7 @@ object TeamEffects {
 
         players.shuffled().forEachIndexed { index, player ->
             val team = teams[index % num_teams]
-            mod_level_data.addPlayer(player, team)
+            mod_level_data.addPlayer(player, team, level.scoreboard, level.getPlayerByUUID(player)?.scoreboardName)
         }
     }
 

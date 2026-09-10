@@ -165,7 +165,7 @@ data class MapData private constructor(
     
     fun place(level: ServerLevel, origin: BlockPos) {
         // also register generators
-        level.gameState.initialiseTeams(base_islands.map(BaseIslandData::team).toSet())
+        level.gameState.initialiseTeams(base_islands.map(BaseIslandData::team).toSet(), level.scoreboard)
         base_islands.forEach{it.place(level, origin)}
         diamond_islands.forEach{it.place(level, origin)}
         misc_islands.forEach{it.place(level, origin)}

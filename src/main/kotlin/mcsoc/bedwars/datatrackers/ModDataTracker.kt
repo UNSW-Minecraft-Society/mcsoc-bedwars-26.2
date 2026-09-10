@@ -3,13 +3,13 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import mcsoc.bedwars.gamestate.RESPAWN_TIME
-import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorExposer
-import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorHolder
-import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorState
-import mcsoc.bedwars.datatrackers.generatordata.InvalidTeamException
+import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorExposer
+import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorHolder
+import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorState
+import mcsoc.bedwars.datatrackers.generatorstate.InvalidTeamException
 import mcsoc.bedwars.datatrackers.mapdata.LoadedMapExposer
 import mcsoc.bedwars.datatrackers.mapdata.LoadedMapHolder
+import mcsoc.bedwars.gamestate.RESPAWN_TIME
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.server.level.ServerPlayer
@@ -35,6 +35,7 @@ import kotlin.math.ceil
 import kotlin.uuid.Uuid
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
+import net.minecraft.world.scores.Scoreboard
 
 enum class GamePhase {
     STARTING,
@@ -419,15 +420,24 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     }
 
     override fun getActiveTeams(): List<Team> = teams_map.keys.toList()
-    
-    override fun initialiseTeams(teams: Set<Team>) {
+
+    override fun initialiseTeams(teams: Set<Team>, scoreboard: Scoreboard) {
         teams_map.clear()
-        teams.forEach { teams_map[it] = TeamDataRecord() }
+        
+        for (team in scoreboard.playerTeams) scoreboard.removePlayerTeam(team)
+        teams.forEach { 
+            teams_map[it] = TeamDataRecord()
+            scoreboard.addPlayerTeam(it.getName())
+        }
+        
+        for (scoreboardTeam in scoreboard.playerTeams) scoreboardTeam.isAllowFriendlyFire = false
     }
 
-    override fun addPlayer(player: UUID, team: Team) {
+    override fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?) {
         getTeam(team).addPlayer(player)
         getPlayerData(player).setTeamName(team)
+        val team = scoreboard.getPlayerTeam(team.getName()) ?: throw InvalidTeamException(team)
+        if (name != null) scoreboard.addPlayerToTeam(name, team)
     }
 
     override fun getPlayersTeam(player: UUID): Team = getPlayerData(player).getTeamName()
@@ -512,13 +522,13 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
         setDirty()
         mod_data.setBedBreaker(team, player)
     }
-    override fun initialiseTeams(teams: Set<Team>) {
+    override fun initialiseTeams(teams: Set<Team>, scoreboard: Scoreboard) {
         setDirty()
-        mod_data.initialiseTeams(teams)
-    } 
-    override fun addPlayer(player: UUID, team: Team) {
+        mod_data.initialiseTeams(teams, scoreboard)
+    }
+    override fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?) {
         setDirty()
-        mod_data.addPlayer(player, team)
+        mod_data.addPlayer(player, team, scoreboard, name)
     }
     
     override fun getPlayersTeam(player: UUID): Team = mod_data.getPlayersTeam(player)
@@ -558,10 +568,11 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     }
 
     override fun <T> getUpgrade(team: Team, type: TeamUpgradeType<T>) = mod_data.getUpgrade(team, type)
-    override fun <T> upgrade(team: Team, type: TeamUpgradeType<T>) = mod_data.upgrade(team, type)
-    override fun popTrap(team: Team) = mod_data.popTrap(team)
+    override fun <T> upgrade(team: Team, type: TeamUpgradeType<T>) {
+        setDirty()
+        mod_data.upgrade(team, type)
+    }
     override fun getTraps(team: Team) = mod_data.getTraps(team)
-    override fun addTrap(team: Team, type: TrapUpgrade) = mod_data.addTrap(team, type)
     
     override fun getTeamBedPosition(team: Team): BlockPos = mod_data.getTeamBedPosition(team)
     override fun setTeamSpawn(team: Team, pos: Vec3) {
@@ -589,4 +600,12 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     override fun setPlayerFinalKills(player: ServerPlayer, value: Int) = mod_data.setPlayerFinalKills(player, value)
     override fun setPlayerDeaths(player: ServerPlayer, value: Int) = mod_data.setPlayerDeaths(player, value)
     override fun setPlayerBedsDestroyed(player: ServerPlayer, value: Int) = mod_data.setPlayerBedsDestroyed(player, value)
+    override fun popTrap(team: Team): TrapUpgrade? {
+        setDirty()
+        return mod_data.popTrap(team)
+    }
+    override fun addTrap(team: Team, type: TrapUpgrade) {
+        setDirty()
+        mod_data.addTrap(team, type)
+    }
 }
