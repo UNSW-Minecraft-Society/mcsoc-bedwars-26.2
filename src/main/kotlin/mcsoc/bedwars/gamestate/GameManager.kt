@@ -3,6 +3,7 @@ package mcsoc.bedwars.gamestate
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
+import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
@@ -82,6 +83,8 @@ class GameManager {
 
         fun endGame(level: ServerLevel) {
             // Triggered by command or on win condition, clean up stuff
+            level.blockProtection.protectionEnabled = false
+            
             val level_mod_data = level.gameState
             level_mod_data.clearActivePlayers()
             level.generatorState.clearGenerators()
@@ -98,6 +101,8 @@ class GameManager {
         }
 
         private fun start(level: ServerLevel) {
+            level.blockProtection.protectionEnabled = true
+            
             val player_manager = level.server.playerList
             val level_mod_data = level.gameState
             for (player_uuid in level_mod_data.getActivePlayers()) {
