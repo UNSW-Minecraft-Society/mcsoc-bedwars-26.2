@@ -114,6 +114,7 @@ class GameManager {
                         1.0F, 1.0F, level.getRandom().nextLong()
                     )
                 )
+                level_mod_data.setPlayerAlive(player)
                 player.setGameMode(GameType.SURVIVAL)
                 val spawn = level_mod_data.getTeamSpawn(level_mod_data.getPlayersTeam(player.uuid))
                 player.teleportTo(spawn.x, spawn.y, spawn.z)
