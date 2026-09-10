@@ -290,6 +290,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     override fun initialiseTeams(numTeams: Int, scoreboard: Scoreboard) {
         assert(numTeams < Team.entries.size) { "More teams specified than can be handled" }
         teams_map.clear()
+        for (team in scoreboard.playerTeams) scoreboard.removePlayerTeam(team)
 
         val teams = Team.entries.take(numTeams)
         teams.forEach {
