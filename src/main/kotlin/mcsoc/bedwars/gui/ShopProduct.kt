@@ -23,6 +23,7 @@ val EMPTY_STACK = Items.AIR.defaultInstance
  * Abstract class for storing data on shop products.
  */
 abstract class ShopProduct {
+    protected var shopDescriptions: List<Component> = listOf()
     /**
      * Gets the `ItemStack` to display in the shop menu.
      */
@@ -34,7 +35,7 @@ abstract class ShopProduct {
     abstract fun getClickCallback(): GuiElement.ClickCallback
     abstract fun getItemCost(): ItemStack?
 
-    abstract fun getProductName(): Component?
+    abstract fun getProductName(): Component
 
     /**
      * Handles purchasing logic, returns true if purchase successful.
@@ -49,11 +50,12 @@ abstract class ShopProduct {
             if (sendMsg) player.sendSystemMessage(Component.literal("Insufficient funds"))
             return false
         }
+        val name = getProductName()
         if (transaction()) {
             inventory.clearOrCountMatchingItems({it.`is`(currency)},
                 price, inventory)
             player.playSound(SoundEvents.NOTE_BLOCK_BELL.value())
-            if (sendMsg) player.sendSystemMessage(Component.literal("Purchased ${getItemStack().toString()}"))
+            player.sendSystemMessage(Component.literal("Purchased ").append(name))
             return true
         } else {
             player.playSound(SoundEvents.NOTE_BLOCK_BIT.value())
@@ -61,6 +63,15 @@ abstract class ShopProduct {
             return false
         }
     }
+
+    fun addDescriptionLine(component: Component): ShopProduct {
+        shopDescriptions += component
+        return this
+    }
+
+    fun addDescriptionLine(string: String) = addDescriptionLine(Component.literal(string))
+
+    fun getDescriptionLines(): List<Component> = shopDescriptions
 }
 
 class EmptyShopProduct : ShopProduct() {
@@ -72,7 +83,7 @@ class EmptyShopProduct : ShopProduct() {
 
     override fun getItemCost(): ItemStack? = null
 
-    override fun getProductName(): Component? = null
+    override fun getProductName(): Component = Component.empty()
 }
 
 /**
@@ -105,7 +116,8 @@ abstract class AbstractShopItem : ShopProduct {
             } else if (clickType == ClickType.MOUSE_LEFT_SHIFT) {
                 var count = 0
                 while (purchaseUnit(player, {inventory.add(getItemStack().copy())}, false)) count++
-                player.sendSystemMessage(Component.literal("Purchased ${getItemStack()} x${count}"))
+                val name = getProductName()
+                player.sendSystemMessage(Component.literal("Purchased ").append(name).append(" x${count}"))
             }
         }
     }
@@ -220,10 +232,10 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
         else  ItemStack(currencies[tier], prices[tier])
     }
 
-    override fun getProductName(): Component? {
+    override fun getProductName(): Component {
         val gameState = player.level().gameState
         val tier = gameState.getTier(player, playerUpgrade)
-        return if (tier >= currencies.size) null
+        return if (tier >= currencies.size) Component.empty()
         else Component.literal(names[tier])
     }
 
@@ -296,9 +308,9 @@ class BooleanShopTeamUpgrade : ShopTeamUpgrade<Boolean> {
         else null
     }
 
-    override fun getProductName(): Component? {
+    override fun getProductName(): Component {
         return if (isUpgradable()) name
-        else null
+        else Component.empty()
     }
 
     override fun isUpgradable(): Boolean = !getUpgradeState()
@@ -326,8 +338,8 @@ class IntShopTeamUpgrade : ShopTeamUpgrade<Int> {
         return currencies.getOrNull(nextTier)?.let { prices.getOrNull(nextTier)?.let { count -> ItemStack(it, count) } }
     }
 
-    override fun getProductName(): Component? {
-        return if (!isUpgradable()) null
+    override fun getProductName(): Component {
+        return if (!isUpgradable()) Component.empty()
         else Component.literal(baseName + romanNumeralMap[getUpgradeState() + 1])
     }
 
@@ -378,8 +390,8 @@ class ShopTrapUpgrade : ShopProduct, PlayerSpecificShopProduct {
         else null
     }
 
-    override fun getProductName(): Component? {
-        return if (isTrapActive()) null
+    override fun getProductName(): Component {
+        return if (isTrapActive()) Component.empty()
         else name
     }
 

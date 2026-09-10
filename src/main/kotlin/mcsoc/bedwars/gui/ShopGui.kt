@@ -121,34 +121,38 @@ object ShopGui {
                      Array(4) {Items.DIAMOND},
                      arrayOf(5,10,20,30),
                      "Protection"
-                 ),
+                 ).addDescriptionLine("Applies protection to your team's armour for more defense"),
                  IntShopTeamUpgrade(TeamUpgradeType.FEATHER_FALLING, Items.FEATHER,
                      Array(2) {Items.DIAMOND},
                      arrayOf(1,2),
                      "Feather Falling"
-                 ),
+                 ).addDescriptionLine("Applies feather falling to your team's boots for less fall damage"),
                  IntShopTeamUpgrade(TeamUpgradeType.HASTE, Items.GOLDEN_PICKAXE,
                      Array(2) {Items.DIAMOND},
                      arrayOf(2,3),
                      "Haste"
-                 ),
+                 ).addDescriptionLine("Applies haste to your team for faster block breaking"),
                  EmptyShopProduct(),
 
                  EmptyShopProduct(),
-                 BooleanShopTeamUpgrade(TeamUpgradeType.SHARPNESS, Items.IRON_SWORD, Items.DIAMOND, 8, "Sharpness"),
-                 BooleanShopTeamUpgrade(TeamUpgradeType.HEAL_POOL, Items.GOLDEN_APPLE, Items.DIAMOND, 3, "Heal Pool"),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
+                 BooleanShopTeamUpgrade(TeamUpgradeType.SHARPNESS, Items.IRON_SWORD, Items.DIAMOND, 8, "Sharpness")
+                     .addDescriptionLine("Applies sharpness to your team's swords to deal more damage"),
+                 BooleanShopTeamUpgrade(TeamUpgradeType.HEAL_POOL, Items.GOLDEN_APPLE, Items.DIAMOND, 3, "Heal Pool")
+                     .addDescriptionLine("Applies faster healing for your team at your island"),
                  EmptyShopProduct(),
                  EmptyShopProduct(),
 
                  EmptyShopProduct(),
-                 ShopTrapUpgrade(TrapUpgrade.BLINDNESS, Items.DYE.black, Items.DIAMOND, 2, "Blindness Trap"),
-                 ShopTrapUpgrade(TrapUpgrade.COUNTER, Items.POTION, Items.DIAMOND, 2, "Counter Trap"),
+                 EmptyShopProduct(),
+                 EmptyShopProduct(),
+                 EmptyShopProduct(),
+                 EmptyShopProduct(),
+
+                 EmptyShopProduct(),
+                 ShopTrapUpgrade(TrapUpgrade.BLINDNESS, Items.DYE.black, Items.DIAMOND, 2, "Blindness Trap")
+                     .addDescriptionLine("Applies blindness to an intruder on your island"),
+                 ShopTrapUpgrade(TrapUpgrade.COUNTER, Items.POTION, Items.DIAMOND, 2, "Counter Trap")
+                     .addDescriptionLine("Applies buffs to your team when an intruder enters your island"),
                  EmptyShopProduct(),
                  EmptyShopProduct(),
 
@@ -182,9 +186,10 @@ object ShopGui {
                 for ((slotIndex, product) in PRODUCT_SLOT_INDEX zip products) {
                     if (product is PlayerSpecificShopProduct) product.setShopPlayer(player)
                     val element = GuiElementBuilder(product.getItemStack())
-                        .addLoreLine(Component.literal("Cost: ${product.getItemCost()}"))
                         .setCallback(product.getClickCallback())
                     if (product.getProductName() != null) element.setName(product.getProductName())
+                    for (line in product.getDescriptionLines()) element.addLoreLine(line)
+                    element.addLoreLine(Component.literal("Cost: ${product.getItemCost()?.count} ").append(product.getItemCost()?.hoverName ?: Component.empty()))
                     gui.setSlot(slotIndex, element)
                 }
             }
