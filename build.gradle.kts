@@ -62,12 +62,13 @@ dependencies {
 	
 	// toml and yaml support
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
-	implementation("com.akuleshov7:ktoml-core:0.7.1")
-    includeTransitive("com.akuleshov7:ktoml-core:0.7.1")
-	implementation("com.akuleshov7:ktoml-file:0.7.1")
-    include("com.akuleshov7:ktoml-file:0.7.1")
-	implementation("io.heapy.kotaml:kotaml:0.110.0")
-    includeTransitive("io.heapy.kotaml:kotaml:0.110.0")
+
+	implementation("com.akuleshov7:ktoml-core-jvm:0.7.1")
+	implementation("com.akuleshov7:ktoml-file-jvm:0.7.1")
+	implementation("io.heapy.kotaml:kotaml-jvm:0.110.0")
+
+	includeTransitive("com.akuleshov7:ktoml-file-jvm:0.7.1")
+    includeTransitive("io.heapy.kotaml:kotaml-jvm:0.110.0")
 
 	implementation("eu.pb4:sgui:2.1.0+26.2")
 	include("eu.pb4:sgui:2.1.0+26.2")
@@ -75,8 +76,8 @@ dependencies {
 
 afterEvaluate {
     includeTransitive.resolvedConfiguration.resolvedArtifacts.forEach { artifact ->
-        val dep = "${artifact.moduleVersion.id.group}:${artifact.moduleVersion.id.name}:${artifact.moduleVersion.id.version}"
-        dependencies.add("include", dep)
+        val id = artifact.moduleVersion.id
+        dependencies.add("include", "${id.group}:${id.name}:${id.version}")
     }
 }
 
