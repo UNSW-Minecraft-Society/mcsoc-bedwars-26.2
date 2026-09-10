@@ -64,6 +64,11 @@ dependencies {
     include("com.akuleshov7:ktoml-core:0.7.1")
 	implementation("com.akuleshov7:ktoml-file:0.7.1")
     include("com.akuleshov7:ktoml-file:0.7.1")
+	implementation("com.squareup.okio:okio:3.16.0")
+	include("com.squareup.okio:okio:3.16.0")
+	implementation("com.squareup.okio:okio:3.16.0")
+	implementation("com.squareup.okio:okio-jvm:3.16.0")
+	include("com.squareup.okio:okio-jvm:3.16.0")
 	implementation("io.heapy.kotaml:kotaml:0.110.0")
     include("io.heapy.kotaml:kotaml:0.110.0")
 
