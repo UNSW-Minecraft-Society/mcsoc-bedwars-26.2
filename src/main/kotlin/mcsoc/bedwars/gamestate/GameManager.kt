@@ -12,6 +12,7 @@ import mcsoc.bedwars.utils.toBlockPos
 import net.minecraft.ChatFormatting
 import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.core.BlockPos
+import net.minecraft.core.GlobalPos
 import net.minecraft.core.Holder
 import net.minecraft.core.Position
 import net.minecraft.network.chat.Component
@@ -27,6 +28,7 @@ import net.minecraft.world.entity.Relative
 import net.minecraft.world.item.Items
 import net.minecraft.world.level.GameType
 import net.minecraft.world.level.gamerules.GameRules
+import net.minecraft.world.level.storage.LevelData
 import net.minecraft.world.phys.Vec3
 import kotlin.time.Duration.Companion.minutes
 
@@ -68,6 +70,15 @@ class GameManager {
                         setOf(), 0F, 0F, true
                     )
                     player.lookAt(EntityAnchorArgument.Anchor.EYES, pos)
+                    player.setRespawnPosition(
+                        ServerPlayer.RespawnConfig(
+                            LevelData.RespawnData(
+                                GlobalPos(
+                                    level.dimension(), spawn.toBlockPos()
+                                ), 0F, 0F
+                            ), false
+                        ), false
+                    )
                 }
             }
 
@@ -122,7 +133,10 @@ class GameManager {
                 level_mod_data.setPlayerAlive(player)
                 player.setGameMode(GameType.SURVIVAL)
                 val spawn = level_mod_data.getTeamSpawn(level_mod_data.getPlayersTeam(player.uuid))
-                player.teleportTo(spawn.x, spawn.y, spawn.z)
+                player.teleportTo(
+                    level, spawn.x, spawn.y, spawn.z, 
+                    setOf(), 0F, 0F, true
+                )
             }
             // tp players to spawn points
             // start generators
@@ -185,7 +199,9 @@ class GameManager {
             if (!level_mod_data.getBedDestroyed(level_mod_data.getPlayersTeam(player.uuid))) {
                 // tp above map
                 val respawn_position: Vec3 = Vec3.atBottomCenterOf(level_mod_data.map_centre.offset(0, 30, 0))
-                player.teleportTo(respawn_position.x, respawn_position.y, respawn_position.z)
+                player.teleportTo(player.level(), respawn_position.x, respawn_position.y, respawn_position.z, 
+                        setOf(), 0F, 0F, true
+                )
 
                 level_mod_data.setPlayerRespawning(player)
                 level_mod_data.resetPlayerRespawnTime(player)
@@ -222,27 +238,27 @@ class GameManager {
                     Component.literal(ChatFormatting.RED.toString() + "ELIMINATED")
                 )
             )
-            val world = player.level()
-            val lightning = LightningBolt(EntityTypes.LIGHTNING_BOLT, world)
+            val level = player.level()
+            val lightning = LightningBolt(EntityTypes.LIGHTNING_BOLT, level)
             lightning.setVisualOnly(true)
             lightning.setPos(player_death_position)
-            world.addFreshEntity(lightning)
-            world.players().forEach { p ->
+            level.addFreshEntity(lightning)
+            level.players().forEach { p ->
                 p.sendSystemMessage(Component.literal(player.scoreboardName + " has been eliminated!"))
             }
             // notify eliminated player of their stats - change to align more closely to hypixel later
             player.sendSystemMessage(Component.literal("Kills: " + level_mod_data.getPlayerKills(player) + " Final Kills: " + level_mod_data.getPlayerFinalKills(player) + " Deaths: " + level_mod_data.getPlayerDeaths(player)))
 
-            val winning_team = checkPlayersLeftOnTeam(world,level_mod_data.getPlayersTeam(player.uuid)) ?: return
-            winGame(world, winning_team)
+            val winning_team = checkPlayersLeftOnTeam(level,level_mod_data.getPlayersTeam(player.uuid)) ?: return
+            winGame(level, winning_team)
         }
 
-        private fun checkPlayersLeftOnTeam(world: ServerLevel, player_down_team: Team): Team? {
-            val level_mod_data = world.gameState
+        private fun checkPlayersLeftOnTeam(level: ServerLevel, player_down_team: Team): Team? {
+            val level_mod_data = level.gameState
             if (level_mod_data.getGamePhase() != GamePhase.ACTIVE) return null
             var game_is_won = true
             var winning_team = Team.NONE
-            level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).forEach{player ->
+            level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach{player ->
                 val player_team = level_mod_data.getPlayersTeam(player.uuid)
 
                 if (player_team == Team.NONE) return@forEach
@@ -261,10 +277,10 @@ class GameManager {
             return winning_team
         }
 
-        private fun winGame(world: ServerLevel, winning_team: Team) {
-            val level_mod_data = world.gameState
+        private fun winGame(level: ServerLevel, winning_team: Team) {
+            val level_mod_data = level.gameState
 
-            val stats_list = level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).map { p ->
+            val stats_list = level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).map { p ->
                 Component.literal(
                     p.name.toString()
                             + " - Kills: "
@@ -275,7 +291,7 @@ class GameManager {
                 )
             }
 
-            world.server.playerList.players.forEach{player ->
+            level.server.playerList.players.forEach{player ->
                 player.connection.send(
                     ClientboundClearTitlesPacket(true)
                 )
@@ -303,8 +319,8 @@ class GameManager {
             level_mod_data.setGamePhase(GamePhase.ENDED)
         }
 
-        fun afterBedBreak(world: ServerLevel, breaker: ServerPlayer, team: Team) {
-            val level_mod_data = world.gameState
+        fun afterBedBreak(level: ServerLevel, breaker: ServerPlayer, team: Team) {
+            val level_mod_data = level.gameState
 
             // Remnant bedhunt code to prevent afterBedBreak being called repeatedly after a bed is broken
             // Should not be needed if afterBedBreak is correctly called... after a bed break is registered
@@ -315,7 +331,7 @@ class GameManager {
             level_mod_data.setPlayerBedsDestroyed(breaker, level_mod_data.getPlayerBedsDestroyed(breaker) + 1)
             level_mod_data.setBedAlive(team, false)
 
-            level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).forEach { p ->
+            level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach { p ->
                 if (level_mod_data.getPlayersTeam(p.uuid) == team) {
                     p.connection.send(
                         ClientboundSetTitleTextPacket(
@@ -327,25 +343,25 @@ class GameManager {
                 p.connection.send(
                     ClientboundSoundPacket(
                         Holder.direct(SoundEvents.ENDER_DRAGON_GROWL),
-                        SoundSource.MASTER, p.x, p.y, p.z, 1.0F, 1.0F, world.getRandom().nextLong())
+                        SoundSource.MASTER, p.x, p.y, p.z, 1.0F, 1.0F, level.getRandom().nextLong())
                 )
 
                 p.sendSystemMessage(Component.literal(team.name + " bed has been destroyed!"))
             }
         }
 
-        fun tick(world: ServerLevel) {
-            val level_mod_data = world.gameState
+        fun tick(level: ServerLevel) {
+            val level_mod_data = level.gameState
             if (level_mod_data.getGamePhase() == GamePhase.INACTIVE) return
 
-            val player_manager = world.server.playerList
-            world.generatorState.tick()
+            val player_manager = level.server.playerList
+            level.generatorState.tick()
 
             level_mod_data.tick()
-            level_mod_data.tickTeams(world)
+            level_mod_data.tickTeams(level)
 
             if (level_mod_data.getTimerTick()) {
-                level_mod_data.getActivePlayers().mapNotNull(world.server.playerList::getPlayer).forEach { player ->
+                level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach { player ->
                     if (level_mod_data.isPlayerEliminated(player)) return@forEach
 
                     if (level_mod_data.isPlayerRespawning(player)) {
@@ -355,7 +371,10 @@ class GameManager {
                             // tp player to base location for respawn
                             val centre = Vec3.atBottomCenterOf(level_mod_data.map_centre)
                             val spawn = level_mod_data.getTeamSpawn(level_mod_data.getPlayersTeam(player.uuid))
-                            player.teleportTo(spawn.x, spawn.y, spawn.z)
+                            player.teleportTo(
+                                level, spawn.x, spawn.y, spawn.z, 
+                                setOf(), 0F, 0F, true
+                            )
                             player.lookAt(EntityAnchorArgument.Anchor.EYES, centre)
 
                             player.setGameMode(GameType.SURVIVAL)
@@ -397,7 +416,7 @@ class GameManager {
             if (level_mod_data.getTimerSecond()) {
                 if (level_mod_data.getGamePhase() == GamePhase.STARTING) {
                     if (time.inWholeSeconds.toInt() >= 10) {
-                        start(world)
+                        start(level)
                     } else {
                         val time_left = (10.0 - time.inWholeSeconds).toInt()
                         for (player_uuid in level_mod_data.getActivePlayers()) {
@@ -411,7 +430,7 @@ class GameManager {
                                 ClientboundSoundPacket(
                                     Holder.direct(SoundEvents.NOTE_BLOCK_PLING.value()),
                                     SoundSource.MASTER, player.x, player.y, player.z,
-                                    1.0F, 1.0F, world.getRandom().nextLong()
+                                    1.0F, 1.0F, level.getRandom().nextLong()
                                 )
                             )
                         }
