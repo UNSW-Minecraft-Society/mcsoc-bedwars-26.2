@@ -297,6 +297,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
             teams_map[it] = TeamDataRecord()
             scoreboard.addPlayerTeam(it.getName())
         }
+        for (scoreboardTeam in scoreboard.playerTeams) scoreboardTeam.isAllowFriendlyFire = false
     }
 
     override fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?) {
