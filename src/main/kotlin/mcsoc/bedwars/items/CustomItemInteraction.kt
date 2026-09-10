@@ -3,6 +3,7 @@ package mcsoc.bedwars.items
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.generatorstate.InvalidTeamException
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.rotate
 import mcsoc.bedwars.utils.toCardinalDirection
@@ -184,7 +185,8 @@ object CustomItemInteraction {
         bug.setPos(hitResult.location)
         bug.health = 1.0f
         bug.speed = 2.0f
-        // DO THE TEAM THING SO IT'S FRIENDLY TO OWNER
+        val scoreboardTeam = level.scoreboard.getPlayerTeam(team.getName())
+        if (scoreboardTeam != null) level.scoreboard.addPlayerToTeam(bug.stringUUID, scoreboardTeam)
         level.addFreshEntity(bug)
         ball.owner = null
         return InteractionResult.SUCCESS
