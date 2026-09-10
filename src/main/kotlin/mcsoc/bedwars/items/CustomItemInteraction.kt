@@ -3,6 +3,7 @@ package mcsoc.bedwars.items
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.generatorstate.InvalidTeamException
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.getCardinalDirection
 import mcsoc.bedwars.utils.rotateVec
@@ -26,9 +27,7 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.entity.projectile.Projectile
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile
-import net.minecraft.world.item.CompassItem
 import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.Items
 import net.minecraft.world.item.component.LodestoneTracker
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.Blocks
@@ -36,7 +35,6 @@ import net.minecraft.world.level.block.Rotation
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.phys.HitResult
 import net.minecraft.world.phys.Vec3
-import org.lwjgl.system.MathUtil
 import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 import kotlin.math.roundToInt
@@ -187,7 +185,8 @@ object CustomItemInteraction {
         bug.setPos(hitResult.location)
         bug.health = 1.0f
         bug.speed = 2.0f
-        // DO THE TEAM THING SO IT'S FRIENDLY TO OWNER
+        val scoreboardTeam = level.scoreboard.getPlayerTeam(team.getName())
+        if (scoreboardTeam != null) level.scoreboard.addPlayerToTeam(bug.stringUUID, scoreboardTeam)
         level.addFreshEntity(bug)
         ball.owner = null
         return InteractionResult.SUCCESS
