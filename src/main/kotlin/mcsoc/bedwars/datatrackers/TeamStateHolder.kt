@@ -2,6 +2,7 @@ package mcsoc.bedwars.datatrackers
 
 import mcsoc.bedwars.utils.Team
 import net.minecraft.world.phys.Vec3
+import net.minecraft.world.scores.Scoreboard
 import java.util.UUID
 
 internal interface TeamStateRecord {
@@ -25,8 +26,8 @@ internal interface TeamStateExposer {
     fun getActiveTeams(): List<Team>
 
     fun setBedAlive(team: Team, state: Boolean)
-    fun addPlayer(player: UUID, team: Team)
-    fun initialiseTeams(numTeams: Int)
+    fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?)
+    fun initialiseTeams(numTeams: Int, scoreboard: Scoreboard)
 
     fun getPlayersTeam(player: UUID): Team
     

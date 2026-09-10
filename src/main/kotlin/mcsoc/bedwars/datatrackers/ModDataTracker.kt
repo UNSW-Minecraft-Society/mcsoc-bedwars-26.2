@@ -26,6 +26,7 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.saveddata.SavedData
 import java.util.UUID
 import net.minecraft.world.phys.Vec3
+import net.minecraft.world.scores.Scoreboard
 
 enum class GamePhase {
     STARTING,
@@ -286,17 +287,22 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 
     // to be updated by map loader
     // this will reset team data
-    override fun initialiseTeams(numTeams: Int) {
+    override fun initialiseTeams(numTeams: Int, scoreboard: Scoreboard) {
         assert(numTeams < Team.entries.size) { "More teams specified than can be handled" }
         teams_map.clear()
 
         val teams = Team.entries.take(numTeams)
-        teams.forEach { teams_map[it] = TeamDataRecord() }
+        teams.forEach {
+            teams_map[it] = TeamDataRecord()
+            scoreboard.addPlayerTeam(it.getName())
+        }
     }
 
-    override fun addPlayer(player: UUID, team: Team) {
+    override fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?) {
         getTeam(team).addPlayer(player)
         getPlayerData(player).setTeamName(team)
+        val team = scoreboard.getPlayerTeam(team.getName()) ?: throw InvalidTeamException()
+        if (name != null) scoreboard.addPlayerToTeam(name, team)
     }
     
     override fun getPlayersTeam(player: UUID): Team = getPlayerData(player).getTeamName()
@@ -361,13 +367,13 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
         setDirty()
         mod_data.setBedAlive(team, state)
     }
-    override fun initialiseTeams(numTeams: Int) {
+    override fun initialiseTeams(numTeams: Int, scoreboard: Scoreboard) {
         setDirty()
-        mod_data.initialiseTeams(numTeams)
+        mod_data.initialiseTeams(numTeams, scoreboard)
     } 
-    override fun addPlayer(player: UUID, team: Team) {
+    override fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?) {
         setDirty()
-        mod_data.addPlayer(player, team)
+        mod_data.addPlayer(player, team, scoreboard, name)
     }
     
     override fun getPlayersTeam(player: UUID): Team = mod_data.getPlayersTeam(player)
