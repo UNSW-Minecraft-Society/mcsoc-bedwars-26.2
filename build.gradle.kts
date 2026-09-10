@@ -57,9 +57,13 @@ dependencies {
 	
 	// toml and yaml support
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+    include("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 	implementation("com.akuleshov7:ktoml-core:0.7.1")
+    include("com.akuleshov7:ktoml-core:0.7.1")
 	implementation("com.akuleshov7:ktoml-file:0.7.1")
+    include("com.akuleshov7:ktoml-file:0.7.1")
 	implementation("io.heapy.kotaml:kotaml:0.110.0")
+    include("io.heapy.kotaml:kotaml:0.110.0")
 
 	implementation("eu.pb4:sgui:2.1.0+26.2")
 	include("eu.pb4:sgui:2.1.0+26.2")
