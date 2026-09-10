@@ -1,6 +1,5 @@
 package mcsoc.bedwars.eventhandlers
 
-import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.gamestate.GameManager
@@ -29,7 +28,6 @@ fun registerEventHandlers() {
     registerEntityCallbacks()
     registerPlayerJoinEvent()
     registerBlockBreakEvents()
-    AfterDeathEvent()
-    AfterRespawnEvent()
-    onBedBreakAttempt()
+    registerAfterDeathEvent()
+    registerAfterRespawnEvent()
 }

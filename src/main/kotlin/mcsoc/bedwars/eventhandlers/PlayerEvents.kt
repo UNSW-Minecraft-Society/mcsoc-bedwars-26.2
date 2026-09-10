@@ -6,14 +6,14 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents
 import net.minecraft.server.level.ServerPlayer
 
 
-fun AfterDeathEvent() {
+fun registerAfterDeathEvent() {
     ServerLivingEntityEvents.AFTER_DEATH.register{maybe_player, death_source ->
         if (maybe_player is ServerPlayer) GameManager.handlePlayerDeath(maybe_player, death_source)
     }
 }
 
 
-fun AfterRespawnEvent() {
+fun registerAfterRespawnEvent() {
     ServerPlayerEvents.AFTER_RESPAWN.register { oldPlayer, newPlayer, alive ->
         GameManager.handlePlayerRespawn(newPlayer)
     }
