@@ -3,10 +3,19 @@ package mcsoc.bedwars.items
 import mcsoc.bedwars.utils.withItemLore
 import mcsoc.bedwars.utils.withTag
 import mcsoc.bedwars.utils.renamedTo
-import net.minecraft.core.component.DataComponents
 import net.minecraft.server.level.ServerPlayer
+import mcsoc.bedwars.utils.withEnchant
+import net.minecraft.core.Holder
+import net.minecraft.core.component.DataComponents
+import net.minecraft.resources.ResourceKey
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
+import net.minecraft.world.item.alchemy.Potion
+import net.minecraft.world.item.alchemy.PotionContents
+import net.minecraft.world.item.enchantment.Enchantment
+import net.minecraft.world.item.enchantment.Enchantments
 
 
 const val BEDWARS_ITEM_TAG = "bedwars_item"
@@ -27,12 +36,37 @@ enum class CustomItemTypes(val value: String, private val item_factory: () -> It
 }
 
 object BedwarsItems {
+    fun potionItemStack(potion: Holder<Potion>): ItemStack {
+        val stack = Items.POTION.defaultInstance
+        stack.set(DataComponents.POTION_CONTENTS, PotionContents(potion))
+        return stack
+    }
+
+    fun enchantedItemStack(item: Item, enchantment: ResourceKey<Enchantment>, enchLevel: Int, level: ServerLevel): ItemStack {
+        val stack = item.defaultInstance
+        .withEnchant(enchantment, enchLevel, level)
+        return stack
+    }
+
+    fun knockbackStickItemStack(level: ServerLevel): ItemStack {
+        return enchantedItemStack(Items.BREEZE_ROD, Enchantments.KNOCKBACK, 2, level)
+        .renamedTo("Knockback Stick")
+    }
+
+    fun powerBowItemStack(level: ServerLevel): ItemStack {
+        return enchantedItemStack(Items.BOW, Enchantments.POWER, 1, level)
+    }
+
+    fun punchBowItemStack(level: ServerLevel): ItemStack {
+        return enchantedItemStack(Items.BOW, Enchantments.PUNCH, 1, level)
+    }
+
     fun fireballItemStack(): ItemStack {
         return Items.FIRE_CHARGE.defaultInstance
-        .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.FIREBALL.value)
-        .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.FIREBALL.value)
-        .renamedTo("Fireball")
-        .withItemLore("Right click to shoot a fireball in the direction you look.")
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.FIREBALL.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.FIREBALL.value)
+            .renamedTo("Fireball")
+            .withItemLore("Right click to shoot a fireball in the direction you look.")
     }
 
     fun bridgeEggItemStack(): ItemStack {

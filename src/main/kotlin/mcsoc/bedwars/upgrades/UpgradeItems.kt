@@ -3,10 +3,9 @@ package mcsoc.bedwars.upgrades
 import com.mojang.serialization.Codec
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.withTag
+import mcsoc.bedwars.utils.withEnchant
 import mcsoc.bedwars.utils.hasTag
-import net.minecraft.core.registries.Registries
 import net.minecraft.resources.ResourceKey
-import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.item.Item
@@ -69,7 +68,8 @@ internal interface EnchantableItem : Single {
     val enchantment: ResourceKey<Enchantment>
 
     override fun createStack(player: ServerPlayer): ItemStack =
-        super.createStack(player).also { applyEnchant(it, enchantment, level, player.level()) }
+        super.createStack(player)
+            .withEnchant(enchantment, level, player.level())
 }
 
 internal interface Resettable : UpgradableItem {
@@ -169,16 +169,16 @@ enum class Sword(override val material: Item) : Single, Resettable {
 
     override fun createStack(player: ServerPlayer): ItemStack {
         val item = super.createStack(player)
-        item.addSharp(player)
-        return item
+        return item.withSharp(player)
     }
     
-    private fun ItemStack.addSharp(player: ServerPlayer) {
+    private fun ItemStack.withSharp(player: ServerPlayer): ItemStack {
         val gameState = player.level().gameState
         val team = gameState.getPlayersTeam(player.uuid)
         if (gameState.getUpgrade(team, TeamUpgradeType.SHARPNESS)) {
-            applyEnchant(this, Enchantments.SHARPNESS, 1, player.level())
+            this.withEnchant(Enchantments.SHARPNESS, 1, player.level())
         }
+        return this
     }
 }
 
@@ -214,22 +214,22 @@ enum class Armour(val boots: Item, val leggings: Item, val chestplate: Item) : U
     private fun setTo(player: ServerPlayer, slot: EquipmentSlot, material: Item) {
         val item = ItemStack(material).withTag("bedwars_item", type.name)
         item.addProt(player)
-        if (slot == EquipmentSlot.FEET) item.addFeatherFalling(player)
+        if (slot == EquipmentSlot.FEET) item.withFeatherFalling(player)
         player.setItemSlot(slot, item)
     }
     
-    private fun ItemStack.addProt(player: ServerPlayer) {
+    private fun ItemStack.addProt(player: ServerPlayer): ItemStack {
         val gameState = player.level().gameState
         val team = gameState.getPlayersTeam(player.uuid)
         val level = gameState.getUpgrade(team, TeamUpgradeType.PROTECTION)
-        applyEnchant(this, Enchantments.PROTECTION, level, player.level())
+        return this.withEnchant(Enchantments.PROTECTION, level, player.level())
     }
     
-    private fun ItemStack.addFeatherFalling(player: ServerPlayer) {
+    private fun ItemStack.withFeatherFalling(player: ServerPlayer): ItemStack {
         val gameState = player.level().gameState
         val team = gameState.getPlayersTeam(player.uuid)
         val level = gameState.getUpgrade(team, TeamUpgradeType.FEATHER_FALLING)
-        applyEnchant(this, Enchantments.FEATHER_FALLING, level, player.level())
+        return this.withEnchant(Enchantments.FEATHER_FALLING, level, player.level())
     }
     
     override fun createStack(player: ServerPlayer): ItemStack {
@@ -237,8 +237,3 @@ enum class Armour(val boots: Item, val leggings: Item, val chestplate: Item) : U
     }
 }
 
-private fun applyEnchant(item: ItemStack, ench: ResourceKey<Enchantment>, enchLevel: Int, level: ServerLevel) {
-    if (enchLevel < 0) return
-    val ench = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(ench)
-    item.enchant(ench, enchLevel)
-}

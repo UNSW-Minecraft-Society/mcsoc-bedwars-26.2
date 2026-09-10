@@ -11,7 +11,6 @@ import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.resources.Identifier
 import net.minecraft.server.permissions.PermissionLevel
-import mcsoc.bedwars.gui.ShopGui
 import net.minecraft.commands.arguments.coordinates.Vec3Argument
 import net.minecraft.server.permissions.Permissions
 
@@ -184,9 +183,6 @@ fun registerCommands() {
                     .executes(CommandActions::openShop)
                 )
             )
-            .then(Commands.literal("test_simple_gui").executes(ShopGui::testSimpleGui))
-
-            .then(Commands.literal("test_simple_gui_4").executes(ShopGui::testSimpleGui4))
             .then(Commands.literal("summon_shopkeeper")
                 .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
                 .then(Commands.argument(POSITION_ARGUMENT, Vec3Argument.vec3())

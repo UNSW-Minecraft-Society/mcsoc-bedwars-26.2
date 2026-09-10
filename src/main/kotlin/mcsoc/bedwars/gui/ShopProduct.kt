@@ -10,22 +10,20 @@ import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.romanNumeralMap
 import net.minecraft.network.chat.Component
-import net.minecraft.network.chat.MutableComponent
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.ItemStackTemplate
 import net.minecraft.world.item.Items
 
-val DEFAULT_TEAM = Team.BLACK
 val EMPTY_STACK = Items.AIR.defaultInstance
 
 /**
  * Abstract class for storing data on shop products.
  */
 abstract class ShopProduct {
+    protected var shopDescriptions: List<Component> = listOf()
     /**
      * Gets the `ItemStack` to display in the shop menu.
      */
@@ -37,7 +35,7 @@ abstract class ShopProduct {
     abstract fun getClickCallback(): GuiElement.ClickCallback
     abstract fun getItemCost(): ItemStack?
 
-    abstract fun getProductName(): Component?
+    abstract fun getProductName(): Component
 
     /**
      * Handles purchasing logic, returns true if purchase successful.
@@ -52,11 +50,12 @@ abstract class ShopProduct {
             if (sendMsg) player.sendSystemMessage(Component.literal("Insufficient funds"))
             return false
         }
+        val name = getProductName()
         if (transaction()) {
             inventory.clearOrCountMatchingItems({it.`is`(currency)},
                 price, inventory)
             player.playSound(SoundEvents.NOTE_BLOCK_BELL.value())
-            if (sendMsg) player.sendSystemMessage(Component.literal("Purchased ${getItemStack().toString()}"))
+            player.sendSystemMessage(Component.literal("Purchased ").append(name))
             return true
         } else {
             player.playSound(SoundEvents.NOTE_BLOCK_BIT.value())
@@ -64,6 +63,15 @@ abstract class ShopProduct {
             return false
         }
     }
+
+    fun addDescriptionLine(component: Component): ShopProduct {
+        shopDescriptions += component
+        return this
+    }
+
+    fun addDescriptionLine(string: String) = addDescriptionLine(Component.literal(string))
+
+    fun getDescriptionLines(): List<Component> = shopDescriptions
 }
 
 class EmptyShopProduct : ShopProduct() {
@@ -75,7 +83,7 @@ class EmptyShopProduct : ShopProduct() {
 
     override fun getItemCost(): ItemStack? = null
 
-    override fun getProductName(): Component? = null
+    override fun getProductName(): Component = Component.empty()
 }
 
 /**
@@ -108,7 +116,8 @@ abstract class AbstractShopItem : ShopProduct {
             } else if (clickType == ClickType.MOUSE_LEFT_SHIFT) {
                 var count = 0
                 while (purchaseUnit(player, {inventory.add(getItemStack().copy())}, false)) count++
-                player.sendSystemMessage(Component.literal("Purchased ${getItemStack()} x${count}"))
+                val name = getProductName()
+                player.sendSystemMessage(Component.literal("Purchased ").append(name).append(" x${count}"))
             }
         }
     }
@@ -123,35 +132,18 @@ abstract class AbstractShopItem : ShopProduct {
 }
 
 open class ShopItem : AbstractShopItem {
+    protected val item: Item
+    protected val count: Int
     protected lateinit var stack: ItemStack
-    protected var itemTemplate: ItemStackTemplate
+//    protected var itemTemplate: ItemStackTemplate
 
-    constructor(template: ItemStackTemplate, currency: Item, price: Int) : super(currency, price) {
-        this.itemTemplate = template
-    }
-    constructor(item: Item, count: Int, currency: Item, price: Int) : this(ItemStackTemplate(item, count),
-        currency, price)
-
-    private fun resolveItemStackTemplate(): ItemStack {
-        if (!this::stack.isInitialized) {
-            BedwarsPlugin.LOGGER.info("creating")
-            this.stack = itemTemplate.create()
-        }
-        return this.stack.copy()
+    constructor(item: Item, count: Int, currency: Item, price: Int) : super(currency, price) {
+        this.item = item
+        this.count = count
     }
 
     override fun getItemStack(): ItemStack {
-        return resolveItemStackTemplate()
-    }
-
-    protected fun setItemStack(stack: ItemStack) {
-        this.itemTemplate = ItemStackTemplate(stack.item, stack.count)
-        this.stack = stack
-    }
-
-    protected fun setItemStack(itemTemplate: ItemStackTemplate) {
-        if (!this::stack.isInitialized) this.itemTemplate = itemTemplate
-        else setItemStack(itemTemplate.create())
+        return ItemStack(item, count)
     }
 }
 
@@ -165,22 +157,38 @@ class ShopCustomItem : AbstractShopItem {
     override fun getItemStack() = stackCreate()
 }
 
-class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
-    private val templates: Map<Team, ItemStackTemplate>
+
+class ShopPlayerCustomItem : AbstractShopItem, PlayerSpecificShopProduct {
+    protected var stackCreate: (ServerPlayer) -> ItemStack
     private lateinit var player: ServerPlayer
 
-    constructor(templates: Map<Team, ItemStackTemplate>, currency: Item, price: Int) : super(
-        templates[Team.NONE] ?: ItemStackTemplate(Items.BARRIER), currency, price) {
-        this.templates = templates
+    constructor(stackCreate: (ServerPlayer) -> ItemStack, currency: Item, price: Int) : super(currency, price) {
+        this.stackCreate = stackCreate
     }
 
-    constructor(items: Map<Team, Item>, count: Int, currency: Item, price: Int) : this(
-        items.mapValues { ItemStackTemplate(it.value, count) },currency, price)
+    override fun getItemStack() = stackCreate(player)
+
+    override fun setShopPlayer(player: ServerPlayer) {
+        this.player = player
+    }
+}
+
+class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
+    private val items: Map<Team, Item>
+    private lateinit var team: Team
+
+    constructor(items: Map<Team, Item>, count: Int, currency: Item, price: Int) : super(
+        items[Team.NONE] ?: Items.AIR, count, currency, price) {
+        this.items = items
+    }
+
+    override fun getItemStack(): ItemStack {
+        return items[team]?.let { ItemStack(it, count) } ?: EMPTY_STACK
+    }
 
     override fun setShopPlayer(player: ServerPlayer) {
         val gameState = player.level().gameState
-        val team = gameState.getPlayersTeam(player.uuid)
-        setItemStack(templates.getValue(team))
+        team = gameState.getPlayersTeam(player.uuid)
     }
 }
 
@@ -224,10 +232,10 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
         else  ItemStack(currencies[tier], prices[tier])
     }
 
-    override fun getProductName(): Component? {
+    override fun getProductName(): Component {
         val gameState = player.level().gameState
         val tier = gameState.getTier(player, playerUpgrade)
-        return if (tier >= currencies.size) null
+        return if (tier >= currencies.size) Component.empty()
         else Component.literal(names[tier])
     }
 
@@ -300,9 +308,9 @@ class BooleanShopTeamUpgrade : ShopTeamUpgrade<Boolean> {
         else null
     }
 
-    override fun getProductName(): Component? {
+    override fun getProductName(): Component {
         return if (isUpgradable()) name
-        else null
+        else Component.empty()
     }
 
     override fun isUpgradable(): Boolean = !getUpgradeState()
@@ -330,8 +338,8 @@ class IntShopTeamUpgrade : ShopTeamUpgrade<Int> {
         return currencies.getOrNull(nextTier)?.let { prices.getOrNull(nextTier)?.let { count -> ItemStack(it, count) } }
     }
 
-    override fun getProductName(): Component? {
-        return if (!isUpgradable()) null
+    override fun getProductName(): Component {
+        return if (!isUpgradable()) Component.empty()
         else Component.literal(baseName + romanNumeralMap[getUpgradeState() + 1])
     }
 
@@ -382,8 +390,8 @@ class ShopTrapUpgrade : ShopProduct, PlayerSpecificShopProduct {
         else null
     }
 
-    override fun getProductName(): Component? {
-        return if (isTrapActive()) null
+    override fun getProductName(): Component {
+        return if (isTrapActive()) Component.empty()
         else name
     }
 

@@ -6,7 +6,12 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.component.CustomData
 import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
+import net.minecraft.core.registries.Registries
+import net.minecraft.resources.ResourceKey
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.item.component.ItemLore
+import net.minecraft.world.item.enchantment.Enchantment
+
 
 fun ItemStack.withTag(key: String, value: String): ItemStack {
     val tag = CompoundTag()
@@ -42,3 +47,11 @@ fun ItemStack.withItemLore(value: Component): ItemStack {
 fun ItemStack.withItemLore(description: String): ItemStack = this.withItemLore(
     Component.literal(description)
 )
+
+fun ItemStack.withEnchant(ench: ResourceKey<Enchantment>, enchLevel: Int, level: ServerLevel): ItemStack {
+    if (enchLevel >= 0) {
+        val ench = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(ench)
+        this.enchant(ench, enchLevel)
+    }
+    return this
+}
