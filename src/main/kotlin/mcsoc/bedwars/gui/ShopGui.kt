@@ -15,7 +15,6 @@ import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.inventory.ContainerInput
 import net.minecraft.world.inventory.MenuType
-import net.minecraft.world.inventory.Slot
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.alchemy.Potions
 
@@ -70,19 +69,21 @@ object ShopGui {
                      arrayOf(1, 2, 3, 4),
                      arrayOf("Wooden Axe", "Stone Axe", "Iron Axe", "Diamond Axe")
                  ),
-                 EmptyShopProduct(),
+                 ShopPlayerUpgrade(UpgradeItemType.SHEARS,
+                     arrayOf(Items.IRON_INGOT), arrayOf(15), arrayOf("Shears")
+                 ),
 
                  // These are ShopItems
-                 ShopItem(Items.SHEARS, 1, Items.IRON_INGOT, 15),
-                 ShopPlayerCustomItem({player -> BedwarsItems.knockbackStickItemStack(player.level())}, Items.GOLD_INGOT, 5),
-                 ShopItem(Items.WATER_BUCKET, 1, Items.GOLD_INGOT, 6),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-
-                 ShopItem(Items.ARROW, 16, Items.GOLD_INGOT, 2),
                  ShopItem(Items.BOW, 1, Items.GOLD_INGOT, 12),
                  ShopPlayerCustomItem({player -> BedwarsItems.powerBowItemStack(player.level())}, Items.GOLD_INGOT, 24),
                  ShopPlayerCustomItem({player -> BedwarsItems.punchBowItemStack(player.level())}, Items.EMERALD, 6),
+                 ShopPlayerCustomItem({player -> BedwarsItems.knockbackStickItemStack(player.level())}, Items.GOLD_INGOT, 5),
+                 ShopItem(Items.WATER_BUCKET, 1, Items.GOLD_INGOT, 6),
+
+                 ShopItem(Items.ARROW, 16, Items.GOLD_INGOT, 2),
+                 EmptyShopProduct(),
+                 EmptyShopProduct(),
+                 EmptyShopProduct(),
                  EmptyShopProduct(),
 
                  ShopTeamItem(Team.entries.associateWith { Items.WOOL.pick(it.dyeColour) },

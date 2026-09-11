@@ -3,7 +3,6 @@ package mcsoc.bedwars.upgrades
 import com.mojang.serialization.Codec
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.applyEnchant
-import mcsoc.bedwars.upgrades.Pickaxe.IRON
 import mcsoc.bedwars.utils.applyTag
 import mcsoc.bedwars.utils.hasTag
 import net.minecraft.resources.ResourceKey
