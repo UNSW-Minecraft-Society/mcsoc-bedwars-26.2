@@ -21,8 +21,9 @@ fun registerAfterRespawnEvent() {
 
 
 fun registerPlayerJoinEvent() {
-//    removed in favour of adding active players on game start
-//    ServerPlayerEvents.JOIN.register { player ->
-//        ModDataTracker.addActivePlayer(player.uuid)
-//    }
+    /* TODO have players given info on join
+     * If joining between games, tell them to ready up with /bedwars join
+     * If joining during a game, tell them to wait until this game finishes
+     * ect. There could also be some thing to reroute them to any inactive worlds?
+     */
 }
