@@ -25,6 +25,9 @@ internal interface CustomEntityExposer {
     fun getEntityType(entity: Entity): CustomEntityType?
     fun addEntity(id: UUID, type: CustomEntityType)
     fun addEntity(entity: Entity, type: CustomEntityType)
+    fun getEntityIds(): List<UUID>
+    fun getEntityIds(type: CustomEntityType): List<UUID>
+    fun removeEntity(id: UUID)
 }
 
 class CustomEntityDataTracker : LevelTiedData, CustomEntityExposer, CustomEntityHolder {
@@ -60,5 +63,17 @@ class CustomEntityDataTracker : LevelTiedData, CustomEntityExposer, CustomEntity
 
     override fun addEntity(entity: Entity, type: CustomEntityType) {
         addEntity(entity.uuid, type)
+    }
+
+    override fun getEntityIds(): List<UUID> {
+        return custom_entity_types.keys.toList()
+    }
+
+    override fun getEntityIds(type: CustomEntityType): List<UUID> {
+        return custom_entity_types.filter { entry -> entry.value == type }.keys.toList()
+    }
+
+    override fun removeEntity(id: UUID) {
+        custom_entity_types.remove(id)
     }
 }
