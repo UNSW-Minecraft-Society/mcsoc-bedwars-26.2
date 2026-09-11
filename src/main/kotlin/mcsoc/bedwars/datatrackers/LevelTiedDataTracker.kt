@@ -6,7 +6,7 @@ import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
-import mcsoc.bedwars.datatrackers.generatordata.GeneratorDataTracker
+import mcsoc.bedwars.datatrackers.generatorstate.GeneratorDataTracker
 import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.util.datafix.DataFixTypes

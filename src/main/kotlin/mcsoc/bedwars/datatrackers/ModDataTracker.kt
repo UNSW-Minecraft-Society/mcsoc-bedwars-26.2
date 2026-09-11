@@ -3,11 +3,10 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorExposer
-import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorHolder
-import mcsoc.bedwars.datatrackers.generatordata.TeamGeneratorState
-import kotlinx.serialization.Serializable
-import mcsoc.bedwars.datatrackers.generatordata.InvalidTeamException
+import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorExposer
+import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorHolder
+import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorState
+import mcsoc.bedwars.datatrackers.generatorstate.InvalidTeamException
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.server.level.ServerPlayer
@@ -21,14 +20,13 @@ import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup
-import net.minecraft.resources.ResourceKey
-import net.minecraft.world.effect.MobEffect
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.saveddata.SavedData
 import java.util.UUID
 import net.minecraft.world.phys.Vec3
+import net.minecraft.world.scores.Scoreboard
 
 enum class GamePhase {
     STARTING,
@@ -289,17 +287,24 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 
     // to be updated by map loader
     // this will reset team data
-    override fun initialiseTeams(numTeams: Int) {
+    override fun initialiseTeams(numTeams: Int, scoreboard: Scoreboard) {
         assert(numTeams < Team.entries.size) { "More teams specified than can be handled" }
         teams_map.clear()
+        for (team in scoreboard.playerTeams) scoreboard.removePlayerTeam(team)
 
         val teams = Team.entries.take(numTeams)
-        teams.forEach { teams_map[it] = TeamDataRecord() }
+        teams.forEach {
+            teams_map[it] = TeamDataRecord()
+            scoreboard.addPlayerTeam(it.getName())
+        }
+        for (scoreboardTeam in scoreboard.playerTeams) scoreboardTeam.isAllowFriendlyFire = false
     }
 
-    override fun addPlayer(player: UUID, team: Team) {
+    override fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?) {
         getTeam(team).addPlayer(player)
         getPlayerData(player).setTeamName(team)
+        val team = scoreboard.getPlayerTeam(team.getName()) ?: throw InvalidTeamException()
+        if (name != null) scoreboard.addPlayerToTeam(name, team)
     }
     
     override fun getPlayersTeam(player: UUID): Team = getPlayerData(player).getTeamName()
@@ -364,13 +369,13 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
         setDirty()
         mod_data.setBedAlive(team, state)
     }
-    override fun initialiseTeams(numTeams: Int) {
+    override fun initialiseTeams(numTeams: Int, scoreboard: Scoreboard) {
         setDirty()
-        mod_data.initialiseTeams(numTeams)
+        mod_data.initialiseTeams(numTeams, scoreboard)
     } 
-    override fun addPlayer(player: UUID, team: Team) {
+    override fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?) {
         setDirty()
-        mod_data.addPlayer(player, team)
+        mod_data.addPlayer(player, team, scoreboard, name)
     }
     
     override fun getPlayersTeam(player: UUID): Team = mod_data.getPlayersTeam(player)
@@ -410,8 +415,17 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     }
 
     override fun <T> getUpgrade(team: Team, type: TeamUpgradeType<T>) = mod_data.getUpgrade(team, type)
-    override fun <T> upgrade(team: Team, type: TeamUpgradeType<T>) = mod_data.upgrade(team, type)
-    override fun popTrap(team: Team) = mod_data.popTrap(team)
+    override fun <T> upgrade(team: Team, type: TeamUpgradeType<T>) {
+        setDirty()
+        mod_data.upgrade(team, type)
+    }
     override fun getTraps(team: Team) = mod_data.getTraps(team)
-    override fun addTrap(team: Team, type: TrapUpgrade) = mod_data.addTrap(team, type)
+    override fun popTrap(team: Team): TrapUpgrade? {
+        setDirty()
+        return mod_data.popTrap(team)
+    }
+    override fun addTrap(team: Team, type: TrapUpgrade) {
+        setDirty()
+        mod_data.addTrap(team, type)
+    }
 }

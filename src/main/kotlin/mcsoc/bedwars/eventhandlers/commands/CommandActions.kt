@@ -29,7 +29,6 @@ import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.network.chat.TextColor
 import net.minecraft.world.item.ItemStack
-import kotlin.uuid.toKotlinUuid
 import net.minecraft.world.phys.Vec3
 
 
@@ -130,7 +129,7 @@ object CommandActions {
         }
         val input = StringArgumentType.getString(ctx, UPGRADE_TYPE_ARG)
         val type = try {
-            UpgradeItemType.valueOf(input)
+            UpgradeItemType.valueOf(input.uppercase())
         } catch (e: IllegalArgumentException) {
             player.sendSystemMessage(Component.literal("$input is not a valid upgrade"))
             return 0
