@@ -48,7 +48,8 @@ sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>
     object BlockProtection: LevelDataType<BlockProtectionTracker>("block_protection", BlockProtectionTracker.CODEC, BlockProtectionTracker())
     object GeneratorState : LevelDataType<GeneratorDataTracker>("generator_state", GeneratorDataTracker.CODEC, GeneratorDataTracker())
     // put another enum value for each tracked data type
-    object CustomEntityData : LevelDataType<CustomEntityDataTracker>("custom_entity_data", null, CustomEntityDataTracker())
+    object CustomEntityData : LevelDataType<CustomEntityDataTracker>("custom_entity_data",
+        CustomEntityDataTracker.CODEC, CustomEntityDataTracker())
 }
 
 private class LevelTiedDataTracker() : SavedData() {

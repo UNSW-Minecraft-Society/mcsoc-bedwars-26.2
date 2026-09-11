@@ -1,8 +1,9 @@
 package mcsoc.bedwars.datatrackers
 
 import com.mojang.serialization.Codec
+import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import mcsoc.bedwars.utils.UUID_CODEC
+import net.minecraft.core.UUIDUtil
 import net.minecraft.world.entity.Entity
 import java.util.UUID
 
@@ -27,20 +28,20 @@ internal interface CustomEntityExposer {
 }
 
 class CustomEntityDataTracker : LevelTiedData, CustomEntityExposer, CustomEntityHolder {
-    override val custom_entity_types: MutableMap<UUID, CustomEntityType>
+    override val custom_entity_types: MutableMap<UUID, CustomEntityType> = mutableMapOf()
     override val type get() = LevelDataType.CustomEntityData
 
     companion object {
-        val CODEC: Codec<CustomEntityDataTracker> = RecordCodecBuilder.create {it.group(
+        val CODEC: MapCodec<CustomEntityDataTracker> = RecordCodecBuilder.mapCodec {it.group(
             Codec.unboundedMap<UUID, CustomEntityType>(
-                UUID_CODEC,
+                UUIDUtil.STRING_CODEC,
                 CustomEntityType.CODEC
             ).fieldOf("custom_entity_types").forGetter(CustomEntityDataTracker::custom_entity_types)
         ).apply(it, ::CustomEntityDataTracker)}
     }
 
     private constructor(custom_entity_types: MutableMap<UUID, CustomEntityType>) {
-        this.custom_entity_types = custom_entity_types
+        this.custom_entity_types += custom_entity_types
     }
 
     internal constructor() : this(mutableMapOf<UUID, CustomEntityType>())
