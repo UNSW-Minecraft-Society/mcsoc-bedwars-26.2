@@ -129,7 +129,7 @@ object CommandActions {
         }
         val input = StringArgumentType.getString(ctx, UPGRADE_TYPE_ARG)
         val type = try {
-            UpgradeItemType.valueOf(input)
+            UpgradeItemType.valueOf(input.uppercase())
         } catch (e: IllegalArgumentException) {
             player.sendSystemMessage(Component.literal("$input is not a valid upgrade"))
             return 0
