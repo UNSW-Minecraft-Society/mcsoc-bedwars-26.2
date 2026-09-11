@@ -134,7 +134,7 @@ private data class BaseIslandData(
     val bed_position: CylindricalBlockPos = CylindricalBlockPos(0F, 0F, 0),
     val team: Team = Team.RED
 ) : GeneratorIsland {
-    override val rotation: (Float) -> Double get() = {2 * PI - it}
+    override val rotation: (Float) -> Double get() = Float::toDouble
     override fun place(level: ServerLevel, origin: BlockPos): BlockPos {
         val pos = super.place(level, origin)
         level.gameState.setTeamSpawn(team, Vec3.atBottomCenterOf(spawn_position.relToMapOrigin(pos, cpos)))
