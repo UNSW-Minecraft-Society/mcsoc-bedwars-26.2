@@ -5,8 +5,10 @@ import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.withTag
 import mcsoc.bedwars.utils.withEnchant
 import mcsoc.bedwars.utils.hasTag
+import net.minecraft.core.component.DataComponents
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.tags.ItemTags
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
@@ -182,11 +184,10 @@ enum class Sword(override val material: Item) : Single, Resettable {
     }
 }
 
-enum class Armour(val boots: Item, val leggings: Item, val chestplate: Item) : UpgradableItem {
+enum class Armour(private val boots: Item, private val leggings: Item, private val chestplate: Item) : UpgradableItem {
     LEATHER(Items.LEATHER_BOOTS, Items.LEATHER_LEGGINGS, Items.LEATHER_CHESTPLATE) {
         override fun next() = CHAINMAIL
         override fun tier() = 0
-
     },
     CHAINMAIL(Items.CHAINMAIL_BOOTS, Items.CHAINMAIL_LEGGINGS, Items.CHAINMAIL_CHESTPLATE) {
         override fun next() = IRON
@@ -208,17 +209,18 @@ enum class Armour(val boots: Item, val leggings: Item, val chestplate: Item) : U
     override fun applyTo(player: ServerPlayer) {
         setTo(player, EquipmentSlot.FEET, boots)
         setTo(player, EquipmentSlot.LEGS, leggings)
-        setTo(player, EquipmentSlot.CHEST, chestplate)
+        setTo(player, EquipmentSlot.CHEST, Items.LEATHER_CHESTPLATE)
+        setTo(player, EquipmentSlot.HEAD, Items.LEATHER_HELMET)
     }
     
     private fun setTo(player: ServerPlayer, slot: EquipmentSlot, material: Item) {
-        val item = ItemStack(material).withTag("bedwars_item", type.name)
-        item.addProt(player)
-        if (slot == EquipmentSlot.FEET) item.withFeatherFalling(player)
+        val item = ItemStack(material)
+                .withPlayerBasedEffects(player)
+                .withTag("bedwars_item", type.name)
         player.setItemSlot(slot, item)
     }
     
-    private fun ItemStack.addProt(player: ServerPlayer): ItemStack {
+    private fun ItemStack.withProt(player: ServerPlayer): ItemStack {
         val gameState = player.level().gameState
         val team = gameState.getPlayersTeam(player.uuid)
         val level = gameState.getUpgrade(team, TeamUpgradeType.PROTECTION)
@@ -234,6 +236,15 @@ enum class Armour(val boots: Item, val leggings: Item, val chestplate: Item) : U
     
     override fun createStack(player: ServerPlayer): ItemStack {
         return ItemStack(chestplate)
+    }
+
+    private fun ItemStack.withPlayerBasedEffects(player: ServerPlayer): ItemStack {
+        val team = player.level().gameState.getPlayersTeam(player.uuid)
+        return this
+            .withProt(player)
+            .also { if (this.`is`(ItemTags.FOOT_ARMOR)) this.withFeatherFalling(player) }
+            .also { if (this.`is`(ItemTags.CAULDRON_CAN_REMOVE_DYE)) this.set(DataComponents.DYE, team.dyeColour) }
+            // other effects here
     }
 }
 
