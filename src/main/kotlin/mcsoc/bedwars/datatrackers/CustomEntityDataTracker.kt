@@ -1,11 +1,22 @@
 package mcsoc.bedwars.datatrackers
 
-import mcsoc.bedwars.entities.CustomEntityType
+import com.mojang.serialization.Codec
+import com.mojang.serialization.codecs.RecordCodecBuilder
+import mcsoc.bedwars.utils.UUID_CODEC
 import net.minecraft.world.entity.Entity
 import java.util.UUID
 
+enum class CustomEntityType(val title: String) {
+    PLAYER_SHOPKEEPER("Player Shopkeeper"),
+    TEAM_SHOPKEEPER("Team Shopkeeper");
+
+    companion object {
+        val CODEC: Codec<CustomEntityType> = Codec.STRING.xmap(::valueOf, CustomEntityType::name)
+    }
+}
+
 internal interface CustomEntityHolder {
-    val customEntityTypes: MutableMap<UUID, CustomEntityType>
+    val custom_entity_types: MutableMap<UUID, CustomEntityType>
 }
 
 internal interface CustomEntityExposer {
@@ -16,13 +27,26 @@ internal interface CustomEntityExposer {
 }
 
 class CustomEntityDataTracker : LevelTiedData, CustomEntityExposer, CustomEntityHolder {
-    override val customEntityTypes: MutableMap<UUID, CustomEntityType> = mutableMapOf<UUID, CustomEntityType>()
+    override val custom_entity_types: MutableMap<UUID, CustomEntityType>
     override val type get() = LevelDataType.CustomEntityData
 
-    internal constructor()
+    companion object {
+        val CODEC: Codec<CustomEntityDataTracker> = RecordCodecBuilder.create {it.group(
+            Codec.unboundedMap<UUID, CustomEntityType>(
+                UUID_CODEC,
+                CustomEntityType.CODEC
+            ).fieldOf("custom_entity_types").forGetter(CustomEntityDataTracker::custom_entity_types)
+        ).apply(it, ::CustomEntityDataTracker)}
+    }
+
+    private constructor(custom_entity_types: MutableMap<UUID, CustomEntityType>) {
+        this.custom_entity_types = custom_entity_types
+    }
+
+    internal constructor() : this(mutableMapOf<UUID, CustomEntityType>())
 
     override fun getEntityType(id: UUID): CustomEntityType? {
-        return customEntityTypes[id]
+        return custom_entity_types[id]
     }
 
     override fun getEntityType(entity: Entity): CustomEntityType? {
@@ -30,7 +54,7 @@ class CustomEntityDataTracker : LevelTiedData, CustomEntityExposer, CustomEntity
     }
 
     override fun addEntity(id: UUID, type: CustomEntityType) {
-        customEntityTypes[id] = type
+        custom_entity_types[id] = type
     }
 
     override fun addEntity(entity: Entity, type: CustomEntityType) {
