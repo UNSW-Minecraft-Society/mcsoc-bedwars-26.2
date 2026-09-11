@@ -3,6 +3,7 @@ package mcsoc.bedwars.upgrades
 import com.mojang.serialization.Codec
 import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.upgrades.Pickaxe.IRON
 import mcsoc.bedwars.utils.applyTag
 import mcsoc.bedwars.utils.hasTag
 import net.minecraft.core.registries.Registries
@@ -21,7 +22,8 @@ enum class UpgradeItemType(val defaultStr: String, val fromName: (String) -> Upg
     AXE("NONE", Axe::valueOf),
     PICKAXE("NONE", Pickaxe::valueOf),
     SWORD("WOODEN", Sword::valueOf),
-    ARMOUR("LEATHER", Armour::valueOf);
+    ARMOUR("LEATHER", Armour::valueOf),
+    SHEARS("NONE", Shears::valueOf);
 
     val default: UpgradableItem
         get() = fromName(defaultStr)
@@ -236,6 +238,23 @@ enum class Armour(val boots: Item, val leggings: Item, val chestplate: Item) : U
     override fun createStack(player: ServerPlayer): ItemStack {
         return ItemStack(chestplate)
     }
+}
+
+enum class Shears(override val material: Item, override val level: Int) : EnchantableItem {
+    NONE(Items.AIR, 0) {
+        override fun next() = SHEARS
+        override fun prev() = NONE
+        override fun tier() = 0
+    },
+    SHEARS(Items.SHEARS, 1) {
+        override fun next() = null
+        override fun prev() = NONE
+        override fun tier() = 1
+    }, ;
+
+    override val type = UpgradeItemType.SHEARS
+    override val enchantment: ResourceKey<Enchantment>
+        get() = Enchantments.EFFICIENCY
 }
 
 private fun applyEnchant(item: ItemStack, ench: ResourceKey<Enchantment>, enchLevel: Int, level: ServerLevel) {
