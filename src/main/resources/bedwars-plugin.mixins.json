@@ -10,7 +10,8 @@
 		"LevelSetBlockMixin",
 		"DisableCraftingMixin",
 		"DisableRecipeBookMixin",
-		"PickupMixin"
+		"PickupMixin",
+		"BedBlockMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
