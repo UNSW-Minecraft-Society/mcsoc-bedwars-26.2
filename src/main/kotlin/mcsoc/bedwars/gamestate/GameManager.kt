@@ -9,6 +9,7 @@ import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.toBlockPos
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.minecraft.ChatFormatting
 import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.core.BlockPos
@@ -83,6 +84,17 @@ class GameManager {
             val gamerules = level.server.gameRules
             gamerules.set(GameRules.IMMEDIATE_RESPAWN, true, level.server)
             gamerules.set(GameRules.KEEP_INVENTORY, true, level.server)
+            gamerules.set(GameRules.SPAWN_MOBS, false, level.server)
+            gamerules.set(GameRules.NATURAL_HEALTH_REGENERATION, false, level.server)
+            gamerules.set(GameRules.ADVANCE_TIME, false, level.server)
+            gamerules.set(GameRules.ADVANCE_WEATHER, false, level.server)
+
+            // sets time to sunrise (maybe change to noon?)
+            val clock = level.dimensionType().defaultClock().orElseThrow()
+            level.clockManager().setTotalTicks(clock, 0);
+
+            // Clears the weather
+            level.resetWeatherCycle()
 
             level_mod_data.resetGameTime()
             level_mod_data.setGamePhase(GamePhase.STARTING)
@@ -348,7 +360,9 @@ class GameManager {
             val level_mod_data = level.gameState
             if (level_mod_data.getGamePhase() == GamePhase.INACTIVE) return
 
-            level.generatorState.tick()
+            if (level_mod_data.getGamePhase() == GamePhase.ACTIVE) {
+                level.generatorState.tick()
+            }
 
             level_mod_data.tick()
             level_mod_data.tickTeams(level)
