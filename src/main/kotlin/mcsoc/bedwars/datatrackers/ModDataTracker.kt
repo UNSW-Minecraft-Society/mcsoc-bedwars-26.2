@@ -569,6 +569,11 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
         setDirty()
         mod_data.downgradeItems(player)
     }
+
+    override fun updateItems(player: ServerPlayer) {
+        // Don't think this needs to setDirty(), updating the enchant should already set it dirty, either way none of the data actually changes
+        mod_data.updateItems(player)
+    }
     override fun clearItems(player: ServerPlayer) {
         setDirty()
         mod_data.clearItems(player)
@@ -583,9 +588,14 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     }
 
     override fun <T> getUpgrade(team: Team, type: TeamUpgradeType<T>) = mod_data.getUpgrade(team, type)
-    override fun <T> upgrade(team: Team, type: TeamUpgradeType<T>) {
+    override fun <T> upgrade(team: Team, type: TeamUpgradeType<T>, level: ServerLevel) {
         setDirty()
-        mod_data.upgrade(team, type)
+        mod_data.upgrade(team, type, level)
+        if (level == null) return
+        for (playerId in getPlayersInTeam(team)) {
+            val player = level.getPlayerByUUID(playerId)
+            if (player is ServerPlayer) updateItems(player)
+        }
     }
     override fun getTraps(team: Team) = mod_data.getTraps(team)
     

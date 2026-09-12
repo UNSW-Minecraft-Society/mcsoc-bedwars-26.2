@@ -295,7 +295,7 @@ abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
             val gameState = player.level().gameState
             val team = gameState.getPlayersTeam(player.uuid)
             purchaseUnit(player, fun(): Boolean {
-                gameState.upgrade(team, teamUpgrade)
+                gameState.upgrade(team, teamUpgrade, player.level())
                 return true
             })
         }

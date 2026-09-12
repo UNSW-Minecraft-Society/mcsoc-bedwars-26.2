@@ -16,6 +16,7 @@ internal interface PlayerUpgradesRecord {
 internal interface PlayerUpgradesExposer {
     fun upgradeItem(player: ServerPlayer, item: UpgradeItemType)
     fun downgradeItems(player: ServerPlayer)
+    fun updateItems(player: ServerPlayer)
     fun clearItems(player: ServerPlayer)
     fun getNextItemStack(player: ServerPlayer, item: UpgradeItemType): ItemStack?
     fun getTier(player: ServerPlayer, item: UpgradeItemType): Int
@@ -37,6 +38,11 @@ internal interface PlayerUpgradesHolder : PlayerUpgradesExposer {
             record.setItem(prev)
             prev.applyTo(player)
         }
+    }
+
+    override fun updateItems(player: ServerPlayer) {
+        val record = getItemUpgradeState(player)
+        UpgradeItemType.entries.forEach { type -> record.getItem(type).applyTo(player) }
     }
 
     override fun clearItems(player: ServerPlayer) {
