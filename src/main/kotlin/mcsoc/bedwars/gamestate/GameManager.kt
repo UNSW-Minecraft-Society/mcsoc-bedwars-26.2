@@ -103,7 +103,7 @@ class GameManager {
 
             level_mod_data.setGamePhase(GamePhase.INACTIVE)
             level_mod_data.setGamePeriod(GamePeriod.INACTIVE)
-            for (player in level.players()) {
+            level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach{player ->
                 player.setGameMode(GameType.SPECTATOR)
             }
 
@@ -113,11 +113,9 @@ class GameManager {
 
         private fun start(level: ServerLevel) {
             level.blockProtection.protectionEnabled = true
-            
-            val player_manager = level.server.playerList
+
             val level_mod_data = level.gameState
-            for (player_uuid in level_mod_data.getActivePlayers()) {
-                val player = player_manager.getPlayer(player_uuid) ?: continue
+            level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach{player ->
                 player.connection.send(
                     ClientboundSetTitleTextPacket(
                         Component.literal("GO")
@@ -354,7 +352,6 @@ class GameManager {
             val level_mod_data = level.gameState
             if (level_mod_data.getGamePhase() == GamePhase.INACTIVE) return
 
-            val player_manager = level.server.playerList
             level.generatorState.tick()
 
             level_mod_data.tick()
@@ -419,8 +416,7 @@ class GameManager {
                         start(level)
                     } else {
                         val time_left = (10.0 - time.inWholeSeconds).toInt()
-                        for (player_uuid in level_mod_data.getActivePlayers()) {
-                            val player = player_manager.getPlayer(player_uuid) ?: continue    
+                        level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach{player ->
                             player.connection.send(
                                 ClientboundSetTitleTextPacket(
                                     Component.literal(time_left.toString())
