@@ -11,7 +11,8 @@
 		"DisableCraftingMixin",
 		"DisableRecipeBookMixin",
 		"PickupMixin",
-		"BedBlockMixin"
+		"BedBlockMixin",
+		"BlockBehaviourMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
