@@ -104,6 +104,7 @@ class GameManager {
             level_mod_data.setGamePhase(GamePhase.INACTIVE)
             level_mod_data.setGamePeriod(GamePeriod.INACTIVE)
             for (player in level.players()) {
+                player.inventory.clearContent()
                 player.setGameMode(GameType.SPECTATOR)
             }
 
@@ -275,11 +276,7 @@ class GameManager {
             
             for (team in level_mod_data.getActiveTeams()) {
                 for (uuid in level_mod_data.getPlayersInTeam(team)) {
-                    val name = run {
-                        val player = level.getPlayerByUUID(uuid)
-                        player?.inventory?.clearContent()
-                        (player?.name ?: Component.literal(uuid.toString())) as MutableComponent
-                    }
+                    val name = (level.getPlayerByUUID(uuid)?.name ?: Component.literal(uuid.toString())) as MutableComponent
                     stats_list.add(name.append(Component.literal("\n" +
                         " - Kills: ${level_mod_data.getPlayerKills(uuid)}\n" +
                         " - Final Kills: ${level_mod_data.getPlayerFinalKills(uuid)}\n" +
