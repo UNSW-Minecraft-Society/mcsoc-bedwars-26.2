@@ -1,14 +1,11 @@
 package mcsoc.bedwars.upgrades
 
 import com.mojang.serialization.Codec
-import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.gameState
-import mcsoc.bedwars.upgrades.Pickaxe.IRON
+import mcsoc.bedwars.utils.applyEnchant
 import mcsoc.bedwars.utils.applyTag
 import mcsoc.bedwars.utils.hasTag
-import net.minecraft.core.registries.Registries
 import net.minecraft.resources.ResourceKey
-import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.item.Item
@@ -255,10 +252,4 @@ enum class Shears(override val material: Item, override val level: Int) : Enchan
     override val type = UpgradeItemType.SHEARS
     override val enchantment: ResourceKey<Enchantment>
         get() = Enchantments.EFFICIENCY
-}
-
-private fun applyEnchant(item: ItemStack, ench: ResourceKey<Enchantment>, enchLevel: Int, level: ServerLevel) {
-    if (enchLevel < 0) return
-    val ench = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(ench)
-    item.enchant(ench, enchLevel)
 }

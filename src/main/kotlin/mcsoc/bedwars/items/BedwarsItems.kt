@@ -1,11 +1,20 @@
 package mcsoc.bedwars.items
 
 import mcsoc.bedwars.utils.addItemLore
+import mcsoc.bedwars.utils.applyEnchant
 import mcsoc.bedwars.utils.applyTag
 import mcsoc.bedwars.utils.renameItem
+import net.minecraft.core.Holder
 import net.minecraft.core.component.DataComponents
+import net.minecraft.resources.ResourceKey
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
+import net.minecraft.world.item.alchemy.Potion
+import net.minecraft.world.item.alchemy.PotionContents
+import net.minecraft.world.item.enchantment.Enchantment
+import net.minecraft.world.item.enchantment.Enchantments
 
 const val BEDWARS_ITEM_TAG = "bedwars_item"
 const val CUSTOM_ITEM_TAG = "bedwars_custom_item"
@@ -20,6 +29,34 @@ enum class CustomItemTypes(val value: String) {
 }
 
 object BedwarsItems {
+    fun potionItemStack(potion: Holder<Potion>): ItemStack {
+        val stack = Items.POTION.defaultInstance
+        stack.set(DataComponents.POTION_CONTENTS, PotionContents(potion))
+        return stack
+    }
+
+    fun enchantedItemStack(item: Item, enchantment: ResourceKey<Enchantment>, enchLevel: Int, level: ServerLevel): ItemStack {
+        val stack = item.defaultInstance
+        applyEnchant(stack, enchantment, enchLevel, level)
+        return stack
+    }
+
+    fun knockbackStickItemStack(level: ServerLevel): ItemStack {
+        val stack = enchantedItemStack(Items.BREEZE_ROD, Enchantments.KNOCKBACK, 2, level)
+        renameItem(stack, "Knockback Stick")
+        return stack
+    }
+
+    fun powerBowItemStack(level: ServerLevel): ItemStack {
+        val stack = enchantedItemStack(Items.BOW, Enchantments.POWER, 1, level)
+        return stack
+    }
+
+    fun punchBowItemStack(level: ServerLevel): ItemStack {
+        val stack = enchantedItemStack(Items.BOW, Enchantments.PUNCH, 1, level)
+        return stack
+    }
+
     fun fireballItemStack(): ItemStack {
         val stack = Items.FIRE_CHARGE.defaultInstance
         applyTag(stack, BEDWARS_ITEM_TAG, CustomItemTypes.FIREBALL.value)

@@ -3,6 +3,7 @@ package mcsoc.bedwars.gamestate
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
+import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
 import net.minecraft.core.BlockPos
@@ -52,6 +53,7 @@ class GameManager {
         fun endGame(world: ServerLevel) {
             // Triggered by command or on win condition, clean up stuff
             val level_mod_data = world.gameState
+            val level_mod_entity_data = world.customEntityData
             level_mod_data.clearActivePlayers()
             // clear teams - todo
 
@@ -62,6 +64,12 @@ class GameManager {
                 player.setGameMode(GameType.SPECTATOR)
             }
 
+            // Clear entities
+            for (id in level_mod_entity_data.getEntityIds()) {
+                val entity = world.getEntity(id)
+                entity?.kill(world)
+                level_mod_entity_data.removeEntity(id)
+            }
             world.worldBorder.size = 59999968.0
             world.worldBorder.setCenter(0.0, 0.0)
         }

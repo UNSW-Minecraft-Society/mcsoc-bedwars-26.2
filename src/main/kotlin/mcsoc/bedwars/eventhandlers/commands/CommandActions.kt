@@ -11,7 +11,7 @@ import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
 import mcsoc.bedwars.datatrackers.blockprotection.ProtectionZone
 import mcsoc.bedwars.datatrackers.gameState
-import mcsoc.bedwars.entities.CustomEntityType
+import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.gamestate.GameManager
