@@ -30,4 +30,5 @@ fun registerEventHandlers() {
     registerBlockUseEvents()
     registerAfterDeathEvent()
     registerAfterRespawnEvent()
+    registerEquipmentChangeEvents()
 }
