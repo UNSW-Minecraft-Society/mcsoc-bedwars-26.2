@@ -401,6 +401,11 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
         setDirty()
         mod_data.downgradeItems(player)
     }
+
+    override fun updateItems(player: ServerPlayer) {
+        // Don't think this needs to setDirty(), updating the enchant should already set it dirty, either way none of the data actually changes
+        mod_data.updateItems(player)
+    }
     override fun clearItems(player: ServerPlayer) {
         setDirty()
         mod_data.clearItems(player)
