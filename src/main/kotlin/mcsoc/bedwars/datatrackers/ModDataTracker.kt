@@ -411,8 +411,8 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         return getPlayerData(player)
     }
 
-    override fun getPlayerStats(player: Player): PlayerStatsRecord {
-        return getPlayerData(player)
+    override fun getPlayerStats(uuid: UUID): PlayerStatsRecord {
+        return getPlayerData(uuid)
     }
 
     override fun getTeam(team: Team): TeamDataRecord {
@@ -591,15 +591,15 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     }
     override fun playerTimerSecondPassed(player: ServerPlayer): Boolean = mod_data.playerTimerSecondPassed(player)
 
-    override fun getPlayerKills(player: ServerPlayer): Int = mod_data.getPlayerKills(player)
-    override fun getPlayerFinalKills(player: ServerPlayer): Int = mod_data.getPlayerFinalKills(player)
-    override fun getPlayerDeaths(player: ServerPlayer): Int = mod_data.getPlayerDeaths(player)
-    override fun getPlayerBedsDestroyed(player: ServerPlayer): Int = mod_data.getPlayerBedsDestroyed(player)
+    override fun getPlayerKills(uuid: UUID): Int = mod_data.getPlayerKills(uuid)
+    override fun getPlayerFinalKills(uuid: UUID): Int = mod_data.getPlayerFinalKills(uuid)
+    override fun getPlayerDeaths(uuid: UUID): Int = mod_data.getPlayerDeaths(uuid)
+    override fun getPlayerBedsDestroyed(uuid: UUID): Int = mod_data.getPlayerBedsDestroyed(uuid)
 
-    override fun setPlayerKills(player: ServerPlayer, value: Int) = mod_data.setPlayerKills(player, value)
-    override fun setPlayerFinalKills(player: ServerPlayer, value: Int) = mod_data.setPlayerFinalKills(player, value)
-    override fun setPlayerDeaths(player: ServerPlayer, value: Int) = mod_data.setPlayerDeaths(player, value)
-    override fun setPlayerBedsDestroyed(player: ServerPlayer, value: Int) = mod_data.setPlayerBedsDestroyed(player, value)
+    override fun setPlayerKills(uuid: UUID, value: Int) = mod_data.setPlayerKills(uuid, value)
+    override fun setPlayerFinalKills(uuid: UUID, value: Int) = mod_data.setPlayerFinalKills(uuid, value)
+    override fun setPlayerDeaths(uuid: UUID, value: Int) = mod_data.setPlayerDeaths(uuid, value)
+    override fun setPlayerBedsDestroyed(uuid: UUID, value: Int) = mod_data.setPlayerBedsDestroyed(uuid, value)
     override fun popTrap(team: Team): TrapUpgrade? {
         setDirty()
         return mod_data.popTrap(team)

@@ -14,8 +14,8 @@ import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.core.BlockPos
 import net.minecraft.core.GlobalPos
 import net.minecraft.core.Holder
-import net.minecraft.core.Position
 import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.MutableComponent
 import net.minecraft.network.protocol.game.*
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
@@ -24,12 +24,12 @@ import net.minecraft.sounds.SoundSource
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.LightningBolt
-import net.minecraft.world.entity.Relative
 import net.minecraft.world.item.Items
 import net.minecraft.world.level.GameType
 import net.minecraft.world.level.gamerules.GameRules
 import net.minecraft.world.level.storage.LevelData
 import net.minecraft.world.phys.Vec3
+import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 
 
@@ -154,34 +154,26 @@ class GameManager {
             val player_team = level_mod_data.getPlayersTeam(player.uuid)
             val bed_destroyed = level_mod_data.getBedDestroyed(player_team)
 
-            var killer = player.killCredit
+            var killer: UUID = (player.killCredit as? ServerPlayer)?.uuid ?: level_mod_data.getBedBreaker(player_team) ?: throw IllegalStateException("Cannot destroy bed without breaker?")
 
             // Need to playtest see if final kill off void death transfers loot
 
-            if (killer is ServerPlayer) {
-                level_mod_data.setPlayerKills(killer, level_mod_data.getPlayerKills(killer) + 1)
+            level_mod_data.incrementPlayerKills(killer)
 
-                if (bed_destroyed) {
-                    level_mod_data.setPlayerFinalKills(killer, level_mod_data.getPlayerFinalKills(killer) + 1)
-                }
+            if (bed_destroyed) {
+                level_mod_data.incrementPlayerFinalKills(killer)
+            }
 
-                player.inventory.forEach{ stack ->
-                    if (!stack.isEmpty) {
-                        if (stack.item in arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD)) {
-                            killer.inventory.add(stack)
-                        }
-                    }
+            for (stack in player.inventory) {
+                if (!stack.isEmpty && stack.item in arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD)) {
+                    player.level().getPlayerByUUID(killer)?.inventory?.add(stack)
                 }
-            } else if (bed_destroyed) {
-                killer = player.level().getPlayerByUUID(level_mod_data.getBedBreaker(player_team) ?: throw IllegalArgumentException("Cannot destroy bed without breaker?")) as ServerPlayer
-                level_mod_data.setPlayerKills(killer, level_mod_data.getPlayerKills(killer) + 1)
-                level_mod_data.setPlayerFinalKills(killer, level_mod_data.getPlayerFinalKills(killer) + 1)
             }
 
             // Downgrade or like reset player item upgrades on death
             player.inventory.clearContent()
             level_mod_data.downgradeItems(player)
-            level_mod_data.setPlayerDeaths(player, level_mod_data.getPlayerDeaths(player) + 1)
+            level_mod_data.incrementPlayerDeaths(player.uuid)
 
             // store player's death position to summon lightning later. Due to the nature of this event handler,
             // all players are forced to enter "DEAD" state upon death.
@@ -247,7 +239,7 @@ class GameManager {
                 p.sendSystemMessage(Component.literal(player.scoreboardName + " has been eliminated!"))
             }
             // notify eliminated player of their stats - change to align more closely to hypixel later
-            player.sendSystemMessage(Component.literal("Kills: " + level_mod_data.getPlayerKills(player) + " Final Kills: " + level_mod_data.getPlayerFinalKills(player) + " Deaths: " + level_mod_data.getPlayerDeaths(player)))
+            // player.sendSystemMessage(Component.literal("Kills: " + level_mod_data.getPlayerKills(player) + " Final Kills: " + level_mod_data.getPlayerFinalKills(player) + " Deaths: " + level_mod_data.getPlayerDeaths(player)))
 
             val winning_team = checkPlayersLeftOnTeam(level,level_mod_data.getPlayersTeam(player.uuid)) ?: return
             winGame(level, winning_team)
@@ -279,18 +271,24 @@ class GameManager {
 
         private fun winGame(level: ServerLevel, winning_team: Team) {
             val level_mod_data = level.gameState
-
-            val stats_list = level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).map { p ->
-                Component.literal(
-                    p.name.toString()
-                            + " - Kills: "
-                            + level_mod_data.getPlayerKills(p)
-                            + " - Final Kills: " + level_mod_data.getPlayerFinalKills(p)
-                            + " - Deaths: " + level_mod_data.getPlayerDeaths(p)
-                            + " - Beds Destroyed: " + level_mod_data.getPlayerBedsDestroyed(p)
-                )
+            val stats_list: MutableList<Component> = mutableListOf()
+            
+            for (team in level_mod_data.getActiveTeams()) {
+                for (uuid in level_mod_data.getPlayersInTeam(team)) {
+                    val name = run {
+                        val player = level.getPlayerByUUID(uuid)
+                        player?.inventory?.clearContent()
+                        (player?.name ?: Component.literal(uuid.toString())) as MutableComponent
+                    }
+                    stats_list.add(name.append(Component.literal("\n" +
+                        " - Kills: ${level_mod_data.getPlayerKills(uuid)}\n" +
+                        " - Final Kills: ${level_mod_data.getPlayerFinalKills(uuid)}\n" +
+                        " - Deaths: ${level_mod_data.getPlayerDeaths(uuid)}\n" +
+                        " - Beds Destroyed: ${level_mod_data.getPlayerBedsDestroyed(uuid)}\n"
+                    )))
+                }
             }
-
+            
             level.server.playerList.players.forEach{player ->
                 player.connection.send(
                     ClientboundClearTitlesPacket(true)
@@ -312,9 +310,7 @@ class GameManager {
                     )
                 }
 
-                stats_list.forEach{stats_message ->
-                    player.sendSystemMessage(stats_message)
-                }
+                stats_list.forEach(player::sendSystemMessage)
             }
             level_mod_data.setGamePhase(GamePhase.ENDED)
         }
@@ -328,7 +324,7 @@ class GameManager {
             // if (!SavedModData.isTeamBaseIntact(team)) return
 
             level_mod_data.setBedBreaker(team, breaker.uuid)
-            level_mod_data.setPlayerBedsDestroyed(breaker, level_mod_data.getPlayerBedsDestroyed(breaker) + 1)
+            level_mod_data.incrementPlayerBedsDestroyed(breaker.uuid)
             level_mod_data.setBedAlive(team, false)
 
             level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach { p ->
