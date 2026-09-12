@@ -3,6 +3,7 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorExposer
 import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorHolder
 import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorState
@@ -431,7 +432,10 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     }
 
     override fun getTeam(team: Team): TeamDataRecord {
-        return teams_map[team] ?: throw InvalidTeamException(team)
+        return teams_map[team] ?: run {
+            BedwarsPlugin.LOGGER.error("getTeam: ", InvalidTeamException(team))
+            TeamDataRecord()
+        }
     }
 
     override fun getActiveTeams(): List<Team> = teams_map.keys.toList()
@@ -451,7 +455,10 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     override fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?) {
         getTeam(team).addPlayer(player)
         getPlayerData(player).setTeamName(team)
-        val team = scoreboard.getPlayerTeam(team.getName()) ?: throw InvalidTeamException(team)
+        val team = scoreboard.getPlayerTeam(team.getName()) ?: run {
+            BedwarsPlugin.LOGGER.error("addPlayer: ", InvalidTeamException(team))
+            scoreboard.addPlayerTeam(team.getName())
+        }
         if (name != null) scoreboard.addPlayerToTeam(name, team)
     }
 

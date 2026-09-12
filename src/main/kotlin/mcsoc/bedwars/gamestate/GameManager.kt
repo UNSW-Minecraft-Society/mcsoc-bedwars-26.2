@@ -1,5 +1,6 @@
 package mcsoc.bedwars.gamestate
 
+import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
@@ -155,7 +156,8 @@ class GameManager {
             val player_team = level_mod_data.getPlayersTeam(player.uuid)
             val bed_destroyed = level_mod_data.getBedDestroyed(player_team)
 
-            var killer: UUID = (player.killCredit as? ServerPlayer)?.uuid ?: level_mod_data.getBedBreaker(player_team) ?: throw IllegalStateException("Cannot destroy bed without breaker?")
+            var killer: UUID = (player.killCredit as? ServerPlayer)?.uuid ?: level_mod_data.getBedBreaker(player_team) ?: 
+                    return BedwarsPlugin.LOGGER.error("handlePlayerDeath player: ${player.name.string}, source: ${death_source.msgId}: ", IllegalStateException("Cannot destroy bed without breaker?"))
 
             // Need to playtest see if final kill off void death transfers loot
 
