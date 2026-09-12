@@ -420,9 +420,14 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     }
 
     override fun <T> getUpgrade(team: Team, type: TeamUpgradeType<T>) = mod_data.getUpgrade(team, type)
-    override fun <T> upgrade(team: Team, type: TeamUpgradeType<T>) {
+    override fun <T> upgrade(team: Team, type: TeamUpgradeType<T>, level: ServerLevel) {
         setDirty()
-        mod_data.upgrade(team, type)
+        mod_data.upgrade(team, type, level)
+        if (level == null) return
+        for (playerId in getPlayersInTeam(team)) {
+            val player = level.getPlayerByUUID(playerId)
+            if (player is ServerPlayer) updateItems(player)
+        }
     }
     override fun getTraps(team: Team) = mod_data.getTraps(team)
     override fun popTrap(team: Team): TrapUpgrade? {

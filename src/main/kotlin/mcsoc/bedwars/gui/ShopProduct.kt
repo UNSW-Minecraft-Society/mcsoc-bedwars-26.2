@@ -10,7 +10,6 @@ import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.romanNumeralMap
 import net.minecraft.network.chat.Component
-import net.minecraft.network.chat.MutableComponent
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.entity.player.Player
@@ -254,7 +253,7 @@ abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
             val gameState = player.level().gameState
             val team = gameState.getPlayersTeam(player.uuid)
             purchaseUnit(player, fun(): Boolean {
-                gameState.upgrade(team, teamUpgrade)
+                gameState.upgrade(team, teamUpgrade, player.level())
                 return true
             })
         }
