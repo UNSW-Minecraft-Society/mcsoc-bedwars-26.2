@@ -26,11 +26,19 @@ public abstract class LevelSetBlockMixin {
         if (!(self instanceof ServerLevel level)) return;
         
         var block_protection = LevelData.getBlockProtection(level);
-        if (!(self.getBlockState(pos).canBeReplaced() || newState.is(BlockTags.AIR)) ||
-                !(block_protection.isBlockPlacementAllowed(pos))
-        ) {
+
+        /* if 
+         * * block placement not allowed - fail
+         * * block is replaced by itself - allow but don't track
+         * * block is replaced and not replaceable - fail
+        */
+
+        if (!(block_protection.isBlockPlacementAllowed(pos)) ||
+            !(self.getBlockState(pos).canBeReplaced() || newState.is(BlockTags.AIR))
+        ) { 
             cir.setReturnValue(false);
+        } else if (!self.getBlockState(pos).getBlock().equals(newState.getBlock())) {
+            block_protection.trackPlacedBlock(pos);
         }
-        block_protection.trackPlacedBlock(pos);
     }
 }
