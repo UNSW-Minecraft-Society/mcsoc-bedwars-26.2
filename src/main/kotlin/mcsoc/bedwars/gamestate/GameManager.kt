@@ -5,6 +5,7 @@ import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
+import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.utils.Team
@@ -105,6 +106,9 @@ class GameManager {
             level.blockProtection.protectionEnabled = false
             
             val level_mod_data = level.gameState
+            val level_mod_entity_data = level.customEntityData
+            level_mod_data.clearActivePlayers()
+            // clear teams - todo
 
             level_mod_data.setGamePhase(GamePhase.INACTIVE)
             level_mod_data.setGamePeriod(GamePeriod.INACTIVE)
@@ -115,8 +119,14 @@ class GameManager {
 
             // Clears Active players, all teams data and player data
             level_mod_data.resetModData()
-
             level.generatorState.clearGenerators()
+            
+            // Clear entities
+            for (id in level_mod_entity_data.getEntityIds()) {
+                val entity = level.getEntity(id)
+                entity?.kill(level)
+                level_mod_entity_data.removeEntity(id)
+            }
 
             level.worldBorder.size = ServerLevel.ACROSS_THE_WHOLE_WORLD.toDouble()
             level.worldBorder.setCenter(0.0, 0.0)

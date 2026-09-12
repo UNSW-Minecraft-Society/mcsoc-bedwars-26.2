@@ -9,15 +9,21 @@ import mcsoc.bedwars.upgrades.TrapUpgrade
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.romanNumeralMap
+import net.minecraft.core.Holder
 import net.minecraft.network.chat.Component
+import net.minecraft.network.protocol.game.ClientboundSoundPacket
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.sounds.SoundEvent
 import net.minecraft.sounds.SoundEvents
+import net.minecraft.sounds.SoundSource
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 
 val EMPTY_STACK = Items.AIR.defaultInstance
+val SUCCESS_SOUND = SoundEvents.NOTE_BLOCK_BELL.value()
+val FAILURE_SOUND = SoundEvents.NOTE_BLOCK_BIT.value()
 
 /**
  * Abstract class for storing data on shop products.
@@ -46,7 +52,7 @@ abstract class ShopProduct {
         val currency = getItemCost()?.item ?: return false
         val price = getItemCost()?.count ?: return false
         if (inventory.countItem(currency) < price) {
-            player.playSound(SoundEvents.NOTE_BLOCK_BIT.value())
+            playSound(player, FAILURE_SOUND)
             if (sendMsg) player.sendSystemMessage(Component.literal("Insufficient funds"))
             return false
         }
@@ -54,13 +60,23 @@ abstract class ShopProduct {
         if (transaction()) {
             inventory.clearOrCountMatchingItems({it.`is`(currency)},
                 price, inventory)
-            player.playSound(SoundEvents.NOTE_BLOCK_BELL.value())
+            playSound(player, SUCCESS_SOUND)
             player.sendSystemMessage(Component.literal("Purchased ").append(name))
             return true
         } else {
-            player.playSound(SoundEvents.NOTE_BLOCK_BIT.value())
+            playSound(player, FAILURE_SOUND)
             if (sendMsg) player.sendSystemMessage(Component.literal("Transaction failed"))
             return false
+        }
+    }
+
+    protected fun playSound(player: Player, sound: SoundEvent) {
+        if (player is ServerPlayer) {
+            player.connection.send(ClientboundSoundPacket(
+                Holder.direct(sound),
+                SoundSource.MASTER, player.x, player.y, player.z,
+                1.0F, 1.0F, player.random.nextLong()
+            ))
         }
     }
 
@@ -108,7 +124,7 @@ abstract class AbstractShopItem : ShopProduct {
 
     override fun getClickCallback(): GuiElement.ClickCallback {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
-            val player = gui.player ?: return@ClickCallback
+            val player = gui.player
             val inventory = player.inventory
             BedwarsPlugin.LOGGER.info("item out: {}", getItemStack())
             if (clickType == ClickType.MOUSE_LEFT) {
@@ -186,6 +202,23 @@ class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
         return items[team]?.let { ItemStack(it, count) } ?: EMPTY_STACK
     }
 
+    override fun getClickCallback(): GuiElement.ClickCallback {
+        return GuiElement.ClickCallback { index, clickType, action, gui ->
+            val player = gui.player
+            setShopPlayer(player)
+            val inventory = player.inventory
+            BedwarsPlugin.LOGGER.info("item out: {}", getItemStack())
+            if (clickType == ClickType.MOUSE_LEFT) {
+                purchaseUnit(player, {inventory.add(getItemStack().copy())})
+            } else if (clickType == ClickType.MOUSE_LEFT_SHIFT) {
+                var count = 0
+                while (purchaseUnit(player, {inventory.add(getItemStack().copy())}, false)) count++
+                val name = getProductName()
+                player.sendSystemMessage(Component.literal("Purchased ").append(name).append(" x${count}"))
+            }
+        }
+    }
+
     override fun setShopPlayer(player: ServerPlayer) {
         val gameState = player.level().gameState
         team = gameState.getPlayersTeam(player.uuid)
@@ -216,7 +249,7 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
 
     override fun getClickCallback(): GuiElement.ClickCallback {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
-            val player = gui.player ?: return@ClickCallback
+            val player = gui.player
             val gameState = player.level().gameState
             purchaseUnit(player, fun(): Boolean {
                 gameState.upgradeItem(player, playerUpgrade)
@@ -257,7 +290,7 @@ abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
 
     override fun getClickCallback(): GuiElement.ClickCallback {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
-            val player = gui.player ?: return@ClickCallback
+            val player = gui.player
             if (!isUpgradable()) return@ClickCallback
             val gameState = player.level().gameState
             val team = gameState.getPlayersTeam(player.uuid)
@@ -374,7 +407,7 @@ class ShopTrapUpgrade : ShopProduct, PlayerSpecificShopProduct {
 
     override fun getClickCallback(): GuiElement.ClickCallback {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
-            val player = gui.player ?: return@ClickCallback
+            val player = gui.player
             if (isTrapActive()) return@ClickCallback
             val gameState = player.level().gameState
             val team = gameState.getPlayersTeam(player.uuid)

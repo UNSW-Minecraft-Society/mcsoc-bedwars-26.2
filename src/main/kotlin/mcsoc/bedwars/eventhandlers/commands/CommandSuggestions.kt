@@ -4,7 +4,7 @@ import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.SuggestionProvider
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
-import mcsoc.bedwars.entities.CustomEntityType
+import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.gui.ShopType
 import mcsoc.bedwars.items.CustomItemTypes
 import mcsoc.bedwars.upgrades.UpgradeItemType

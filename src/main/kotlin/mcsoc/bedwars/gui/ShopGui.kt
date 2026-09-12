@@ -15,9 +15,9 @@ import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.inventory.ContainerInput
 import net.minecraft.world.inventory.MenuType
-import net.minecraft.world.inventory.Slot
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.alchemy.Potions
+
 
 enum class ShopType(val title: String) {
     PLAYER_SHOP("Player Shop"),
@@ -188,7 +188,7 @@ object ShopGui {
                     if (product is PlayerSpecificShopProduct) product.setShopPlayer(player)
                     val element = GuiElementBuilder(product.getItemStack())
                         .setCallback(product.getClickCallback())
-                    if (product.getProductName() != null) element.setName(product.getProductName())
+                    element.setName(product.getProductName())
                     for (line in product.getDescriptionLines()) element.addLoreLine(line)
                     element.addLoreLine(Component.literal("Cost: ${product.getItemCost()?.count} ").append(product.getItemCost()?.hoverName ?: Component.empty()))
                     gui.setSlot(slotIndex, element)

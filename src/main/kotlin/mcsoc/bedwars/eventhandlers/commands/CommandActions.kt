@@ -14,7 +14,7 @@ import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.configloader.MapData
 import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader.Companion.place
 import mcsoc.bedwars.datatrackers.gameState
-import mcsoc.bedwars.entities.CustomEntityType
+import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.gamestate.GameManager
@@ -176,7 +176,7 @@ internal object CommandActions {
         }
         val input = StringArgumentType.getString(ctx, UPGRADE_TYPE_ARG)
         val type = try {
-            UpgradeItemType.valueOf(input)
+            UpgradeItemType.valueOf(input.uppercase())
         } catch (e: IllegalArgumentException) {
             player.sendSystemMessage(Component.literal("$input is not a valid upgrade"))
             return 0
