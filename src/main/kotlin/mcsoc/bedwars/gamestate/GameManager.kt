@@ -97,15 +97,15 @@ class GameManager {
             level.blockProtection.protectionEnabled = false
             
             val level_mod_data = level.gameState
-            level_mod_data.clearActivePlayers()
-            level.generatorState.clearGenerators()
-            // clear teams - todo
 
-            level_mod_data.setGamePhase(GamePhase.INACTIVE)
-            level_mod_data.setGamePeriod(GamePeriod.INACTIVE)
             level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach{player ->
                 player.setGameMode(GameType.SPECTATOR)
             }
+
+            // Clears Active players, all teams data and player data
+            level_mod_data.resetModData()
+
+            level.generatorState.clearGenerators()
 
             level.worldBorder.size = ServerLevel.ACROSS_THE_WHOLE_WORLD.toDouble()
             level.worldBorder.setCenter(0.0, 0.0)
@@ -289,7 +289,7 @@ class GameManager {
                 )
             }
 
-            level.server.playerList.players.forEach{player ->
+            level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach{player ->
                 player.connection.send(
                     ClientboundClearTitlesPacket(true)
                 )

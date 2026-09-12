@@ -399,6 +399,21 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     private fun getPlayerData(player: Player): PlayerDataRecord {
         return getPlayerData(player.uuid)
     }
+
+    fun resetModData() {
+        player_data_map.clear()
+        teams_map.clear()
+        active_players.clear()
+        prev_tick_time = TimeSource.Monotonic.markNow()
+        tick_delta = Duration.ZERO
+        game_timer = Duration.ZERO
+        timer_tick = false
+        timer_second = false
+        game_phase = GamePhase.INACTIVE
+        game_period = GamePeriod.INACTIVE
+        map_centre = BlockPos(0, 0, 0)
+    }
+
     override fun getPlayerState(player: Player): PlayerDataRecord {
         return getPlayerData(player)
     }
@@ -495,7 +510,7 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
         mod_data.setGamePeriod(period)
     }
 
-
+    fun resetModData() = mod_data.resetModData()
 
     override fun isPlayerAlive(player: Player) = mod_data.isPlayerAlive(player)
     override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
