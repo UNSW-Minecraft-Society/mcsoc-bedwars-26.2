@@ -86,7 +86,7 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
         toolUpgrades: Map<UpgradeItemType, UpgradableItem>
     ) : this() {
         this.life_state = life_state
-        this.team = Team.NONE
+        this.team = team
         this.toolUpgrades.putAll(toolUpgrades)
     }
 
