@@ -65,11 +65,7 @@ class GameManager {
                 val spawn = level_mod_data.getTeamSpawn(team)
                 for (player in level_mod_data.getPlayersInTeam(team)) {
                     val player = level.server.playerList.getPlayer(player) ?: continue
-                    player.teleportTo(
-                        level, spawn.x, spawn.y, spawn.z, 
-                        setOf(), 0F, 0F, true
-                    )
-                    player.lookAt(EntityAnchorArgument.Anchor.EYES, pos)
+
                     player.setRespawnPosition(
                         ServerPlayer.RespawnConfig(
                             LevelData.RespawnData(
