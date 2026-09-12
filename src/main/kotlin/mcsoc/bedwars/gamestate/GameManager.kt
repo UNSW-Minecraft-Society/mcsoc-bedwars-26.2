@@ -198,8 +198,6 @@ class GameManager {
             val level_mod_data = player.level().gameState
             if (level_mod_data.getGamePhase() != GamePhase.ACTIVE) return
 
-            level_mod_data.downgradeItems(player)
-
             player.setGameMode(GameType.SPECTATOR)
 
             if (!level_mod_data.getBedDestroyed(level_mod_data.getPlayersTeam(player.uuid))) {
