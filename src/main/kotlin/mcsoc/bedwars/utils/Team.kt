@@ -27,7 +27,7 @@ enum class Team(val chatColour: ChatFormatting, val trimMaterial: ResourceKey<Tr
     WHITE(ChatFormatting.WHITE, TrimMaterials.QUARTZ, DyeColor.WHITE),
     BLACK(ChatFormatting.BLACK, TrimMaterials.NETHERITE, DyeColor.BLACK),
 
-    NONE(ChatFormatting.GRAY, TrimMaterials.IRON, DyeColor.GRAY);
+    NONE(ChatFormatting.GRAY, TrimMaterials.NETHERITE, DyeColor.WHITE);
 
     fun getName() = name.lowercase()
 

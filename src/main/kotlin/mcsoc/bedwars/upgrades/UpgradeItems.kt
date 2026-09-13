@@ -5,19 +5,21 @@ import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.withTag
 import mcsoc.bedwars.utils.withEnchant
 import mcsoc.bedwars.utils.hasTag
+import mcsoc.bedwars.utils.withTrim
 import net.minecraft.core.component.DataComponents
 import net.minecraft.resources.ResourceKey
-import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.tags.ItemTags
 import net.minecraft.world.entity.EquipmentSlot
-import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
+import net.minecraft.world.item.component.DyedItemColor
 import net.minecraft.world.item.enchantment.Enchantment
 import net.minecraft.world.item.enchantment.Enchantments
+import net.minecraft.world.item.equipment.trim.TrimPatterns
 
+val TRIM_PATTERN = TrimPatterns.HOST
 
 enum class UpgradeItemType(val defaultStr: String, val fromName: (String) -> UpgradableItem) {
     AXE("NONE", Axe::valueOf),
@@ -187,22 +189,22 @@ enum class Sword(override val material: Item) : Single, Resettable {
     }
 }
 
-enum class Armour(private val boots: Item, private val leggings: Item, private val chestplate: Item) : UpgradableItem {
-    LEATHER(Items.LEATHER_BOOTS, Items.LEATHER_LEGGINGS, Items.LEATHER_CHESTPLATE) {
+enum class Armour(private val boots: Item, private val leggings: Item) : UpgradableItem {
+    LEATHER(Items.LEATHER_BOOTS, Items.LEATHER_LEGGINGS) {
         override fun next() = CHAINMAIL
         override fun tier() = 0
     },
-    CHAINMAIL(Items.CHAINMAIL_BOOTS, Items.CHAINMAIL_LEGGINGS, Items.CHAINMAIL_CHESTPLATE) {
+    CHAINMAIL(Items.CHAINMAIL_BOOTS, Items.CHAINMAIL_LEGGINGS) {
         override fun next() = IRON
         override fun tier() = 1
 
     },
-    IRON(Items.IRON_BOOTS, Items.IRON_LEGGINGS, Items.IRON_CHESTPLATE) {
+    IRON(Items.IRON_BOOTS, Items.IRON_LEGGINGS) {
         override fun next() = DIAMOND
         override fun tier() = 2
 
     },
-    DIAMOND(Items.DIAMOND_BOOTS, Items.DIAMOND_LEGGINGS, Items.DIAMOND_CHESTPLATE) {
+    DIAMOND(Items.DIAMOND_BOOTS, Items.DIAMOND_LEGGINGS) {
         override fun next() = null
         override fun tier() = 3
     };
@@ -238,7 +240,7 @@ enum class Armour(private val boots: Item, private val leggings: Item, private v
     }
     
     override fun createStack(player: ServerPlayer): ItemStack {
-        return ItemStack(chestplate)
+        return ItemStack(leggings)
     }
 
     private fun ItemStack.withPlayerBasedEffects(player: ServerPlayer): ItemStack {
@@ -246,7 +248,8 @@ enum class Armour(private val boots: Item, private val leggings: Item, private v
         return this
             .withProt(player)
             .also { if (this.`is`(ItemTags.FOOT_ARMOR)) this.withFeatherFalling(player) }
-            .also { if (this.`is`(ItemTags.CAULDRON_CAN_REMOVE_DYE)) this.set(DataComponents.DYE, team.dyeColour) }
+            .also { if (this.`is`(ItemTags.CAULDRON_CAN_REMOVE_DYE)) this.set(DataComponents.DYED_COLOR, DyedItemColor(team.dyeColour.textureDiffuseColor)) }
+            .withTrim(team.trimMaterial, TRIM_PATTERN, player.level())
             // other effects here
     }
 }
