@@ -1,6 +1,8 @@
 package mcsoc.bedwars.gamestate
 
+import net.minecraft.server.level.ServerLevel
+
 sealed interface GameEvent {
-    val runnable: () -> Unit
+    val eventCallback: (ServerLevel) -> Unit
 }
 
