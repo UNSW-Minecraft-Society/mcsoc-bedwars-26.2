@@ -146,11 +146,11 @@ object ShopGui {
                  EmptyShopProduct(),
                  EmptyShopProduct(),
 
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
 
                  EmptyShopProduct(),
                  ShopTrapUpgrade(TrapUpgrade.BLINDNESS, Items.DYE.black, Items.DIAMOND, 2, "Blindness Trap")
@@ -166,12 +166,12 @@ object ShopGui {
                  EmptyShopProduct(),
                  EmptyShopProduct(),
 
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-             )
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+            )
         )
     }
 

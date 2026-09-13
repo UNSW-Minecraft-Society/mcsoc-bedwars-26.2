@@ -17,17 +17,20 @@ import net.minecraft.server.permissions.Permissions
 
 const val ROOT_NODE = "bedwars"
 
+const val POSITION_ARGUMENT = "pos"
+const val FIRST_POSITION_ARGUMENT = "pos1"
+const val SECOND_POSITION_ARGUMENT = "pos2"
+
+const val MAP_NAME_ARGUMENT = "name"
+
 const val SOME_ARGUMENT = "some"
 const val BOOL_ARGUMENT = "bool"
 const val UPGRADE_TYPE_ARG = "type"
 const val ENTITY_TYPE_ARG = "type2"
 const val SHOP_TYPE_ARG = "type3"
-const val POSITION_ARG = "pos"
 const val CUSTOM_ITEM_ARG = "custom_item"
-const val FIRST_POSITION_ARGUMENT = "pos1"
-const val SECOND_POSITION_ARGUMENT = "pos2"
+
 const val GEN_TYPE_ARG = "type"
-const val GEN_POS_ARG = "pos"
 const val GEN_TEAM_ARG = "team"
 const val GEN_ID_ARG = "id"
 
@@ -41,22 +44,26 @@ fun registerCommands() {
     CommandRegistrationCallback.EVENT.register { dispatcher, buildContext, selection ->
     dispatcher.register(
         Commands.literal(ROOT_NODE)
-            .then(
-                Commands.literal("ping")
-                    .requires(GAMEMASTER_PERMS_REQUIREMENT)
-                    .executes(CommandActions::ping)
-                    .then(
-                        Commands.argument(SOME_ARGUMENT, StringArgumentType.word())
-                            .suggests(ExampleSuggestionProvider())
-                            .executes(CommandActions::pingWord)
-                    )
-                    .then(Commands.literal("start")
-                        .requires(GAMEMASTER_PERMS_REQUIREMENT)
-                        .executes(CommandActions::start))
-                    .then(Commands.literal("end")
-                        .requires(GAMEMASTER_PERMS_REQUIREMENT)
-                        .executes(CommandActions::end))
+            .then(Commands.literal("ping")
+            .requires(GAMEMASTER_PERMS_REQUIREMENT)
+            .executes(CommandActions::ping)
+                .then(Commands.argument(SOME_ARGUMENT, StringArgumentType.word())
+                    .suggests(ExampleSuggestionProvider())
+                    .executes(CommandActions::pingWord)
+                )
             )
+            .then(Commands.literal("start")
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
+                .then(Commands.argument(MAP_NAME_ARGUMENT, StringArgumentType.string())
+                .suggests(LoadedMapSuggestionProvider())
+                    .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
+                    .executes(CommandActions::start)
+                    )
+                )
+            )
+            .then(Commands.literal("end")
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
+                .executes(CommandActions::end))
             .then(Commands.literal("join")
             .executes(CommandActions::join)
             )
@@ -68,9 +75,7 @@ fun registerCommands() {
             )
             .then(Commands.literal("assign_teams")
             .requires(GAMEMASTER_PERMS_REQUIREMENT)
-                .then(Commands.argument("number_of_teams", IntegerArgumentType.integer())
-                .executes(CommandActions::assignTeams)
-                )
+            .executes(CommandActions::assignTeams)
             )
             .then(Commands.literal("upgrade")
             .requires(GAMEMASTER_PERMS_REQUIREMENT)
@@ -103,18 +108,38 @@ fun registerCommands() {
                     )
                 )
             )
+            .then(Commands.literal("place_structure")
+                .then(Commands.argument(MAP_NAME_ARGUMENT, StringArgumentType.string())
+                .suggests(AvailableStructureSuggestionProvider())
+                    .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
+                    .executes(CommandActions::placeStructure)
+                    )   
+                )
+            )
+            .then(Commands.literal("place_map")
+                .then(Commands.argument(MAP_NAME_ARGUMENT, StringArgumentType.string())
+                .suggests(LoadedMapSuggestionProvider())
+                    .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
+                    .executes(CommandActions::placeMap)
+                    )
+                )
+            )
+            .then(Commands.literal("reload")
+            .requires{it.permissionContext.permissionLevel().isEqualOrHigherThan(PermissionLevel.GAMEMASTERS)}
+            .executes(CommandActions::reload)
+            )
             .then(Commands.literal("generator")
                 .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR) }
                 .then(Commands.literal("add")
                     .then(Commands.argument(GEN_TYPE_ARG, StringArgumentType.word())
                         .suggests(GeneratorSuggestionProvider())
                         .executes(CommandActions::addGeneratorAtPlayer)
-                        .then(Commands.argument(GEN_POS_ARG, BlockPosArgument.blockPos())
+                        .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
                             .executes(CommandActions::addGenerator)
                         )
                     )
                 ).then(Commands.literal("add_team_gen")
-                    .then(Commands.argument(GEN_POS_ARG, BlockPosArgument.blockPos())
+                    .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
                         .then(Commands.argument(GEN_TEAM_ARG, StringArgumentType.word())
                             .suggests(TeamSuggestionProvider())
                             .executes(CommandActions::addTeamGenerator)
@@ -122,7 +147,7 @@ fun registerCommands() {
                     )
                 )
                 .then(Commands.literal("remove")
-                    .then(Commands.argument(GEN_POS_ARG, BlockPosArgument.blockPos())
+                    .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
                         .executes(CommandActions::removeGenerator)
                     )
                     .then(Commands.literal("id")
@@ -160,7 +185,7 @@ fun registerCommands() {
             )
             .then(Commands.literal("summon_shopkeeper")
                 .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
-                .then(Commands.argument(POSITION_ARG, Vec3Argument.vec3())
+                .then(Commands.argument(POSITION_ARGUMENT, Vec3Argument.vec3())
                     .then(Commands.argument(ENTITY_TYPE_ARG, StringArgumentType.word())
                         .suggests(EntityTypeSuggestionProvider())
                         .executes(CommandActions::summonShopkeeper)
