@@ -1,5 +1,6 @@
 package mcsoc.bedwars.entities
 
+import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.datatrackers.customEntityData
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel

@@ -21,7 +21,6 @@ private class GeneratorDataStore() : GeneratorsHolder {
                 Codec.unboundedMap(GeneratorType.CODEC, GEN_LIST_CODEC)
                     .fieldOf("generators")
                     .forGetter(GeneratorDataStore::generators),
-
                 Codec.unboundedMap(GeneratorType.CODEC, Codec.INT)
                     .fieldOf("upgrades")
                     .forGetter(GeneratorDataStore::genUpgrades),
@@ -118,4 +117,8 @@ class GeneratorDataTracker : LevelTiedData, GeneratorsExposer {
         generator_data.placeGenerators(server)
     }
     fun removeTimerEntities() = generator_data.removeTimerEntities()
+    override fun clearGenerators() {
+        setDirty()
+        generator_data.clearGenerators()
+    }
 }
