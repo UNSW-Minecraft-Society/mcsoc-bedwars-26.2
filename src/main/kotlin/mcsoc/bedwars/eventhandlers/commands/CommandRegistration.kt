@@ -192,6 +192,11 @@ fun registerCommands() {
                     )
                 )
             )
+            .then(Commands.literal("summon_golem")
+                .then(Commands.argument(POSITION_ARGUMENT, Vec3Argument.vec3())
+                .executes(CommandActions::summonGolem)
+                )
+            )
         )
     }
 }

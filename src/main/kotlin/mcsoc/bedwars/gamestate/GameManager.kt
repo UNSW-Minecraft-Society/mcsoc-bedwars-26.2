@@ -7,6 +7,7 @@ import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.customEntityData
+import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.utils.Team
@@ -361,6 +362,7 @@ class GameManager {
             if (level_mod_data.getGamePhase() == GamePhase.INACTIVE) return
 
             level.generatorState.tick()
+            level.eventQueue.tick()
 
             level_mod_data.tick()
             level_mod_data.tickTeams(level)

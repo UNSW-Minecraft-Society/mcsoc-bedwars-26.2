@@ -17,6 +17,7 @@ import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.datatrackers.generatorState
+import mcsoc.bedwars.entities.spawnDoomedDefender
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.items.CustomItemTypes
 import mcsoc.bedwars.gui.ShopGui.displayShop
@@ -335,6 +336,17 @@ internal object CommandActions {
         }
 
         ctx.source.level.gameState.upgradeGen(team)
+        return 1
+    }
+    
+    fun summonGolem(ctx: CommandContext<CommandSourceStack>): Int {
+        val caller = ctx.source.player ?: run {
+            ctx.source.sendFailure(Component.literal("This command must be sent by a Player!"))
+            return 0
+        }
+        val team = ctx.source.level.gameState.getPlayersTeam(caller.uuid)
+        val posInput = Vec3Argument.getVec3(ctx, POSITION_ARGUMENT)
+        spawnDoomedDefender(ctx.source.level, posInput, team)
         return 1
     }
 }

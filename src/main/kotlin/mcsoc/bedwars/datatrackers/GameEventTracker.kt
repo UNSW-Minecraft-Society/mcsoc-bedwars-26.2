@@ -1,20 +1,39 @@
 package mcsoc.bedwars.datatrackers
 
+import com.mojang.serialization.Codec
+import com.mojang.serialization.MapCodec
+import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.gamestate.GameEvent
 import net.minecraft.server.level.ServerLevel
 import java.util.PriorityQueue
+import java.util.UUID
 
-sealed class GameEventTracker {
-    val level: ServerLevel
-    private var currTickNumber: Int = 0
+
+class GameEventTracker() : LevelTiedData() {
+    companion object {
+        val CODEC: MapCodec<GameEventTracker> = RecordCodecBuilder.mapCodec{it.group(
+            Codec.LONG.fieldOf("tickCount").forGetter(GameEventTracker::currTickNumber),
+            GameEvent.CODEC.listOf().fieldOf("queuedEvents").forGetter(GameEventTracker::listQueuedEvents)
+        ).apply(it, ::GameEventTracker)}
+    }
+    override val type get() = LevelDataType.EventQueue
+    
+    lateinit var level: ServerLevel
+    private var currTickNumber: Long = 0
     val eventQueue = PriorityQueue<GameEvent>()
-
-    protected constructor(level: ServerLevel) {
-        this.level = level
+    private fun listQueuedEvents(): List<GameEvent> = eventQueue.toList()
+    
+    private constructor(currTickNumber: Long, eventList: List<GameEvent>) : this() {
+        this.currTickNumber = currTickNumber
+        this.eventQueue.addAll(eventList)
     }
 
-    fun queueEvent(event: GameEvent) {
+    private fun queueEvent(event: GameEvent) {
         eventQueue.add(event)
+    }
+    
+    fun queueEntityExpiry(ticks: Long, uuid: UUID) {
+        queueEvent(GameEvent.EntityExpiryEvent(currTickNumber + ticks, uuid))
     }
 
     private fun dequeueEventsToTrigger(): Collection<GameEvent> {
