@@ -4,10 +4,13 @@ import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.utils.INSTANT_CODEC
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.entity.Entity
 import java.util.UUID
 import kotlin.reflect.full.companionObjectInstance
+import kotlin.time.Instant
 
 
 private interface GameEventCompanion<T : GameEvent> {
@@ -15,7 +18,7 @@ private interface GameEventCompanion<T : GameEvent> {
     val codec: MapCodec<T>
 }
 
-sealed class GameEvent(protected val tickNumber: Long, private val id: String): Comparable<GameEvent> {
+internal sealed class GameEvent(protected val triggerTime: Instant, private val id: String): Comparable<GameEvent> {
     companion object {
         val REGISTRY: Map<String, MapCodec<out GameEvent>> by lazy {
             GameEvent::class.sealedSubclasses
@@ -27,27 +30,26 @@ sealed class GameEvent(protected val tickNumber: Long, private val id: String): 
 
     abstract fun trigger(level: ServerLevel)
     
-    fun hasExpired(currTickNumber: Long): Boolean {
-        BedwarsPlugin.LOGGER.info("event time left: {}", tickNumber - currTickNumber)
-        return tickNumber <= currTickNumber
+    fun hasExpired(currTime: Instant): Boolean {
+        return triggerTime <= currTime
     }
 
     override fun compareTo(other: GameEvent): Int {
-        return tickNumber.compareTo(other.tickNumber)
+        return triggerTime.compareTo(other.triggerTime)
     }
 
-    class EntityExpiryEvent(tickNumber: Long, val entityId: UUID): GameEvent(tickNumber, id) {
+    class EntityExpiryEvent(triggerTime: Instant, val entityId: UUID): GameEvent(triggerTime, id) {
         companion object : GameEventCompanion<EntityExpiryEvent> {
             override val id: String = "golem"
             override val codec: MapCodec<EntityExpiryEvent> = RecordCodecBuilder.mapCodec{it.group(
-                Codec.LONG.fieldOf("time").forGetter(EntityExpiryEvent::tickNumber),
+                INSTANT_CODEC.fieldOf("time").forGetter(EntityExpiryEvent::triggerTime),
                 UUIDUtil.CODEC.fieldOf("id").forGetter(EntityExpiryEvent::entityId)
             ).apply(it, ::EntityExpiryEvent)}
         }
         override fun trigger(level: ServerLevel) {
             // lazy kill impl, could add effects
             val golem = level.getEntity(entityId) ?: return
-            golem.kill(level)
+            golem.discard()
             // TODO("Not yet implemented")
         }
     }

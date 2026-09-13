@@ -362,7 +362,6 @@ class GameManager {
             if (level_mod_data.getGamePhase() == GamePhase.INACTIVE) return
 
             level.generatorState.tick()
-            level.eventQueue.tick()
 
             level_mod_data.tick()
             level_mod_data.tickTeams(level)
