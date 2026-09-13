@@ -1,5 +1,6 @@
 package mcsoc.bedwars.gamestate
 
+import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
@@ -42,15 +43,15 @@ const val RESPAWN_TIME: Int = 5
 class GameManager {
     companion object {
         fun setupGame(map_name: String, level: ServerLevel, start_pos: BlockPos) {
-            
+
             val level_mod_data = level.gameState
             if (level_mod_data.getGamePhase() != GamePhase.INACTIVE) {
                 endGame(level)
             }
-            
+
             BedwarsConfigData.placeMap(map_name, level, start_pos)
             level_mod_data.map_centre = start_pos
-            
+
             TeamEffects.createTeamsWithPlayers(level)
             // TODO val map = level_mod_data.getLoadedMapData()
 
@@ -67,7 +68,6 @@ class GameManager {
                 val spawn = level_mod_data.getTeamSpawn(team)
                 for (player in level_mod_data.getPlayersInTeam(team)) {
                     val player = level.server.playerList.getPlayer(player) ?: continue
-
                     player.setRespawnPosition(
                         ServerPlayer.RespawnConfig(
                             LevelData.RespawnData(
@@ -153,7 +153,7 @@ class GameManager {
                 player.setGameMode(GameType.SURVIVAL)
                 val spawn = level_mod_data.getTeamSpawn(level_mod_data.getPlayersTeam(player.uuid))
                 player.teleportTo(
-                    level, spawn.x, spawn.y, spawn.z, 
+                    level, spawn.x, spawn.y, spawn.z,
                     setOf(), 0F, 0F, true
                 )
             }
@@ -173,7 +173,8 @@ class GameManager {
             val player_team = level_mod_data.getPlayersTeam(player.uuid)
             val bed_destroyed = level_mod_data.getBedDestroyed(player_team)
 
-            var killer: UUID = (player.killCredit as? ServerPlayer)?.uuid ?: level_mod_data.getBedBreaker(player_team) ?: throw IllegalStateException("Cannot destroy bed without breaker?")
+            var killer: UUID = (player.killCredit as? ServerPlayer)?.uuid ?: level_mod_data.getBedBreaker(player_team) ?:
+                    return BedwarsPlugin.LOGGER.error("handlePlayerDeath player: ${player.name.string}, source: ${death_source.msgId}: ", IllegalStateException("Cannot destroy bed without breaker?"))
 
             // Need to playtest see if final kill off void death transfers loot
 
@@ -208,7 +209,7 @@ class GameManager {
             if (!level_mod_data.getBedDestroyed(level_mod_data.getPlayersTeam(player.uuid))) {
                 // tp above map
                 val respawn_position: Vec3 = Vec3.atBottomCenterOf(level_mod_data.map_centre.offset(0, 30, 0))
-                player.teleportTo(player.level(), respawn_position.x, respawn_position.y, respawn_position.z, 
+                player.teleportTo(player.level(), respawn_position.x, respawn_position.y, respawn_position.z,
                         setOf(), 0F, 0F, true
                 )
 
@@ -289,7 +290,7 @@ class GameManager {
         private fun winGame(level: ServerLevel, winning_team: Team) {
             val level_mod_data = level.gameState
             val stats_list: MutableList<Component> = mutableListOf()
-            
+
             for (team in level_mod_data.getActiveTeams()) {
                 for (uuid in level_mod_data.getPlayersInTeam(team)) {
                     val name = (level.getPlayerByUUID(uuid)?.name ?: Component.literal(uuid.toString())) as MutableComponent
@@ -382,7 +383,7 @@ class GameManager {
                             val centre = Vec3.atBottomCenterOf(level_mod_data.map_centre)
                             val spawn = level_mod_data.getTeamSpawn(level_mod_data.getPlayersTeam(player.uuid))
                             player.teleportTo(
-                                level, spawn.x, spawn.y, spawn.z, 
+                                level, spawn.x, spawn.y, spawn.z,
                                 setOf(), 0F, 0F, true
                             )
                             player.lookAt(EntityAnchorArgument.Anchor.EYES, centre)
