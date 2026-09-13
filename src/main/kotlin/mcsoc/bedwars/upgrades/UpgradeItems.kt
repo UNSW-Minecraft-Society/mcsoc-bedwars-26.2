@@ -1,11 +1,16 @@
 package mcsoc.bedwars.upgrades
 
 import com.mojang.serialization.Codec
+import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.withTag
 import mcsoc.bedwars.utils.withEnchant
 import mcsoc.bedwars.utils.hasTag
+import mcsoc.bedwars.utils.withTrim
+import net.minecraft.core.Holder
+import net.minecraft.core.Registry
 import net.minecraft.core.component.DataComponents
+import net.minecraft.core.registries.Registries
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
@@ -15,9 +20,13 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
+import net.minecraft.world.item.component.DyedItemColor
 import net.minecraft.world.item.enchantment.Enchantment
 import net.minecraft.world.item.enchantment.Enchantments
+import net.minecraft.world.item.equipment.trim.ArmorTrim
+import net.minecraft.world.item.equipment.trim.TrimPatterns
 
+val TRIM_PATTERN = TrimPatterns.HOST
 
 enum class UpgradeItemType(val defaultStr: String, val fromName: (String) -> UpgradableItem) {
     AXE("NONE", Axe::valueOf),
@@ -238,7 +247,7 @@ enum class Armour(private val boots: Item, private val leggings: Item, private v
     }
     
     override fun createStack(player: ServerPlayer): ItemStack {
-        return ItemStack(chestplate)
+        return ItemStack(leggings)
     }
 
     private fun ItemStack.withPlayerBasedEffects(player: ServerPlayer): ItemStack {
@@ -246,7 +255,8 @@ enum class Armour(private val boots: Item, private val leggings: Item, private v
         return this
             .withProt(player)
             .also { if (this.`is`(ItemTags.FOOT_ARMOR)) this.withFeatherFalling(player) }
-            .also { if (this.`is`(ItemTags.CAULDRON_CAN_REMOVE_DYE)) this.set(DataComponents.DYE, team.dyeColour) }
+            .also { if (this.`is`(ItemTags.CAULDRON_CAN_REMOVE_DYE)) this.set(DataComponents.DYED_COLOR, DyedItemColor(team.dyeColour.textureDiffuseColor)) }
+            .withTrim(team.trimMaterial, TRIM_PATTERN, player.level())
             // other effects here
     }
 }
