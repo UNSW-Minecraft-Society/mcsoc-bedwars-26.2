@@ -52,6 +52,7 @@ class GameEventTracker() : LevelTiedData() {
     }
 
     fun reset() {
+        this.currTime = Instant.fromEpochMilliseconds(0)
         this.eventQueue.clear()
     }
     

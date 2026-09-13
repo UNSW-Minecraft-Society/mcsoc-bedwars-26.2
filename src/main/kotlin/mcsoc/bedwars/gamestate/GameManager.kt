@@ -101,6 +101,7 @@ class GameManager {
 
             val level_mod_data = level.gameState
             val level_mod_entity_data = level.customEntityData
+            level.eventQueue.reset()
             level_mod_data.clearActivePlayers()
             // clear teams - todo
 
