@@ -10,7 +10,7 @@ import net.minecraft.world.phys.Vec3
 
 // mod data or team related
 
-class InvalidTeamException : Exception("Invalid team")
+class InvalidTeamException(team: Team) : Exception("Invalid team: $team")
 
 internal interface TeamGeneratorState {
     fun upgradeGen()
@@ -34,6 +34,7 @@ internal interface GeneratorsExposer {
     fun addTeamGenerator(server: MinecraftServer, location: Vec3, level: ResourceKey<Level>, team: Team): Int
     fun removeGenerator(location: Vec3)
     fun removeGenerator(id: Int)
+    fun clearGenerators()
     fun getGeneratorUpgrade(type: GeneratorType): Int
     fun upgradeGenerator(type: GeneratorType)
 }
@@ -54,6 +55,10 @@ internal interface GeneratorsHolder : GeneratorsExposer {
         return addGenerator(server, location, level, GeneratorType.BASE(team))
     }
 
+    override fun clearGenerators() {
+        getGenerators().forEach{removeGenerator(it)}
+    }
+    
     override fun removeGenerator(location: Vec3) {
         getGenerators()
             .filter { it.location == location }

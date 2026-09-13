@@ -42,5 +42,3 @@ internal interface BlockProtectionHolder : BlockProtectionExposer, BlockPlacemen
         return !(protectionEnabled && getIfBlockIsProtected(pos))
     }
 }
-
-

@@ -1,9 +1,10 @@
 package mcsoc.bedwars.items
 
-import mcsoc.bedwars.utils.addItemLore
-import mcsoc.bedwars.utils.applyEnchant
-import mcsoc.bedwars.utils.applyTag
-import mcsoc.bedwars.utils.renameItem
+import mcsoc.bedwars.utils.withItemLore
+import mcsoc.bedwars.utils.withTag
+import mcsoc.bedwars.utils.renamedTo
+import net.minecraft.server.level.ServerPlayer
+import mcsoc.bedwars.utils.withEnchant
 import net.minecraft.core.Holder
 import net.minecraft.core.component.DataComponents
 import net.minecraft.resources.ResourceKey
@@ -16,16 +17,22 @@ import net.minecraft.world.item.alchemy.PotionContents
 import net.minecraft.world.item.enchantment.Enchantment
 import net.minecraft.world.item.enchantment.Enchantments
 
+
 const val BEDWARS_ITEM_TAG = "bedwars_item"
 const val CUSTOM_ITEM_TAG = "bedwars_custom_item"
 
-enum class CustomItemTypes(val value: String) {
-    FIREBALL("fireball"),
-    BRIDGE_EGG("bridge_egg"),
-    INSTANT_TNT("instant_tnt"),
-    BALL_OF_BUGS("ball_of_bugs"),
-    POPUP_TOWER("popup_tower"),
-    PLAYER_TRACKER("player_tracker")
+enum class CustomItemTypes(val value: String, private val item_factory: () -> ItemStack) {
+    FIREBALL("fireball", {BedwarsItems.fireballItemStack()}),
+    BRIDGE_EGG("bridge_egg", {BedwarsItems.bridgeEggItemStack()}),
+    INSTANT_TNT("instant_tnt", {BedwarsItems.instantTNTItemStack()}),
+    BALL_OF_BUGS("ball_of_bugs", {BedwarsItems.ballOfBugsItemStack()}),
+    POPUP_TOWER("popup_tower", {BedwarsItems.popupTowerItemStack()}),
+    PLAYER_TRACKER("player_tracker", {BedwarsItems.playerTrackerItemStack()});
+    
+    fun giveToPlayer(player: ServerPlayer?): Int {
+        return if (player is ServerPlayer && player.addItem(item_factory())) 1
+        else 0
+    }
 }
 
 object BedwarsItems {
@@ -37,78 +44,69 @@ object BedwarsItems {
 
     fun enchantedItemStack(item: Item, enchantment: ResourceKey<Enchantment>, enchLevel: Int, level: ServerLevel): ItemStack {
         val stack = item.defaultInstance
-        applyEnchant(stack, enchantment, enchLevel, level)
+        .withEnchant(enchantment, enchLevel, level)
         return stack
     }
 
     fun knockbackStickItemStack(level: ServerLevel): ItemStack {
-        val stack = enchantedItemStack(Items.BREEZE_ROD, Enchantments.KNOCKBACK, 2, level)
-        renameItem(stack, "Knockback Stick")
-        return stack
+        return enchantedItemStack(Items.BREEZE_ROD, Enchantments.KNOCKBACK, 2, level)
+        .renamedTo("Knockback Stick")
     }
 
     fun powerBowItemStack(level: ServerLevel): ItemStack {
-        val stack = enchantedItemStack(Items.BOW, Enchantments.POWER, 1, level)
-        return stack
+        return enchantedItemStack(Items.BOW, Enchantments.POWER, 1, level)
     }
 
     fun punchBowItemStack(level: ServerLevel): ItemStack {
-        val stack = enchantedItemStack(Items.BOW, Enchantments.PUNCH, 1, level)
-        return stack
+        return enchantedItemStack(Items.BOW, Enchantments.PUNCH, 1, level)
     }
 
     fun fireballItemStack(): ItemStack {
-        val stack = Items.FIRE_CHARGE.defaultInstance
-        applyTag(stack, BEDWARS_ITEM_TAG, CustomItemTypes.FIREBALL.value)
-        applyTag(stack, CUSTOM_ITEM_TAG, CustomItemTypes.FIREBALL.value)
-        renameItem(stack, "Fireball")
-        addItemLore(stack, "Right click to shoot a fireball in the direction you look.")
-        return stack
+        return Items.FIRE_CHARGE.defaultInstance
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.FIREBALL.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.FIREBALL.value)
+            .renamedTo("Fireball")
+            .withItemLore("Right click to shoot a fireball in the direction you look.")
     }
 
     fun bridgeEggItemStack(): ItemStack {
-        val stack = Items.EGG.defaultInstance
-        applyTag(stack, BEDWARS_ITEM_TAG, CustomItemTypes.BRIDGE_EGG.value)
-        applyTag(stack, CUSTOM_ITEM_TAG, CustomItemTypes.BRIDGE_EGG.value)
-        renameItem(stack, "Bridge Egg")
-        addItemLore(stack, "Right click to throw the egg, creating a bridge in it's wake.")
-        return stack
+        return Items.EGG.defaultInstance
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.BRIDGE_EGG.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.BRIDGE_EGG.value)
+            .renamedTo("Bridge Egg")
+            .withItemLore("Right click to throw the egg, creating a bridge in it's wake.")
     }
 
     fun instantTNTItemStack(): ItemStack {
-        val stack = Items.TNT.defaultInstance
-        applyTag(stack, BEDWARS_ITEM_TAG, CustomItemTypes.INSTANT_TNT.value)
-        applyTag(stack, CUSTOM_ITEM_TAG, CustomItemTypes.INSTANT_TNT.value)
-        renameItem(stack, "Instant TNT")
-        addItemLore(stack, "Right click on a block to place down instantly primed TNT.")
-        return stack
+        return Items.TNT.defaultInstance
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.INSTANT_TNT.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.INSTANT_TNT.value)
+            .renamedTo("Instant TNT")
+            .withItemLore("Right click on a block to place down instantly primed TNT.")
     }
 
     fun ballOfBugsItemStack(): ItemStack {
-        val stack = Items.ENDER_PEARL.defaultInstance
-        stack.remove(DataComponents.USE_COOLDOWN)
-        applyTag(stack, BEDWARS_ITEM_TAG, CustomItemTypes.BALL_OF_BUGS.value)
-        applyTag(stack, CUSTOM_ITEM_TAG, CustomItemTypes.BALL_OF_BUGS.value)
-        renameItem(stack, "Ball of Bugs")
-        addItemLore(stack, "Right click to throw a ball, spawning an endermite when it lands.")
-        return stack
+        return Items.ENDER_PEARL.defaultInstance
+            .also{it.remove(DataComponents.USE_COOLDOWN)}
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.BALL_OF_BUGS.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.BALL_OF_BUGS.value)
+            .renamedTo("Ball of Bugs")
+            .withItemLore("Right click to throw a ball, spawning an endermite when it lands.")
     }
 
     fun popupTowerItemStack(): ItemStack {
-        val stack = Items.REINFORCED_DEEPSLATE.defaultInstance
-        applyTag(stack, BEDWARS_ITEM_TAG, CustomItemTypes.POPUP_TOWER.value)
-        applyTag(stack, CUSTOM_ITEM_TAG, CustomItemTypes.POPUP_TOWER.value)
-        renameItem(stack, "Popup Tower")
-        addItemLore(stack, "Right click on a block to instantly create a tower structure.")
-        return stack
+        return Items.REINFORCED_DEEPSLATE.defaultInstance
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.POPUP_TOWER.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.POPUP_TOWER.value)
+            .renamedTo("Popup Tower")
+            .withItemLore("Right click on a block to instantly create a tower structure.")
     }
 
     fun playerTrackerItemStack(): ItemStack {
-        val stack = Items.COMPASS.defaultInstance
-        applyTag(stack, BEDWARS_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
-        applyTag(stack, CUSTOM_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
-        renameItem(stack, "Player Tracker")
-        addItemLore(stack, "Points to where the nearest player on an enemy team was, Right click to update the location.")
-        return stack
+        return Items.COMPASS.defaultInstance
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
+            .renamedTo("Player Tracker")
+            .withItemLore("Points to where the nearest player on an enemy team was, Right click to update the location.")
     }
 }

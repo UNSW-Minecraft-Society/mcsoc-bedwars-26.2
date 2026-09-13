@@ -6,7 +6,9 @@ import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
 
+
 object BedwarsPlugin : ModInitializer {
+	const val CONFIG_PATH = "bedwars"
 	const val MOD_ID: String = "bedwars-plugin"
 
 	val LOGGER = LoggerFactory.getLogger(MOD_ID)
