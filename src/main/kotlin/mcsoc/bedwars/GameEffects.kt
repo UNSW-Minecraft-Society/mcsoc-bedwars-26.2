@@ -10,14 +10,14 @@ const val MAX_TEAM_PLAYERS = 4
 
 object TeamEffects {
     // On start of game run this to add players (probably just active)
-    fun createTeamsWithPlayers(level: ServerLevel, numTeams: Int) {
+    fun createTeamsWithPlayers(level: ServerLevel) {
         val mod_level_data = level.gameState
         val players = mod_level_data.getActivePlayers()
-        mod_level_data.initialiseTeams(numTeams, level.scoreboard)
         val teams = mod_level_data.getActiveTeams()
+        val num_teams = teams.size
 
         players.shuffled().forEachIndexed { index, player ->
-            val team = teams[index % numTeams]
+            val team = teams[index % num_teams]
             mod_level_data.addPlayer(player, team, level.scoreboard, level.getPlayerByUUID(player)?.scoreboardName)
         }
     }

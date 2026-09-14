@@ -4,6 +4,7 @@ plugins {
 	id("net.fabricmc.fabric-loom")
 	`maven-publish`
 	id("org.jetbrains.kotlin.jvm") version "2.4.10"
+	kotlin("plugin.serialization") version "2.4.10"
 }
 
 version = providers.gradleProperty("mod_version").get()
@@ -15,8 +16,12 @@ repositories {
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
 	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
 	// for more information about repositories.
+	maven {
+		url = uri("https://maven.enginehub.org/repo/")
+	}
 	mavenCentral()
-	maven("https://maven.nucleoid.xyz/") {
+	maven{
+		url = uri("https://maven.nucleoid.xyz/") 
 		name = "Nucleoid"
 	}
 }
@@ -38,6 +43,11 @@ fabricApi {
 	}
 }
 
+val includeTransitive by configurations.creating
+configurations {
+    implementation.get().extendsFrom(includeTransitive)
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft("com.mojang:minecraft:${providers.gradleProperty("minecraft_version").get()}")
@@ -47,8 +57,28 @@ dependencies {
 	implementation("net.fabricmc.fabric-api:fabric-api:${providers.gradleProperty("fabric_api_version").get()}")
     implementation("net.fabricmc:fabric-language-kotlin:${providers.gradleProperty("fabric_kotlin_version").get()}")
 
+	// for loading schematics
+	implementation("com.sk89q.worldedit:worldedit-fabric-mc${providers.gradleProperty("minecraft_version").get()}:${providers.gradleProperty("worldedit_api_version").get()}")
+	
+	// toml and yaml support
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+
+	implementation("com.akuleshov7:ktoml-core-jvm:0.7.1")
+	implementation("com.akuleshov7:ktoml-file-jvm:0.7.1")
+	implementation("io.heapy.kotaml:kotaml-jvm:0.110.0")
+
+	includeTransitive("com.akuleshov7:ktoml-file-jvm:0.7.1")
+    includeTransitive("io.heapy.kotaml:kotaml-jvm:0.110.0")
+
 	implementation("eu.pb4:sgui:2.1.0+26.2")
 	include("eu.pb4:sgui:2.1.0+26.2")
+}
+
+afterEvaluate {
+    includeTransitive.resolvedConfiguration.resolvedArtifacts.forEach { artifact ->
+        val id = artifact.moduleVersion.id
+        dependencies.add("include", "${id.group}:${id.name}:${id.version}")
+    }
 }
 
 tasks.processResources {
