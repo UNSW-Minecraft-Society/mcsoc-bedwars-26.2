@@ -3,6 +3,7 @@ package mcsoc.bedwars.eventhandlers
 import mcsoc.bedwars.gamestate.GameManager
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import net.minecraft.server.level.ServerPlayer
 
 
@@ -26,4 +27,8 @@ fun registerPlayerJoinEvent() {
      * If joining during a game, tell them to wait until this game finishes
      * ect. There could also be some thing to reroute them to any inactive worlds?
      */
+    ServerPlayConnectionEvents.JOIN.register{ handler, _, server ->
+        GameManager.handlePlayerJoin(server.scoreboard, handler.player)
+    }
+
 }
