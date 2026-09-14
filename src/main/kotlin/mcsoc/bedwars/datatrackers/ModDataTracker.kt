@@ -21,6 +21,7 @@ import mcsoc.bedwars.utils.inWholeTicks
 import kotlin.time.Duration
 import kotlin.time.TimeSource
 import mcsoc.bedwars.utils.Team
+import mcsoc.bedwars.utils.ticks
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup
@@ -72,10 +73,12 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
     private var team: Team = Team.NONE
     private var toolUpgrades = HashMap<UpgradeItemType, UpgradableItem>()
 
-    private var respawn_ticks: Int = 0
-    private var respawn_seconds: Int = 0
-    private var respawn_second_passed: Boolean = false
-
+    private var time_internal: Duration = Duration.ZERO
+    override val time get() = RESPAWN_TIME - time_internal
+    
+    override val timerTick: Int get() = 0
+    override var timerSecond: Int = 0
+    
     private var kills: Int = 0
     private var final_kills: Int = 0
     private var deaths: Int = 0
@@ -122,27 +125,16 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
         toolUpgrades.remove(item)
     }
 
-    override fun getRespawnSeconds(): Int {
-        return respawn_seconds
+    override fun tick() {
+        if (time < Duration.ZERO) return
+        
+        val old_time = time
+        time_internal += 1.ticks
+        timerSecond = (old_time.inWholeSeconds - time.inWholeSeconds).toInt()
     }
 
-    override fun decrementPlayerRespawnTicks() {
-        if (respawn_ticks > 0) {
-            respawn_ticks -= 1
-            if (ceil((respawn_ticks / 20.0)) < respawn_seconds) {
-                respawn_seconds -= 1
-                respawn_second_passed = true
-            } else respawn_second_passed = false
-        }
-    }
-
-    override fun resetPlayerRespawnTime() {
-        respawn_ticks = RESPAWN_TIME * 20
-        respawn_seconds = RESPAWN_TIME
-    }
-
-    override fun getSecondPassed(): Boolean {
-        return respawn_second_passed
+    override fun reset() {
+        time_internal = Duration.ZERO
     }
 
     override fun getKills(): Int {
@@ -210,7 +202,7 @@ private class TeamDataRecord(
 
     private var trapCooldown = 0
 
-    fun tick(level: ServerLevel) {
+    override fun tick(level: ServerLevel) {
 
         if (getUpgrade(TeamUpgradeType.HEAL_POOL)) {
             players
@@ -297,7 +289,7 @@ private class TeamDataRecord(
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder, PlayerTimeHolder, PlayerStatsHolder, TeamGeneratorHolder, TeamUpgradesHolder,
+private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, PlayerUpgradesHolder, PlayerTimeHolder, PlayerStatsHolder, TeamGeneratorHolder, TeamUpgradesHolder,
     LoadedMapHolder {
     companion object {
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
@@ -308,25 +300,18 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
             Codec.unboundedMap(Team.CODEC, TeamDataRecord.CODEC)
                 .fieldOf("teams_map")
                 .forGetter(ModDataStore::teams_map),
-
-            Codec.STRING.xmap(Duration::parseIsoString, Duration::toIsoString)
-                .fieldOf("game_timer")
-                .forGetter(ModDataStore::game_timer),
                     
             BlockPos.CODEC
                 .fieldOf("map_centre")
                 .forGetter(ModDataStore::map_centre),
+                    
+            
         ).apply(it, ::ModDataStore)}
     }
     
     private val player_data_map = HashMap<UUID, PlayerDataRecord>()
     private val teams_map = HashMap<Team, TeamDataRecord>()
     private val active_players = mutableSetOf<UUID>()
-    private var prev_tick_time = TimeSource.Monotonic.markNow()
-    private var tick_delta = Duration.ZERO
-    private var game_timer = Duration.ZERO
-    private var timer_tick = false
-    private var timer_second = false
     private var game_phase = GamePhase.INACTIVE
     private var game_period = GamePeriod.INACTIVE
     override var map_centre: BlockPos = BlockPos(0, 0, 0)
@@ -334,48 +319,23 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     private constructor(
         playerMap: Map<UUID, PlayerDataRecord>,
         teamMap: Map<Team, TeamDataRecord>,
-        timer: Duration,
         map_centre: BlockPos
     ) : this() {
         this.player_data_map.putAll(playerMap)
         this.teams_map.putAll(teamMap)
-        this.game_timer = timer
         this.map_centre = map_centre
     }
 
 
     override fun tick() {
-        tick_delta = prev_tick_time.elapsedNow()
-        prev_tick_time = TimeSource.Monotonic.markNow()
-
-        timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
-        timer_second = game_timer.inWholeSeconds != (game_timer + tick_delta).inWholeSeconds
-
         // Tick down timers for all individual players
         if (game_phase == GamePhase.ACTIVE) {
-            active_players.forEach { uuid ->
-                val record = player_data_map.getOrDefault(uuid, null)
-                if (record != null && timer_tick) record.decrementPlayerRespawnTicks()
+            for (uuid in active_players) {
+                val record = player_data_map[uuid] ?: continue
+                record.tick()
             }
         }
-
-        game_timer += tick_delta
     }
-
-    fun tickTeams(level: ServerLevel) {
-        getActiveTeams().forEach { teams_map[it]?.tick(level) }
-    }
-
-    override fun getGameTime() = game_timer
-
-    override fun resetGameTime() {
-        game_timer = Duration.ZERO
-        prev_tick_time = TimeSource.Monotonic.markNow()
-    }
-
-    override fun getTimerTick() = timer_tick
-
-    override fun getTimerSecond() = timer_second
 
     fun getGamePhase(): GamePhase {
         return game_phase
@@ -405,11 +365,6 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         player_data_map.clear()
         teams_map.clear()
         active_players.clear()
-        prev_tick_time = TimeSource.Monotonic.markNow()
-        tick_delta = Duration.ZERO
-        game_timer = Duration.ZERO
-        timer_tick = false
-        timer_second = false
         game_phase = GamePhase.INACTIVE
         game_period = GamePeriod.INACTIVE
         map_centre = BlockPos(0, 0, 0)
@@ -471,7 +426,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 }
 
 
-class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer, PlayerTimeExposer, PlayerStatsExposer, TeamGeneratorExposer, TeamUpgradesExposer,
+class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, PlayerUpgradesExposer, PlayerTimeExposer, PlayerStatsExposer, TeamGeneratorExposer, TeamUpgradesExposer,
     LoadedMapExposer {
     companion object {
         val CODEC: MapCodec<ModDataTracker> = RecordCodecBuilder.mapCodec{ it.group(
@@ -494,17 +449,10 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
         setDirty()
         mod_data.tick()
     }
-    fun tickTeams(level: ServerLevel) {
+    override fun tickTeams(level: ServerLevel) {
         setDirty()
         mod_data.tickTeams(level)
     }
-    override fun getGameTime(): Duration = mod_data.getGameTime()
-    override fun resetGameTime() {
-        setDirty()
-        mod_data.resetGameTime()
-    }
-    override fun getTimerTick(): Boolean = mod_data.getTimerTick()
-    override fun getTimerSecond(): Boolean = mod_data.getTimerSecond()
 
     fun getGamePhase(): GamePhase = mod_data.getGamePhase()
     fun setGamePhase(phase: GamePhase) {
@@ -598,7 +546,6 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     override fun <T> upgrade(team: Team, type: TeamUpgradeType<T>, level: ServerLevel) {
         setDirty()
         mod_data.upgrade(team, type, level)
-        if (level == null) return
         for (playerId in getPlayersInTeam(team)) {
             val player = level.getPlayerByUUID(playerId)
             if (player is ServerPlayer) updateItems(player)
@@ -621,7 +568,7 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
         setDirty()
         mod_data.resetPlayerRespawnTime(player)
     }
-    override fun playerTimerSecondPassed(player: ServerPlayer): Boolean = mod_data.playerTimerSecondPassed(player)
+    override fun playerTimerSecondPassed(player: ServerPlayer): Int = mod_data.playerTimerSecondPassed(player)
 
     override fun getPlayerKills(uuid: UUID): Int = mod_data.getPlayerKills(uuid)
     override fun getPlayerFinalKills(uuid: UUID): Int = mod_data.getPlayerFinalKills(uuid)

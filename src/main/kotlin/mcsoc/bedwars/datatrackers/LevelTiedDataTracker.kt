@@ -50,6 +50,7 @@ sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>
     // put another enum value for each tracked data type
     object CustomEntityData : LevelDataType<CustomEntityDataTracker>("custom_entity_data",
         CustomEntityDataTracker.CODEC, CustomEntityDataTracker())
+    object GameClock : LevelDataType<GameTimer>("timer", GameTimer.CODEC, GameTimer())
 }
 
 private class LevelTiedDataTracker() : SavedData() {
@@ -91,4 +92,5 @@ val ServerLevel.gameState: ModDataTracker get() = levelTiedData.getDataOfType(Le
 val ServerLevel.blockProtection: BlockProtectionTracker get() = levelTiedData.getDataOfType(LevelDataType.BlockProtection) as BlockProtectionTracker
 val ServerLevel.generatorState: GeneratorDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GeneratorState) as GeneratorDataTracker
 val ServerLevel.customEntityData get() = levelTiedData.getDataOfType(LevelDataType.CustomEntityData) as CustomEntityDataTracker
+val ServerLevel.clock: TickExposer get() = levelTiedData.getDataOfType(LevelDataType.GameClock) as GameTimer
 // put other level-tied data getters here
