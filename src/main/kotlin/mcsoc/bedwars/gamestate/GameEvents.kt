@@ -19,6 +19,7 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.level.GameType
 import net.minecraft.world.phys.Vec3
 import java.util.UUID
+import kotlin.reflect.KClass
 import kotlin.reflect.full.companionObjectInstance
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -29,10 +30,20 @@ private interface GameEventCompanion<T : GameEvent> {
     val codec: MapCodec<T>
 }
 
+fun <T : GameEvent> KClass<T>.getAllSealedSubclasses(): List<KClass<out T>> {
+    return this.sealedSubclasses.flatMap {
+        if (it.isSealed) {
+            it.getAllSealedSubclasses()
+        } else {
+            listOf(it)
+        }
+    }
+}
+
 sealed class GameEvent(protected val triggerTime: Duration, private val id: String): Comparable<GameEvent> {
     companion object {
         val REGISTRY: Map<String, MapCodec<out GameEvent>> by lazy {
-            GameEvent::class.sealedSubclasses
+            GameEvent::class.getAllSealedSubclasses()
                 .mapNotNull { it.companionObjectInstance as? GameEventCompanion<*> }
                 .associate { it.id to it.codec }
         }
@@ -51,8 +62,7 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
     }
     
     
-    abstract class RecursiveGameEvent<T: GameEvent>(triggerTime: Duration, id: String, protected val count: Long, private val interval: Duration) : GameEvent(triggerTime, id) {
-        
+    sealed class RecursiveGameEvent<T: GameEvent>(triggerTime: Duration, id: String, protected val count: Long, private val interval: Duration) : GameEvent(triggerTime, id) {
         protected abstract fun recurseTrigger(level: ServerLevel)
         protected abstract fun concludeTrigger(level: ServerLevel)
 
@@ -159,4 +169,3 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
         override fun createEvent(triggerTime: Duration, count: Long) = RespawnCounterEvent(triggerTime, player, count)
     }
 }
-
