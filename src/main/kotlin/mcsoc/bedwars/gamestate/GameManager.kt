@@ -20,6 +20,7 @@ import net.minecraft.core.Holder
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.MutableComponent
 import net.minecraft.network.protocol.game.*
+import net.minecraft.server.ServerScoreboard
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
@@ -164,6 +165,18 @@ class GameManager {
             level_mod_data.resetGameTime()
             level_mod_data.setGamePhase(GamePhase.ACTIVE)
             level_mod_data.setGamePeriod(GamePeriod.ACTIVE)
+        }
+
+        fun handlePlayerJoin(scoreboard: ServerScoreboard, player: ServerPlayer) {
+            val level_mod_data = player.level().gameState
+            if (level_mod_data.getGamePhase() != GamePhase.ACTIVE) return
+            if (player.uuid !in level_mod_data.getActivePlayers()) {
+                player.inventory.clearContent()
+                player.removeAllEffects()
+                player.setGameMode(GameType.SPECTATOR)
+                // set player team to spectator?
+                scoreboard.removePlayerFromTeam(player.scoreboardName)
+            }
         }
 
         fun handlePlayerDeath(player: ServerPlayer, death_source: DamageSource) {

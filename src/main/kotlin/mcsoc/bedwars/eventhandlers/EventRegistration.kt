@@ -31,4 +31,5 @@ fun registerEventHandlers() {
     registerAfterDeathEvent()
     registerAfterRespawnEvent()
     registerEquipmentChangeEvents()
+    registerPlayerJoinEvent()
 }
