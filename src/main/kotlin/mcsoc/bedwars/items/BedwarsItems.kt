@@ -27,7 +27,8 @@ enum class CustomItemTypes(val value: String, private val item_factory: () -> It
     INSTANT_TNT("instant_tnt", {BedwarsItems.instantTNTItemStack()}),
     BALL_OF_BUGS("ball_of_bugs", {BedwarsItems.ballOfBugsItemStack()}),
     POPUP_TOWER("popup_tower", {BedwarsItems.popupTowerItemStack()}),
-    PLAYER_TRACKER("player_tracker", {BedwarsItems.playerTrackerItemStack()});
+    PLAYER_TRACKER("player_tracker", {BedwarsItems.playerTrackerItemStack()}),
+    BED_DEFENDER("bed_defender", { BedwarsItems.bedDefenderItemStack() });
     
     fun giveToPlayer(player: ServerPlayer?): Int {
         return if (player is ServerPlayer && player.addItem(item_factory())) 1
@@ -106,6 +107,14 @@ object BedwarsItems {
         return Items.COMPASS.defaultInstance
             .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
             .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
+            .renamedTo("Player Tracker")
+            .withItemLore("Points to where the nearest player on an enemy team was, Right click to update the location.")
+    }
+
+    fun bedDefenderItemStack(): ItemStack {
+        return Items.PIGLIN_BRUTE_SPAWN_EGG.defaultInstance
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.BED_DEFENDER.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.BED_DEFENDER.value)
             .renamedTo("Player Tracker")
             .withItemLore("Points to where the nearest player on an enemy team was, Right click to update the location.")
     }
