@@ -400,7 +400,7 @@ class GameManager {
                     if (level_mod_data.isPlayerRespawning(player)) {
                         val seconds_left = level_mod_data.getPlayerRespawnSeconds(player)
 
-                        if (seconds_left < 0) {
+                        if (seconds_left <= 0) {
                             // tp player to base location for respawn
                             val centre = Vec3.atBottomCenterOf(level_mod_data.map_centre)
                             val spawn = level_mod_data.getTeamSpawn(level_mod_data.getPlayersTeam(player.uuid))
