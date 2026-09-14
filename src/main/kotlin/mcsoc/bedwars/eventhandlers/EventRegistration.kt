@@ -1,5 +1,6 @@
 package mcsoc.bedwars.eventhandlers
 
+import mcsoc.bedwars.datatrackers.clock
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.generatorState
@@ -10,7 +11,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
 fun registerEventHandlers() {
     ServerTickEvents.END_LEVEL_TICK.register{ level ->
-        level.eventQueue.tick()
+        level.clock.tick()
         GameManager.tick(level)
     }
 
