@@ -22,6 +22,7 @@ import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.item.PrimedTnt
 import net.minecraft.world.entity.monster.Endermite
+import net.minecraft.world.entity.monster.piglin.PiglinBrute
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.entity.projectile.Projectile
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball
@@ -93,6 +94,7 @@ object CustomItemInteraction {
             CustomItemTypes.INSTANT_TNT.value -> return useInstantTNTEffect(player, level, item, hitResult)
             CustomItemTypes.POPUP_TOWER.value -> return usePopupTowerEffect(player, level, item, hitResult, team)
             CustomItemTypes.PLAYER_TRACKER.value -> return usePlayerTrackerEffect(player, level, item, team)
+            CustomItemTypes.BED_DEFENDER.value -> return useBedDefenderEffect(player, level, item, hitResult, team)
         }
         return InteractionResult.PASS
     }
@@ -243,5 +245,18 @@ object CustomItemInteraction {
         player.sendSystemMessage(Component.literal("Enemy ${distance.roundToInt()} blocks away."))
         return InteractionResult.SUCCESS
         
+    }
+
+    private fun useBedDefenderEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, team: Team): InteractionResult {
+        if (hitResult !is HitResult)
+            return InteractionResult.PASS
+        val pos = hitResult.location
+        val defender = PiglinBrute(EntityTypes.PIGLIN_BRUTE, level)
+        defender.setPos(pos)
+        val scoreboardTeam = level.scoreboard.getPlayerTeam(team.getName())
+        if (scoreboardTeam != null) level.scoreboard.addPlayerToTeam(defender.stringUUID, scoreboardTeam)
+        level.addFreshEntity(defender)
+        if (!player.isCreative) item.count -= 1
+        return InteractionResult.SUCCESS
     }
 }
