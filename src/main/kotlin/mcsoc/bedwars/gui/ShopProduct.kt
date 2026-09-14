@@ -253,6 +253,7 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
     override fun getClickCallback(): GuiElement.ClickCallback {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player
+            setShopPlayer(player)
             val gameState = player.level().gameState
             BedwarsPlugin.LOGGER.info("$player wants to buy ${playerUpgrade.name}")
             purchaseUnit(player, fun(): Boolean {
