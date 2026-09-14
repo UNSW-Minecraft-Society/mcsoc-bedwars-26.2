@@ -3,19 +3,22 @@ package mcsoc.bedwars.gamestate
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.CODEC
 import net.minecraft.ChatFormatting
 import net.minecraft.commands.arguments.EntityAnchorArgument
+import net.minecraft.core.Holder
 import net.minecraft.core.UUIDUtil
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket
+import net.minecraft.network.protocol.game.ClientboundSoundPacket
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.sounds.SoundEvents
+import net.minecraft.sounds.SoundSource
 import net.minecraft.world.level.GameType
 import net.minecraft.world.phys.Vec3
 import java.util.UUID
@@ -107,14 +110,15 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
     }
     
     class RespawnCounterEvent private constructor(triggerTime: Duration, val player: UUID, count: Long) :
-            RecursiveGameEvent<RespawnCounterEvent>(triggerTime, id, count, 1.seconds) {
+            RecursiveGameEvent<RespawnCounterEvent>(triggerTime, id, count, INTERVAL) {
         constructor(triggerTime: Duration, respawnTime: Duration, player: UUID) : this(
             triggerTime,
             player,
-            respawnTime.inWholeSeconds
+            (respawnTime / INTERVAL).toLong()
         )
-        
         companion object : GameEventCompanion<RespawnCounterEvent> {
+            val INTERVAL = 1.seconds
+            
             override val id: String = "respawn"
             override val codec: MapCodec<RespawnCounterEvent> = RecordCodecBuilder.mapCodec{it.group(
                 Duration.CODEC.fieldOf("time").forGetter(RespawnCounterEvent::triggerTime),
@@ -167,5 +171,43 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
             player.sendSystemMessage(Component.literal(ChatFormatting.YELLOW.toString() + "You have respawned!"))
         }
         override fun createEvent(triggerTime: Duration, count: Long) = RespawnCounterEvent(triggerTime, player, count)
+    }
+    
+    class GameStartCounterEvent private constructor(triggerTime: Duration, count: Long) :
+            RecursiveGameEvent<GameStartCounterEvent>(triggerTime, id, count, INTERVAL) {
+        constructor(triggerTime: Duration, startTime: Duration, _d: Unit = Unit) : this(
+            triggerTime,
+            (startTime / INTERVAL).toLong()
+        )
+        companion object : GameEventCompanion<GameStartCounterEvent> {
+            val INTERVAL = 1.seconds
+            
+            override val id: String = "gameStart"
+            override val codec: MapCodec<GameStartCounterEvent> = RecordCodecBuilder.mapCodec{it.group(
+                Duration.CODEC.fieldOf("time").forGetter(GameStartCounterEvent::triggerTime),
+                Codec.LONG.fieldOf("second").forGetter(GameStartCounterEvent::count)
+            ).apply(it, ::GameStartCounterEvent)}
+        }
+        
+        override fun recurseTrigger(level: ServerLevel) {
+            level.gameState.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach{player ->
+                player.connection.send(
+                    ClientboundSetTitleTextPacket(
+                        Component.literal(count.toString())
+                    )
+                )
+                player.connection.send(
+                    ClientboundSoundPacket(
+                        Holder.direct(SoundEvents.NOTE_BLOCK_PLING.value()),
+                        SoundSource.MASTER, player.x, player.y, player.z,
+                        1.0F, 1.0F, level.getRandom().nextLong()
+                    )
+                )
+            }
+        }
+        override fun concludeTrigger(level: ServerLevel) {
+            GameManager.start(level)
+        }
+        override fun createEvent(triggerTime: Duration, count: Long) = GameStartCounterEvent(triggerTime, count)
     }
 }

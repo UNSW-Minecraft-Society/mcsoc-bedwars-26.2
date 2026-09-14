@@ -105,6 +105,7 @@ class GameManager {
 
             level.clock.reset()
             level_mod_data.setGamePhase(GamePhase.STARTING)
+            level.eventQueue.queueGameStartCounter(10.seconds)
         }
 
         fun endGame(level: ServerLevel) {
@@ -139,7 +140,7 @@ class GameManager {
             level.worldBorder.setCenter(0.0, 0.0)
         }
 
-        private fun start(level: ServerLevel) {
+        fun start(level: ServerLevel) {
             level.blockProtection.protectionEnabled = true
 
             val level_mod_data = level.gameState
@@ -367,27 +368,7 @@ class GameManager {
 
             val time = level.clock.time
             if (level.clock.timerSecond > 0) {
-                if (level_mod_data.getGamePhase() == GamePhase.STARTING) {
-                    if (time.inWholeSeconds >= 10L) {
-                        start(level)
-                    } else {
-                        val time_left = (10.0 - time.inWholeSeconds).toInt()
-                        level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach{player ->
-                            player.connection.send(
-                                ClientboundSetTitleTextPacket(
-                                    Component.literal(time_left.toString())
-                                )
-                            )
-                            player.connection.send(
-                                ClientboundSoundPacket(
-                                    Holder.direct(SoundEvents.NOTE_BLOCK_PLING.value()),
-                                    SoundSource.MASTER, player.x, player.y, player.z,
-                                    1.0F, 1.0F, level.getRandom().nextLong()
-                                )
-                            )
-                        }
-                    }
-                } else if (level_mod_data.getGamePhase() == GamePhase.ACTIVE) {
+                if (level_mod_data.getGamePhase() == GamePhase.ACTIVE) {
                     // periodic things to hit when game active
                     if (time >= DEATHMATCH_TIME && level_mod_data.getGamePeriod() == GamePeriod.ACTIVE) {
                         // trigger deathmatch, you can mess with the deathmatch time constant
