@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -25,9 +26,19 @@ public abstract class LevelSetBlockMixin {
         if (!(self instanceof ServerLevel level)) return;
         
         var block_protection = LevelData.getBlockProtection(level);
-        if (!block_protection.isBlockPlacementAllowed(pos)) {
+
+        /* if 
+         * * block placement not allowed - fail
+         * * block is replaced by itself - allow but don't track
+         * * block is replaced and not replaceable - fail
+        */
+
+        if (!(block_protection.isBlockPlacementAllowed(pos)) ||
+            !(self.getBlockState(pos).canBeReplaced() || newState.is(BlockTags.AIR))
+        ) { 
             cir.setReturnValue(false);
+        } else if (!self.getBlockState(pos).getBlock().equals(newState.getBlock())) {
+            block_protection.trackPlacedBlock(pos);
         }
-        block_protection.trackPlacedBlock(pos);
     }
 }

@@ -1,5 +1,6 @@
 package mcsoc.bedwars.entities
 
+import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.gui.ShopGui
@@ -12,10 +13,7 @@ import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.Level
 
-enum class CustomEntityType(val title: String) {
-    PLAYER_SHOPKEEPER("Player Shopkeeper"),
-    TEAM_SHOPKEEPER("Team Shopkeeper"),
-}
+
 
 object CustomEntityInteractions {
     fun triggerShopkeeperOpen(player: Player, level: Level, hand: InteractionHand, entity: Entity): InteractionResult {

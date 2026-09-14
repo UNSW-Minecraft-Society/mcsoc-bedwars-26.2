@@ -1,6 +1,6 @@
 package mcsoc.bedwars.eventhandlers
 
-import mcsoc.bedwars.datatrackers.ModDataTracker
+import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.gamestate.GameManager
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
@@ -15,6 +15,7 @@ fun registerEventHandlers() {
         server.allLevels.forEach {
             it.generatorState.placeGenerators(server)
         }
+        BedwarsConfigData.initialise()
     }
 
     ServerLifecycleEvents.SERVER_STOPPING.register {server ->
@@ -26,4 +27,8 @@ fun registerEventHandlers() {
     registerItemCallbacks()
     registerEntityCallbacks()
     registerBlockBreakEvents()
+    registerBlockUseEvents()
+    registerAfterDeathEvent()
+    registerAfterRespawnEvent()
+    registerEquipmentChangeEvents()
 }

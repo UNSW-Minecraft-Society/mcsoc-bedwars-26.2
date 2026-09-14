@@ -1,12 +1,8 @@
 package mcsoc.bedwars.gui
 
-import com.mojang.brigadier.context.CommandContext
 import eu.pb4.sgui.api.ClickType
-import eu.pb4.sgui.api.elements.AnimatedGuiElement
-import eu.pb4.sgui.api.elements.AnimatedGuiElementBuilder
 import eu.pb4.sgui.api.elements.GuiElement
 import eu.pb4.sgui.api.elements.GuiElementBuilder
-import eu.pb4.sgui.api.elements.SimpleGuiElement
 import eu.pb4.sgui.api.gui.SimpleGui
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.generatorstate.InvalidTeamException
@@ -15,17 +11,13 @@ import mcsoc.bedwars.upgrades.TeamUpgradeType
 import mcsoc.bedwars.upgrades.TrapUpgrade
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.utils.Team
-import net.minecraft.ChatFormatting
-import net.minecraft.commands.CommandSourceStack
 import net.minecraft.network.chat.Component
-import net.minecraft.network.chat.Style
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.inventory.ContainerInput
 import net.minecraft.world.inventory.MenuType
-import net.minecraft.world.inventory.Slot
 import net.minecraft.world.item.Items
-import net.minecraft.world.item.enchantment.Enchantments
-import java.util.UUID
+import net.minecraft.world.item.alchemy.Potions
+
 
 enum class ShopType(val title: String) {
     PLAYER_SHOP("Player Shop"),
@@ -56,123 +48,131 @@ object ShopGui {
     private fun getProducts(): Map<ShopType,Array<ShopProduct>> {
         // At some point put this into a config file to be read, instead of hard-coded
         return mapOf(
-             ShopType.PLAYER_SHOP to arrayOf(
-                 // These are ShopPlayerUpgrades
-                 ShopPlayerUpgrade(UpgradeItemType.ARMOUR,
-                     arrayOf(Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
-                     arrayOf(3, 4, 5),
-                     arrayOf("Chainmail Armor", "Iron Armor", "Diamond Armor")
-                 ),
-                 ShopPlayerUpgrade(UpgradeItemType.SWORD,
-                     arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND),
-                     arrayOf(3, 4, 5),
-                     arrayOf("Stone Sword", "Iron Sword", "Diamond Sword")
-                 ),
-                 ShopPlayerUpgrade(UpgradeItemType.PICKAXE,
-                     arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
-                     arrayOf(1, 2, 3, 4),
-                     arrayOf("Wooden Pickaxe", "Iron Pickaxe", "Golden Pickaxe", "Diamond Pickaxe")
-                 ),
-                 ShopPlayerUpgrade(UpgradeItemType.AXE,
-                     arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD),
-                     arrayOf(1, 2, 3, 4),
-                     arrayOf("Wooden Axe", "Stone Axe", "Iron Axe", "Diamond Axe")
-                 ),
-                 EmptyShopProduct(),
+            ShopType.PLAYER_SHOP to arrayOf(
+                // These are ShopPlayerUpgrades
+                ShopPlayerUpgrade(UpgradeItemType.ARMOUR,
+                    arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.EMERALD),
+                    arrayOf(20, 12, 6),
+                    arrayOf("Chainmail Armor", "Iron Armor", "Diamond Armor")
+                ),
+                ShopPlayerUpgrade(UpgradeItemType.SWORD,
+                    arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.EMERALD),
+                    arrayOf(10, 7, 3),
+                    arrayOf("Stone Sword", "Iron Sword", "Diamond Sword")
+                ),
+                ShopPlayerUpgrade(UpgradeItemType.PICKAXE,
+                    arrayOf(Items.IRON_INGOT, Items.IRON_INGOT, Items.GOLD_INGOT, Items.GOLD_INGOT),
+                    arrayOf(5, 10, 3, 6),
+                    arrayOf("Wooden Pickaxe", "Iron Pickaxe", "Golden Pickaxe", "Diamond Pickaxe")
+                ),
+                ShopPlayerUpgrade(UpgradeItemType.AXE,
+                    arrayOf(Items.IRON_INGOT, Items.IRON_INGOT, Items.GOLD_INGOT, Items.GOLD_INGOT),
+                    arrayOf(5, 10, 3, 6),
+                    arrayOf("Wooden Axe", "Stone Axe", "Iron Axe", "Diamond Axe")
+                ),
+                ShopPlayerUpgrade(UpgradeItemType.SHEARS,
+                    arrayOf(Items.IRON_INGOT), arrayOf(15), arrayOf("Shears")
+                ),
 
-                 // These are ShopItems
-                 ShopItem(Items.SHEARS, 1, Items.IRON_INGOT, 30),
-                 ShopItem(Items.STICK, 1, Items.GOLD_INGOT, 10),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
+                // These are ShopItems
+                ShopItem(Items.BOW, 1, Items.GOLD_INGOT, 12),
+                ShopPlayerCustomItem({player -> BedwarsItems.powerBowItemStack(player.level())}, Items.GOLD_INGOT, 24),
+                ShopPlayerCustomItem({player -> BedwarsItems.punchBowItemStack(player.level())}, Items.EMERALD, 6),
+                ShopPlayerCustomItem({player -> BedwarsItems.knockbackStickItemStack(player.level())}, Items.GOLD_INGOT, 5),
+                ShopItem(Items.WATER_BUCKET, 1, Items.GOLD_INGOT, 6),
 
-                 ShopItem(Items.ARROW, 16, Items.GOLD_INGOT, 2),
-                 ShopItem(Items.BOW, 1, Items.GOLD_INGOT, 12),
-                 ShopItem(Items.BOW, 1, Items.GOLD_INGOT, 24),
-                 ShopItem(Items.BOW, 1, Items.EMERALD, 6),
-                 EmptyShopProduct(),
+                ShopItem(Items.ARROW, 8, Items.GOLD_INGOT, 2),
+                ShopItem(Items.GOLDEN_APPLE, 1, Items.GOLD_INGOT, 3),
+                ShopCustomItem({BedwarsItems.potionItemStack(Potions.LEAPING)}, Items.EMERALD, 1),
+                ShopCustomItem({BedwarsItems.potionItemStack(Potions.SWIFTNESS)}, Items.EMERALD, 1),
+                ShopCustomItem({BedwarsItems.potionItemStack(Potions.INVISIBILITY)}, Items.EMERALD, 2),
 
-                 ShopTeamItem(Team.entries.associateWith { Items.WOOL.pick(it.dyeColour) },
-                     16, Items.IRON_INGOT, 4),
-                 ShopItem(Items.SANDSTONE, 16, Items.IRON_INGOT, 16),
-                 ShopItem(Items.END_STONE, 12, Items.IRON_INGOT, 24),
-                 ShopItem(Items.OBSIDIAN, 4, Items.EMERALD, 4),
-                 ShopItem(Items.OAK_PLANKS, 16, Items.GOLD_INGOT, 6),
+                ShopTeamItem(Team.entries.associateWith { Items.WOOL.pick(it.dyeColour) },
+                    16, Items.IRON_INGOT, 4),
+                ShopItem(Items.SANDSTONE, 16, Items.IRON_INGOT, 16),
+                ShopItem(Items.END_STONE, 16, Items.IRON_INGOT, 24),
+                ShopItem(Items.OBSIDIAN, 4, Items.EMERALD, 4),
+                ShopItem(Items.OAK_PLANKS, 16, Items.GOLD_INGOT, 6),
 
-                 ShopItem(Items.LADDER, 16, Items.IRON_INGOT, 16),
-                 ShopItem(Items.WATER_BUCKET, 1, Items.EMERALD, 2),
-                 ShopItem(Items.GOLDEN_APPLE, 1, Items.GOLD_INGOT, 3),
-                 ShopItem(Items.IRON_GOLEM_SPAWN_EGG, 2, Items.IRON_INGOT, 150),
-                 ShopItem(Items.ENDER_PEARL, 1, Items.EMERALD, 4),
+                ShopTeamItem(Team.entries.associateWith { Items.STAINED_GLASS.pick(it.dyeColour) },
+                    4, Items.IRON_INGOT, 11),
+                ShopItem(Items.CLAY, 16, Items.IRON_INGOT, 12),
+                ShopItem(Items.LADDER, 16, Items.IRON_INGOT, 4),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
 
-                 ShopCustomItem(BedwarsItems::bridgeEggItemStack, Items.IRON_INGOT, 48),
-                 ShopCustomItem(BedwarsItems::ballOfBugsItemStack, Items.GOLD_INGOT, 2),
-                 ShopCustomItem(BedwarsItems::fireballItemStack, Items.IRON_INGOT, 36),
-                 ShopCustomItem(BedwarsItems::instantTNTItemStack, Items.GOLD_INGOT, 12),
-                 ShopCustomItem(BedwarsItems::popupTowerItemStack, Items.GOLD_INGOT, 12),
 
-                 ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
-                 ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
-                 ShopItem(Items.SPLASH_POTION, 1, Items.EMERALD, 1),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-             ),
-             ShopType.TEAM_SHOP to arrayOf(
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
+                ShopItem(Items.WIND_CHARGE, 1, Items.GOLD_INGOT, 24),
+                ShopCustomItem(BedwarsItems::popupTowerItemStack, Items.GOLD_INGOT, 24),
+                ShopCustomItem(BedwarsItems::bridgeEggItemStack, Items.EMERALD, 1),
+                ShopItem(Items.ENDER_PEARL, 1, Items.EMERALD, 4),
+                EmptyShopProduct(),
 
-                 EmptyShopProduct(),
-                 IntShopTeamUpgrade(TeamUpgradeType.PROTECTION, Items.SHIELD,
-                     Array(4) {Items.DIAMOND},
-                     arrayOf(2,3,4,5),
-                     "Protection"
-                 ),
-                 IntShopTeamUpgrade(TeamUpgradeType.FEATHER_FALLING, Items.FEATHER,
-                     Array(2) {Items.DIAMOND},
-                     arrayOf(1,2),
-                     "Feather Falling"
-                 ),
-                 IntShopTeamUpgrade(TeamUpgradeType.HASTE, Items.GOLDEN_PICKAXE,
-                     Array(2) {Items.DIAMOND},
-                     arrayOf(2,3),
-                     "Haste"
-                 ),
-                 EmptyShopProduct(),
+                ShopCustomItem(BedwarsItems::ballOfBugsItemStack, Items.GOLD_INGOT, 2),
+                ShopCustomItem(BedwarsItems::fireballItemStack, Items.IRON_INGOT, 36),
+                ShopCustomItem(BedwarsItems::instantTNTItemStack, Items.GOLD_INGOT, 8),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+            ),
+            ShopType.TEAM_SHOP to arrayOf(
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
 
-                 EmptyShopProduct(),
-                 BooleanShopTeamUpgrade(TeamUpgradeType.SHARPNESS, Items.IRON_SWORD, Items.DIAMOND, 12, "Sharpness"),
-                 BooleanShopTeamUpgrade(TeamUpgradeType.HEAL_POOL, Items.GOLDEN_APPLE, Items.DIAMOND, 8, "Heal Pool"),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
+                EmptyShopProduct(),
+                IntShopTeamUpgrade(TeamUpgradeType.PROTECTION, Items.SHIELD,
+                    Array(4) {Items.DIAMOND},
+                    arrayOf(5,10,20,30),
+                    "Protection"
+                ).addDescriptionLine("Applies protection to your team's armour for more defense"),
+                IntShopTeamUpgrade(TeamUpgradeType.FEATHER_FALLING, Items.FEATHER,
+                    Array(2) {Items.DIAMOND},
+                    arrayOf(1,2),
+                    "Feather Falling"
+                ).addDescriptionLine("Applies feather falling to your team's boots for less fall damage"),
+                IntShopTeamUpgrade(TeamUpgradeType.HASTE, Items.GOLDEN_PICKAXE,
+                    Array(2) {Items.DIAMOND},
+                    arrayOf(2,3),
+                    "Haste"
+                ).addDescriptionLine("Applies haste to your team for faster block breaking"),
+                EmptyShopProduct(),
 
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
+                EmptyShopProduct(),
+                BooleanShopTeamUpgrade(TeamUpgradeType.SHARPNESS, Items.IRON_SWORD, Items.DIAMOND, 8, "Sharpness")
+                    .addDescriptionLine("Applies sharpness to your team's swords to deal more damage"),
+                BooleanShopTeamUpgrade(TeamUpgradeType.HEAL_POOL, Items.GOLDEN_APPLE, Items.DIAMOND, 3, "Heal Pool")
+                    .addDescriptionLine("Applies faster healing for your team at your island"),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
 
-                 EmptyShopProduct(),
-                 ShopTrapUpgrade(TrapUpgrade.BLINDNESS, Items.DYE.black, Items.DIAMOND, 4, "Blindness Trap"),
-                 ShopTrapUpgrade(TrapUpgrade.COUNTER, Items.POTION, Items.DIAMOND, 4, "Counter Trap"),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
 
-                 EmptyShopProduct(),
-                 ShopTrapUpgrade(TrapUpgrade.REVEAL, Items.ENDER_EYE, Items.DIAMOND, 2, "Reveal Trap"),
-                 ShopTrapUpgrade(TrapUpgrade.MINING, Items.ELDER_GUARDIAN_SPAWN_EGG, Items.DIAMOND, 4, "Mining Fatigue Trap"),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
+                EmptyShopProduct(),
+                ShopTrapUpgrade(TrapUpgrade.BLINDNESS, Items.DYE.black, Items.DIAMOND, 2, "Blindness Trap")
+                    .addDescriptionLine("Applies blindness to an intruder on your island"),
+                ShopTrapUpgrade(TrapUpgrade.COUNTER, Items.POTION, Items.DIAMOND, 2, "Counter Trap")
+                    .addDescriptionLine("Applies buffs to your team when an intruder enters your island"),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
 
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-                 EmptyShopProduct(),
-             )
+                EmptyShopProduct(),
+                ShopTrapUpgrade(TrapUpgrade.REVEAL, Items.ENDER_EYE, Items.DIAMOND, 2, "Reveal Trap"),
+                ShopTrapUpgrade(TrapUpgrade.MINING, Items.ELDER_GUARDIAN_SPAWN_EGG, Items.DIAMOND, 2, "Mining Fatigue Trap"),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+                EmptyShopProduct(),
+            )
         )
     }
 
@@ -191,9 +191,10 @@ object ShopGui {
                 for ((slotIndex, product) in PRODUCT_SLOT_INDEX zip products) {
                     if (product is PlayerSpecificShopProduct) product.setShopPlayer(player)
                     val element = GuiElementBuilder(product.getItemStack())
-                        .addLoreLine(Component.literal("Cost: ${product.getItemCost()}"))
                         .setCallback(product.getClickCallback())
-                    if (product.getProductName() != null) element.setName(product.getProductName())
+                    element.setName(product.getProductName())
+                    for (line in product.getDescriptionLines()) element.addLoreLine(line)
+                    element.addLoreLine(Component.literal("Cost: ${product.getItemCost()?.count} ").append(product.getItemCost()?.hoverName ?: Component.empty()))
                     gui.setSlot(slotIndex, element)
                 }
             }
@@ -217,165 +218,5 @@ object ShopGui {
         } catch (e: InvalidTeamException) {
             player.sendSystemMessage(Component.literal("You must be on a team to open the shop"))
         }
-    }
-
-    /**
-     * Test GUIs from Sgui translated to kotlin
-     */
-    fun testSimpleGui(objectCommandContext: CommandContext<CommandSourceStack>): Int {
-        try {
-            LOGGER.info("Testing simple gui")
-            val player = objectCommandContext.source.player
-
-            val gui = object : SimpleGui(MenuType.GENERIC_3x3, player, false) {
-                override fun onClick(
-                    index: Int,
-                    type: ClickType?,
-                    action: ContainerInput?,
-                    element: GuiElement?
-                ): Boolean {
-                    this.player.sendSystemMessage(Component.literal(type.toString()), false)
-
-                    return super.onClick(index, type, action, element)
-                }
-
-                override fun onTick() {
-                    this.setSlot(
-                        0, GuiElementBuilder(Items.ARROW)
-                            .setCount((player?.level()?.gameTime?.rem(99))?.toInt() ?: 0).setMaxCount(99)
-                    )
-                    super.onTick()
-                }
-            }
-
-            gui.title = Component.literal("Nice")
-            gui.setSlot(0, GuiElementBuilder(Items.ARROW).setCount(99).setMaxDamage(99))
-            gui.setSlot(
-                1, AnimatedGuiElement(
-                    arrayOf(
-                        Items.NETHERITE_PICKAXE.defaultInstance,
-                        Items.DIAMOND_PICKAXE.defaultInstance,
-                        Items.GOLDEN_PICKAXE.defaultInstance,
-                        Items.IRON_PICKAXE.defaultInstance,
-                        Items.STONE_PICKAXE.defaultInstance,
-                        Items.WOODEN_PICKAXE.defaultInstance
-                    ), 10, false
-                ) { p0, p1, p2, p3 -> {} }
-            )
-            gui.setSlot(
-                2, AnimatedGuiElementBuilder()
-                    .setItem(Items.NETHERITE_AXE).setDamage(150).saveItemStack()
-                    .setItem(Items.DIAMOND_AXE).setDamage(150).unbreakable().saveItemStack()
-                    .setItem(Items.GOLDEN_AXE).glow().saveItemStack()
-                    .setItem(Items.IRON_AXE).enchant(
-                        objectCommandContext.source.registryAccess(),
-                        Enchantments.AQUA_AFFINITY, 1
-                    ).hideDefaultTooltip().saveItemStack()
-                    .setItem(Items.WOODEN_AXE).saveItemStack()
-                    .setInterval(10).setRandom(true)
-            )
-            for (x in 3..gui.size - 1) {
-                val itemStack = Items.STONE.defaultInstance
-                itemStack.count = x
-                gui.setSlot(
-                    x, SimpleGuiElement(
-                        itemStack
-                    ) { p0, p1, p2, p3 -> {} }
-                )
-            }
-            gui.setSlot(
-                5, GuiElementBuilder(Items.PLAYER_HEAD)
-                    .setProfileSkinTexture("ewogICJ0aW1lc3RhbXAiIDogMTYxOTk3MDIyMjQzOCwKICAicHJvZmlsZUlkIiA6ICI2OTBkMDM2OGM2NTE0OGM5ODZjMzEwN2FjMmRjNjFlYyIsCiAgInByb2ZpbGVOYW1lIiA6ICJ5emZyXzciLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNDI0OGVhYTQxNGNjZjA1NmJhOTY5ZTdkODAxZmI2YTkyNzhkMGZlYWUxOGUyMTczNTZjYzhhOTQ2NTY0MzU1ZiIsCiAgICAgICJtZXRhZGF0YSIgOiB7CiAgICAgICAgIm1vZGVsIiA6ICJzbGltIgogICAgICB9CiAgICB9CiAgfQp9")
-                    .setName(Component.literal("Battery"))
-                    .glow()
-            )
-            gui.setSlot(
-                6, GuiElementBuilder(Items.PLAYER_HEAD)
-                    .setProfile(UUID.fromString("5efbb976-f210-4f78-9141-9598241a37a0"))
-                    .hideDefaultTooltip()
-                    .setName(Component.literal("# Alice's Head #"))
-                    .glow()
-            )
-            gui.setSlot(
-                7, GuiElementBuilder()
-                    .setItem(Items.BARRIER)
-                    .glow()
-                    .setName(Component.literal("Bye").setStyle(Style.EMPTY.withItalic(false).withBold(true)))
-                    .addLoreLine(Component.literal("Some lore"))
-                    .addLoreLine(Component.literal("More lore").withStyle(ChatFormatting.RED))
-                    .hideTooltip()
-                    .setCount(3)
-                    .setCallback(Runnable { gui.close() })
-            )
-            gui.setSlot(
-                8, GuiElementBuilder()
-                    .setItem(Items.TNT)
-                    .hideDefaultTooltip()
-                    .glow()
-                    .setName(Component.literal("Test :)").setStyle(Style.EMPTY.withItalic(false).withBold(true)))
-                    .addLoreLine(Component.literal("Some lore"))
-                    .addLoreLine(Component.literal("More lore").withStyle(ChatFormatting.RED))
-                    .setCount(1)
-                    .setCallback { index, clickType, actionType, s ->
-                        player?.sendSystemMessage(Component.literal("me when the click"), false)
-                        val item = gui.getGuiElement(index)?.itemStack
-                        if (clickType == ClickType.MOUSE_LEFT) {
-                            item?.count = if (item.count == 1) item.count else item.count - 1
-                        } else if (clickType == ClickType.MOUSE_RIGHT) {
-                            item?.count += 1
-                        }
-                        (gui.getGuiElement(index) as SimpleGuiElement).itemStack = item
-                        item?.let {
-                            if (player != null) {
-                                if (it.count <= player.enderChestInventory.containerSize) {
-                                    gui.setSlot(
-                                        4, Slot(
-                                            player.enderChestInventory,
-                                            item.count - it.count - 1, 0, 0
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-            )
-            gui.setSlot(4, Slot(player!!.enderChestInventory, 0, 0, 0))
-
-            gui.open()
-        } catch (e: Exception) {
-            LOGGER.error(e.stackTraceToString())
-            e.printStackTrace()
-        }
-        return 1
-    }
-    fun testSimpleGui4(objectCommandContext: CommandContext<CommandSourceStack>): Int {
-        try {
-            LOGGER.info("Testing simple gui 4")
-            val player = objectCommandContext.source.player
-
-            val gui = object: SimpleGui(MenuType.GENERIC_3x3, player, true) {
-                override fun onManualClose() {
-                    super.onManualClose()
-
-                    val gui = SimpleGui(MenuType.GENERIC_9x1, player, true)
-                    gui.title = Component.literal("If you can take it, it's broken")
-                    gui.setSlot(0, GuiElementBuilder(Items.DIAMOND, 5))
-                    gui.open()
-                }
-            }
-
-            gui.setSlot(0, GuiElementBuilder(Items.BARRIER, 8)
-                .setCallback(Runnable { gui.close() }))
-            gui.setSlot(2, GuiElementBuilder(Items.IRON_AXE).hideDefaultTooltip())
-            gui.setSlot(6, GuiElementBuilder(Items.BARRIER, 9)
-                .setCallback(Runnable { gui.onManualClose() }))
-
-            gui.title = Component.literal("Close gui to test switching")
-            gui.open()
-        } catch (e: Exception) {
-            LOGGER.error(e.stackTraceToString())
-            e.printStackTrace()
-        }
-        return 1
     }
 }
