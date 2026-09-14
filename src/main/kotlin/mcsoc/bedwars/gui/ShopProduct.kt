@@ -54,6 +54,7 @@ abstract class ShopProduct {
         if (inventory.countItem(currency) < price) {
             playSound(player, FAILURE_SOUND)
             if (sendMsg) player.sendSystemMessage(Component.literal("Insufficient funds"))
+            BedwarsPlugin.LOGGER.info("$player didn't have enough ${inventory.countItem(currency)} < $price ${currency.toString()}")
             return false
         }
         val name = getProductName()
@@ -62,10 +63,12 @@ abstract class ShopProduct {
                 price, inventory)
             playSound(player, SUCCESS_SOUND)
             player.sendSystemMessage(Component.literal("Purchased ").append(name))
+            BedwarsPlugin.LOGGER.info("$player had enough ${inventory.countItem(currency)} >= $price ${currency.toString()}")
             return true
         } else {
             playSound(player, FAILURE_SOUND)
             if (sendMsg) player.sendSystemMessage(Component.literal("Transaction failed"))
+            BedwarsPlugin.LOGGER.info("$player's transaction failed somehow")
             return false
         }
     }
@@ -251,6 +254,7 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player
             val gameState = player.level().gameState
+            BedwarsPlugin.LOGGER.info("$player wants to buy ${playerUpgrade.name}")
             purchaseUnit(player, fun(): Boolean {
                 gameState.upgradeItem(player, playerUpgrade)
                 return true

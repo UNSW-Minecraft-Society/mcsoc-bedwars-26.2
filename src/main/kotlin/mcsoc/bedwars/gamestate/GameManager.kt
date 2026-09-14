@@ -7,6 +7,7 @@ import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.customEntityData
+import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.utils.Team
@@ -108,6 +109,7 @@ class GameManager {
             
             val level_mod_data = level.gameState
             val level_mod_entity_data = level.customEntityData
+            level.eventQueue.reset()
             level_mod_data.clearActivePlayers()
             // clear teams - todo
 
