@@ -43,7 +43,7 @@ enum class GamePhase {
     STARTING,
     ACTIVE,
     ENDED,
-    INACTIVE
+    INACTIVE;
 }
 
 enum class GamePeriod {
@@ -305,6 +305,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
                 .fieldOf("map_centre")
                 .forGetter(ModDataStore::map_centre),
                     
+                
             
         ).apply(it, ::ModDataStore)}
     }
@@ -320,6 +321,8 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         playerMap: Map<UUID, PlayerDataRecord>,
         teamMap: Map<Team, TeamDataRecord>,
         map_centre: BlockPos
+        // game_phase: GamePhase,
+        // game_period: GamePhase
     ) : this() {
         this.player_data_map.putAll(playerMap)
         this.teams_map.putAll(teamMap)

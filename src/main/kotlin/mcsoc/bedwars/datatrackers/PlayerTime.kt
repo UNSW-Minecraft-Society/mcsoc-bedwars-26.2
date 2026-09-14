@@ -17,7 +17,7 @@ internal interface PlayerTimeHolder : PlayerTimeExposer {
     fun getPlayerTime(player: Player): PlayerTimeRecord
 
     override fun getPlayerRespawnSeconds(player: ServerPlayer): Int {
-        return getPlayerTime(player).time.inWholeSeconds.toInt() + 1
+        return getPlayerTime(player).time.inWholeSeconds.toInt()
     }
 
     override fun resetPlayerRespawnTime(player: ServerPlayer) {
