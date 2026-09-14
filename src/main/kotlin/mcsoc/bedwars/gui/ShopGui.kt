@@ -111,7 +111,7 @@ object ShopGui {
                 ShopCustomItem(BedwarsItems::ballOfBugsItemStack, Items.GOLD_INGOT, 2),
                 ShopCustomItem(BedwarsItems::fireballItemStack, Items.IRON_INGOT, 36),
                 ShopCustomItem(BedwarsItems::instantTNTItemStack, Items.GOLD_INGOT, 8),
-                ShopCustomItem(BedwarsItems::bedDefenderItemStack, Items.EMERALD, 4),
+                ShopCustomItem(BedwarsItems::doomedDefenderItemStack, Items.EMERALD, 4),
                 EmptyShopProduct(),
             ),
             ShopType.TEAM_SHOP to arrayOf(

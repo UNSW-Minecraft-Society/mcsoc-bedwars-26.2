@@ -2,8 +2,9 @@ package mcsoc.bedwars.items
 
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.blockProtection
+import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
-import mcsoc.bedwars.datatrackers.generatorstate.InvalidTeamException
+import mcsoc.bedwars.entities.GOLEM_EXPIRY_TIME_TICKS
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.rotate
 import mcsoc.bedwars.utils.toCardinalDirection
@@ -43,6 +44,7 @@ import kotlin.math.roundToInt
 const val FIREBALL_SPEED = 1.0
 const val BRIDGE_EGG_OFFSET = -0.5
 const val POPUP_TOWER_HEIGHT = 6 // needs to be >5
+const val DOOMED_DEFENDER_EXPIRY_TIME_TICKS: Long = 400
 val POPUP_TOWER_WOOL_OFFSETS = buildSet {
     for (y in -1..POPUP_TOWER_HEIGHT-3) {
         add(Vec3i(-1, y, -1))
@@ -94,7 +96,7 @@ object CustomItemInteraction {
             CustomItemTypes.INSTANT_TNT.value -> return useInstantTNTEffect(player, level, item, hitResult)
             CustomItemTypes.POPUP_TOWER.value -> return usePopupTowerEffect(player, level, item, hitResult, team)
             CustomItemTypes.PLAYER_TRACKER.value -> return usePlayerTrackerEffect(player, level, item, team)
-            CustomItemTypes.BED_DEFENDER.value -> return useBedDefenderEffect(player, level, item, hitResult, team)
+            CustomItemTypes.DOOMED_DEFENDER.value -> return useDoomedDefenderEffect(player, level, item, hitResult, team)
         }
         return InteractionResult.PASS
     }
@@ -247,7 +249,7 @@ object CustomItemInteraction {
         
     }
 
-    private fun useBedDefenderEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, team: Team): InteractionResult {
+    private fun useDoomedDefenderEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, team: Team): InteractionResult {
         if (hitResult !is HitResult)
             return InteractionResult.PASS
         val pos = hitResult.location
@@ -255,7 +257,10 @@ object CustomItemInteraction {
         defender.setPos(pos)
         val scoreboardTeam = level.scoreboard.getPlayerTeam(team.getName())
         if (scoreboardTeam != null) level.scoreboard.addPlayerToTeam(defender.stringUUID, scoreboardTeam)
-        level.addFreshEntity(defender)
+        if (level.addFreshEntity(defender) && level is ServerLevel) {
+            level.eventQueue.queueEntityExpiry(DOOMED_DEFENDER_EXPIRY_TIME_TICKS, defender.uuid)
+            // "Doomed to death of KARMA!" - NarraChara UnderTale
+        }
         if (!player.isCreative) item.count -= 1
         return InteractionResult.SUCCESS
     }
