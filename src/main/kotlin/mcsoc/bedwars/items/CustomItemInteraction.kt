@@ -44,7 +44,7 @@ import kotlin.math.roundToInt
 const val FIREBALL_SPEED = 1.0
 const val BRIDGE_EGG_OFFSET = -0.5
 const val POPUP_TOWER_HEIGHT = 6 // needs to be >5
-const val DOOMED_DEFENDER_EXPIRY_TIME_TICKS: Long = 400
+const val DOOMED_DEFENDER_EXPIRY_TIME_TICKS: Long = 280
 val POPUP_TOWER_WOOL_OFFSETS = buildSet {
     for (y in -1..POPUP_TOWER_HEIGHT-3) {
         add(Vec3i(-1, y, -1))
