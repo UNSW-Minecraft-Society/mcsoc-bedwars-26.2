@@ -28,7 +28,7 @@ enum class CustomItemTypes(val value: String, private val item_factory: () -> It
     BALL_OF_BUGS("ball_of_bugs", {BedwarsItems.ballOfBugsItemStack()}),
     POPUP_TOWER("popup_tower", {BedwarsItems.popupTowerItemStack()}),
     PLAYER_TRACKER("player_tracker", {BedwarsItems.playerTrackerItemStack()}),
-    BED_DEFENDER("bed_defender", { BedwarsItems.bedDefenderItemStack() });
+    DOOMED_DEFENDER("doomed_defender", { BedwarsItems.doomedDefenderItemStack() });
     
     fun giveToPlayer(player: ServerPlayer?): Int {
         return if (player is ServerPlayer && player.addItem(item_factory())) 1
@@ -111,11 +111,11 @@ object BedwarsItems {
             .withItemLore("Points to where the nearest player on an enemy team was, Right click to update the location.")
     }
 
-    fun bedDefenderItemStack(): ItemStack {
+    fun doomedDefenderItemStack(): ItemStack {
         return Items.PIGLIN_BRUTE_SPAWN_EGG.defaultInstance
-            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.BED_DEFENDER.value)
-            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.BED_DEFENDER.value)
-            .renamedTo("Player Tracker")
-            .withItemLore("Points to where the nearest player on an enemy team was, Right click to update the location.")
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.DOOMED_DEFENDER.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.DOOMED_DEFENDER.value)
+            .renamedTo("Doomed Defender")
+            .withItemLore("Spawn a temporary piglin brute on your team.")
     }
 }
