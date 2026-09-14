@@ -157,6 +157,7 @@ class GameManager {
                     level, spawn.x, spawn.y, spawn.z,
                     setOf(), 0F, 0F, true
                 )
+                level_mod_data.updateItems(player)
             }
             // tp players to spawn points
             // start generators
