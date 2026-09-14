@@ -36,6 +36,8 @@ class GameEventTracker() : LevelTiedData() {
     fun queueEntityExpiry(lifetime: Duration, uuid: UUID) {
         queueEvent(GameEvent.EntityExpiryEvent(level.clock.time, lifetime, uuid))
     }
+    fun queuePlayerRespawn(respawnTime: Duration, uuid: UUID) {
+        queueEvent(GameEvent.RespawnCounterEvent(level.clock.time, respawnTime, uuid))
     }
 
     private fun dequeueEventsToTrigger(): Iterable<GameEvent> {

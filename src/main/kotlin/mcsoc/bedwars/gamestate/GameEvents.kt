@@ -11,6 +11,10 @@ import net.minecraft.ChatFormatting
 import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.core.UUIDUtil
 import net.minecraft.network.chat.Component
+import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
+import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.level.GameType
 import net.minecraft.world.phys.Vec3
@@ -91,6 +95,68 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
         }
         override fun createEvent(triggerTime: Duration, count: Long) = EntityExpiryEvent(triggerTime, entityId, count)
     }
+    
+    class RespawnCounterEvent private constructor(triggerTime: Duration, val player: UUID, count: Long) :
+            RecursiveGameEvent<RespawnCounterEvent>(triggerTime, id, count, 1.seconds) {
+        constructor(triggerTime: Duration, respawnTime: Duration, player: UUID) : this(
+            triggerTime,
+            player,
+            respawnTime.inWholeSeconds
+        )
+        
+        companion object : GameEventCompanion<RespawnCounterEvent> {
+            override val id: String = "respawn"
+            override val codec: MapCodec<RespawnCounterEvent> = RecordCodecBuilder.mapCodec{it.group(
+                Duration.CODEC.fieldOf("time").forGetter(RespawnCounterEvent::triggerTime),
+                UUIDUtil.CODEC.fieldOf("player").forGetter(RespawnCounterEvent::player),
+                Codec.LONG.fieldOf("second").forGetter(RespawnCounterEvent::count)
+            ).apply(it, ::RespawnCounterEvent)}
+        }
+        
+        override fun recurseTrigger(level: ServerLevel) {
+            val player = level.server.playerList.getPlayer(player) ?: return
+            val respawn_time_message = RESPAWN_TIME_MESSAGE(count.toInt())
+            player.connection.send(
+                ClientboundSetTitlesAnimationPacket(0, 30, 0)
+            )
+            player.connection.send(
+                ClientboundSetSubtitleTextPacket(
+                    Component.literal(respawn_time_message)
+                )
+            )
+            player.connection.send(
+                ClientboundSetTitleTextPacket(
+                    Component.literal((ChatFormatting.RED.toString() + "YOU DIED!"))
+                )
+            )
+            player.sendSystemMessage(Component.literal(respawn_time_message))
+        }
+        override fun concludeTrigger(level: ServerLevel) {
+            val player = level.server.playerList.getPlayer(player) ?: return
+            val level_mod_data = level.gameState
+            val spawn = level_mod_data.getTeamSpawn(level_mod_data.getPlayersTeam(player.uuid))
+            player.teleportTo(
+                level, spawn.x, spawn.y, spawn.z,
+                setOf(), 0F, 0F, true
+            )
+            player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atBottomCenterOf(level_mod_data.map_centre))
+
+            player.setGameMode(GameType.SURVIVAL)
+            level_mod_data.setPlayerAlive(player)
+            player.connection.send(
+                ClientboundClearTitlesPacket(true)
+            )
+            player.connection.send(
+                ClientboundSetTitlesAnimationPacket(10, 40, 10)
+            )
+            player.connection.send(
+                ClientboundSetTitleTextPacket(
+                    Component.literal((ChatFormatting.GREEN.toString() + "RESPAWNED!"))
+                )
+            )
+            player.sendSystemMessage(Component.literal(ChatFormatting.YELLOW.toString() + "You have respawned!"))
+        }
+        override fun createEvent(triggerTime: Duration, count: Long) = RespawnCounterEvent(triggerTime, player, count)
     }
 }
 

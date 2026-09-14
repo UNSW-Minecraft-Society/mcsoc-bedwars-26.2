@@ -214,6 +214,7 @@ class GameManager {
             player.setGameMode(GameType.SPECTATOR)
 
             if (!level_mod_data.getBedDestroyed(level_mod_data.getPlayersTeam(player.uuid))) {
+                player.level().eventQueue.queuePlayerRespawn(RESPAWN_TIME, player.uuid)
                 // tp above map
                 val respawn_position: Vec3 = Vec3.atBottomCenterOf(level_mod_data.map_centre.offset(0, 30, 0))
                 player.teleportTo(player.level(), respawn_position.x, respawn_position.y, respawn_position.z,
@@ -222,21 +223,6 @@ class GameManager {
 
                 level_mod_data.setPlayerRespawning(player)
                 level_mod_data.resetPlayerRespawnTime(player)
-                val respawn_time_message = RESPAWN_TIME_MESSAGE(RESPAWN_TIME.inWholeSeconds.toInt())
-                player.connection.send(
-                    ClientboundSetTitlesAnimationPacket(0, 30, 0)
-                )
-                player.connection.send(
-                    ClientboundSetSubtitleTextPacket(
-                        Component.literal(respawn_time_message)
-                    )
-                )
-                player.connection.send(
-                    ClientboundSetTitleTextPacket(
-                        Component.literal((ChatFormatting.RED.toString() + "YOU DIED!"))
-                    )
-                )
-                player.sendSystemMessage(Component.literal(respawn_time_message))
             } else {
                 eliminatePlayer(player)
             }
@@ -376,57 +362,6 @@ class GameManager {
                     level.generatorState.tick()
                     level_mod_data.tick()
                     level_mod_data.tickTeams(level)
-                }
-            }
-            if (level.clock.timerTick > 0) {
-                level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach { player ->
-                    if (level_mod_data.isPlayerEliminated(player)) return@forEach
-
-                    if (level_mod_data.isPlayerRespawning(player)) {
-                        val seconds_left = level_mod_data.getPlayerRespawnSeconds(player)
-
-                        if (seconds_left <= 0) {
-                            // tp player to base location for respawn
-                            val centre = Vec3.atBottomCenterOf(level_mod_data.map_centre)
-                            val spawn = level_mod_data.getTeamSpawn(level_mod_data.getPlayersTeam(player.uuid))
-                            player.teleportTo(
-                                level, spawn.x, spawn.y, spawn.z,
-                                setOf(), 0F, 0F, true
-                            )
-                            player.lookAt(EntityAnchorArgument.Anchor.EYES, centre)
-
-                            player.setGameMode(GameType.SURVIVAL)
-                            level_mod_data.setPlayerAlive(player)
-                            player.connection.send(
-                                ClientboundClearTitlesPacket(true)
-                            )
-                            player.connection.send(
-                                ClientboundSetTitlesAnimationPacket(10, 40, 10)
-                            )
-                            player.connection.send(
-                                ClientboundSetTitleTextPacket(
-                                    Component.literal((ChatFormatting.GREEN.toString() + "RESPAWNED!"))
-                                )
-                            )
-                            player.sendSystemMessage(Component.literal(ChatFormatting.YELLOW.toString() + "You have respawned!"))
-                        } else if (level_mod_data.playerTimerSecondPassed(player) > 0) {
-                            val respawn_time_message = RESPAWN_TIME_MESSAGE(seconds_left)
-                            player.connection.send(
-                                ClientboundSetTitlesAnimationPacket(0, 30, 0)
-                            )
-                            player.connection.send(
-                                ClientboundSetSubtitleTextPacket(
-                                    Component.literal(respawn_time_message)
-                                )
-                            )
-                            player.connection.send(
-                                ClientboundSetTitleTextPacket(
-                                    Component.literal((ChatFormatting.RED.toString() + "YOU DIED!"))
-                                )
-                            )
-                            player.sendSystemMessage(Component.literal(respawn_time_message))
-                        }
-                    }
                 }
             }
 
