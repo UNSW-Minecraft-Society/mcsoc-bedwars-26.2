@@ -1,63 +1,60 @@
 package mcsoc.bedwars.datatrackers
 
-import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.gamestate.GameEvent
-import mcsoc.bedwars.utils.INSTANT_CODEC
-import mcsoc.bedwars.utils.ticks
 import net.minecraft.server.level.ServerLevel
 import java.util.PriorityQueue
 import java.util.UUID
-import kotlin.time.Clock
-import kotlin.time.Instant
-import kotlin.time.TimeSource
+import kotlin.time.Duration
 
 
 class GameEventTracker() : LevelTiedData() {
     companion object {
         val CODEC: MapCodec<GameEventTracker> = RecordCodecBuilder.mapCodec{it.group(
-            INSTANT_CODEC.fieldOf("counter").forGetter(GameEventTracker::currTime),
             GameEvent.CODEC.listOf().fieldOf("queuedEvents").forGetter(GameEventTracker::listQueuedEvents)
         ).apply(it, ::GameEventTracker)}
     }
     override val type get() = LevelDataType.EventQueue
     
     lateinit var level: ServerLevel
-    private var currTime: Instant = Instant.fromEpochMilliseconds(0)
     private val eventQueue = PriorityQueue<GameEvent>()
     private fun listQueuedEvents(): List<GameEvent> = eventQueue.toList()
     
-    private constructor(currTime: Instant, eventList: List<GameEvent>) : this() {
-        this.currTime = currTime
-        for (event in eventList) {
-            queueEvent(event)
-        }
-    }
-
-    private fun queueEvent(event: GameEvent) {
-        eventQueue.add(event)
+    private constructor(eventList: List<GameEvent>) : this() {
+        queueEvents(eventList)
     }
     
-    fun queueEntityExpiry(ticks: Long, uuid: UUID) {
-        queueEvent(GameEvent.EntityExpiryEvent(currTime + ticks.ticks, uuid))
+    fun queueEvent(event: GameEvent) {
+        eventQueue.add(event)
+    }
+    fun queueEvents(events: Iterable<GameEvent>) {
+        eventQueue.addAll(events)
+    }
+    
+    fun queueEntityExpiry(lifetime: Duration, uuid: UUID) {
+        queueEvent(GameEvent.EntityExpiryEvent(level.clock.time, lifetime, uuid))
+    }
+    fun queueGameStartCounter(startTime: Duration) {
+        queueEvent(GameEvent.GameStartCounterEvent(level.clock.time, startTime))
+    }
+    fun queuePlayerRespawn(respawnTime: Duration, uuid: UUID) {
+        queueEvent(GameEvent.RespawnCounterEvent(level.clock.time, respawnTime, uuid))
     }
 
     private fun dequeueEventsToTrigger(): Iterable<GameEvent> {
         val eventsToTrigger: MutableCollection<GameEvent> = mutableSetOf()
-        while (eventQueue.isNotEmpty() && eventQueue.peek().hasExpired(currTime))
+        while (eventQueue.isNotEmpty() && eventQueue.peek().hasExpired(level.clock.time))
             eventsToTrigger.add(eventQueue.poll() ?: break)
         return eventsToTrigger
     }
 
     fun reset() {
-        this.currTime = Instant.fromEpochMilliseconds(0)
         this.eventQueue.clear()
     }
     
     fun tick() {
-        currTime += 1.ticks
         for (event in dequeueEventsToTrigger())
             event.trigger(level)
     }

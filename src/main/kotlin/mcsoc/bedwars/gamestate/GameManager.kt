@@ -106,6 +106,7 @@ class GameManager {
 
             level.clock.reset()
             level_mod_data.setGamePhase(GamePhase.STARTING)
+            level.eventQueue.queueGameStartCounter(10.seconds)
         }
 
         fun endGame(level: ServerLevel) {
@@ -140,7 +141,7 @@ class GameManager {
             level.worldBorder.setCenter(0.0, 0.0)
         }
 
-        private fun start(level: ServerLevel) {
+        fun start(level: ServerLevel) {
             level.blockProtection.protectionEnabled = true
 
             val level_mod_data = level.gameState
@@ -228,6 +229,7 @@ class GameManager {
             player.setGameMode(GameType.SPECTATOR)
 
             if (!level_mod_data.getBedDestroyed(level_mod_data.getPlayersTeam(player.uuid))) {
+                player.level().eventQueue.queuePlayerRespawn(RESPAWN_TIME, player.uuid)
                 // tp above map
                 val respawn_position: Vec3 = Vec3.atBottomCenterOf(level_mod_data.map_centre.offset(0, 30, 0))
                 player.teleportTo(player.level(), respawn_position.x, respawn_position.y, respawn_position.z,
@@ -236,21 +238,6 @@ class GameManager {
 
                 level_mod_data.setPlayerRespawning(player)
                 level_mod_data.resetPlayerRespawnTime(player)
-                val respawn_time_message = RESPAWN_TIME_MESSAGE(RESPAWN_TIME.inWholeSeconds.toInt())
-                player.connection.send(
-                    ClientboundSetTitlesAnimationPacket(0, 30, 0)
-                )
-                player.connection.send(
-                    ClientboundSetSubtitleTextPacket(
-                        Component.literal(respawn_time_message)
-                    )
-                )
-                player.connection.send(
-                    ClientboundSetTitleTextPacket(
-                        Component.literal((ChatFormatting.RED.toString() + "YOU DIED!"))
-                    )
-                )
-                player.sendSystemMessage(Component.literal(respawn_time_message))
             } else {
                 eliminatePlayer(player)
             }
@@ -393,81 +380,10 @@ class GameManager {
                     level_mod_data.tickTeams(level)
                 }
             }
-            if (level.clock.timerTick > 0) {
-                level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach { player ->
-                    if (level_mod_data.isPlayerEliminated(player)) return@forEach
-
-                    if (level_mod_data.isPlayerRespawning(player)) {
-                        val seconds_left = level_mod_data.getPlayerRespawnSeconds(player)
-
-                        if (seconds_left <= 0) {
-                            // tp player to base location for respawn
-                            val centre = Vec3.atBottomCenterOf(level_mod_data.map_centre)
-                            val spawn = level_mod_data.getTeamSpawn(level_mod_data.getPlayersTeam(player.uuid))
-                            player.teleportTo(
-                                level, spawn.x, spawn.y, spawn.z,
-                                setOf(), 0F, 0F, true
-                            )
-                            player.lookAt(EntityAnchorArgument.Anchor.EYES, centre)
-
-                            player.setGameMode(GameType.SURVIVAL)
-                            level_mod_data.setPlayerAlive(player)
-                            player.connection.send(
-                                ClientboundClearTitlesPacket(true)
-                            )
-                            player.connection.send(
-                                ClientboundSetTitlesAnimationPacket(10, 40, 10)
-                            )
-                            player.connection.send(
-                                ClientboundSetTitleTextPacket(
-                                    Component.literal((ChatFormatting.GREEN.toString() + "RESPAWNED!"))
-                                )
-                            )
-                            player.sendSystemMessage(Component.literal(ChatFormatting.YELLOW.toString() + "You have respawned!"))
-                        } else if (level_mod_data.playerTimerSecondPassed(player) > 0) {
-                            val respawn_time_message = RESPAWN_TIME_MESSAGE(seconds_left)
-                            player.connection.send(
-                                ClientboundSetTitlesAnimationPacket(0, 30, 0)
-                            )
-                            player.connection.send(
-                                ClientboundSetSubtitleTextPacket(
-                                    Component.literal(respawn_time_message)
-                                )
-                            )
-                            player.connection.send(
-                                ClientboundSetTitleTextPacket(
-                                    Component.literal((ChatFormatting.RED.toString() + "YOU DIED!"))
-                                )
-                            )
-                            player.sendSystemMessage(Component.literal(respawn_time_message))
-                        }
-                    }
-                }
-            }
 
             val time = level.clock.time
             if (level.clock.timerSecond > 0) {
-                if (level_mod_data.getGamePhase() == GamePhase.STARTING) {
-                    if (time.inWholeSeconds >= 10L) {
-                        start(level)
-                    } else {
-                        val time_left = (10.0 - time.inWholeSeconds).toInt()
-                        level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach{player ->
-                            player.connection.send(
-                                ClientboundSetTitleTextPacket(
-                                    Component.literal(time_left.toString())
-                                )
-                            )
-                            player.connection.send(
-                                ClientboundSoundPacket(
-                                    Holder.direct(SoundEvents.NOTE_BLOCK_PLING.value()),
-                                    SoundSource.MASTER, player.x, player.y, player.z,
-                                    1.0F, 1.0F, level.getRandom().nextLong()
-                                )
-                            )
-                        }
-                    }
-                } else if (level_mod_data.getGamePhase() == GamePhase.ACTIVE) {
+                if (level_mod_data.getGamePhase() == GamePhase.ACTIVE) {
                     // periodic things to hit when game active
                     if (time >= DEATHMATCH_TIME && level_mod_data.getGamePeriod() == GamePeriod.ACTIVE) {
                         // trigger deathmatch, you can mess with the deathmatch time constant

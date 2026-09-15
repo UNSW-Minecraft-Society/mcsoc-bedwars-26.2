@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 fun registerEventHandlers() {
     ServerTickEvents.END_LEVEL_TICK.register{ level ->
         level.clock.tick()
+        level.eventQueue.tick()
         GameManager.tick(level)
     }
 
