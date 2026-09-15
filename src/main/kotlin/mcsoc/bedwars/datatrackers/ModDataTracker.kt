@@ -22,6 +22,7 @@ import kotlin.time.Duration
 import kotlin.time.TimeSource
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.ticks
+import mcsoc.bedwars.utils.toBlockPos
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup
@@ -203,19 +204,26 @@ private class TeamDataRecord(
     private var trapCooldown = 0
 
     override fun tick(level: ServerLevel) {
+        BedwarsPlugin.LOGGER.info("Ticking team stuff, spawn position: ${spawn.toBlockPos().toString()}")
 
         if (getUpgrade(TeamUpgradeType.HEAL_POOL)) {
             players
                 .mapNotNull {level.getPlayerByUUID(it)}
                 .filter { spawn.distanceTo(it.position()) < PLAYER_RANGE }
-                .forEach { it.addEffect(MobEffectInstance(MobEffects.REGENERATION, 1, 0, false, false)) }
+                .forEach {
+                    it.addEffect(MobEffectInstance(MobEffects.REGENERATION, 1, 0, false, false))
+                    BedwarsPlugin.LOGGER.info("Applying regen to ${it.name} who is ${spawn.distanceTo(it.position())} blocks away")
+                }
         }
 
         val haste = getUpgrade(TeamUpgradeType.HASTE)
         if (haste > 0) {
             players
                 .mapNotNull {level.getPlayerByUUID(it)}
-                .forEach { it.addEffect(MobEffectInstance(MobEffects.HASTE, 1, haste - 1, false, false)) }
+                .forEach {
+                    it.addEffect(MobEffectInstance(MobEffects.HASTE, 1, haste - 1, false, false))
+                    BedwarsPlugin.LOGGER.info("Applying haste to ${it.name} who is ${spawn.distanceTo(it.position())} blocks away")
+                }
         }
 
         if (trapCooldown > 0) {
@@ -230,6 +238,7 @@ private class TeamDataRecord(
             val trap = popTrap()
             trap?.enemyEffect(level, enemies)
             trap?.teamEffect(level, teammates)
+            trap?.let { BedwarsPlugin.LOGGER.info("Triggered ${it.name}, affecting enemies ${enemies.map{it.toString()}} and teammates ${teammates.map{it.toString()}}") }
             // notify teammates about trap being triggered with title and sfx
         }
     }
