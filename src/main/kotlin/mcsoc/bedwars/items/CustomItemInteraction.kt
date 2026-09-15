@@ -4,11 +4,11 @@ import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
-import mcsoc.bedwars.entities.GOLEM_EXPIRY_TIME_TICKS
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.rotate
 import mcsoc.bedwars.utils.toCardinalDirection
 import mcsoc.bedwars.utils.toBlockPos
+import mcsoc.bedwars.utils.withTrim
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.core.GlobalPos
@@ -29,7 +29,9 @@ import net.minecraft.world.entity.projectile.Projectile
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
 import net.minecraft.world.item.component.LodestoneTracker
+import net.minecraft.world.item.equipment.trim.TrimPatterns
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.Rotation
@@ -39,12 +41,14 @@ import net.minecraft.world.phys.Vec3
 import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 import kotlin.math.roundToInt
+import kotlin.time.Duration
 
 
 const val FIREBALL_SPEED = 1.0
 const val BRIDGE_EGG_OFFSET = -0.5
 const val POPUP_TOWER_HEIGHT = 6 // needs to be >5
-const val DOOMED_DEFENDER_EXPIRY_TIME_TICKS: Long = 280
+val DOOMED_DEFENDER_EXPIRY_TIME: Duration = Duration.parse("14s")
+val DOOMED_DEFENDER_TRIM = TrimPatterns.SNOUT
 val POPUP_TOWER_WOOL_OFFSETS = buildSet {
     for (y in -1..POPUP_TOWER_HEIGHT-3) {
         add(Vec3i(-1, y, -1))
@@ -250,15 +254,16 @@ object CustomItemInteraction {
     }
 
     private fun useDoomedDefenderEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, team: Team): InteractionResult {
-        if (hitResult !is HitResult)
+        if (hitResult !is HitResult || level !is ServerLevel)
             return InteractionResult.PASS
         val pos = hitResult.location
         val defender = PiglinBrute(EntityTypes.PIGLIN_BRUTE, level)
         defender.setPos(pos)
+        defender.equipItemIfPossible(level, Items.GOLDEN_LEGGINGS.defaultInstance.withTrim(team.trimMaterial, DOOMED_DEFENDER_TRIM, level))
         val scoreboardTeam = level.scoreboard.getPlayerTeam(team.getName())
         if (scoreboardTeam != null) level.scoreboard.addPlayerToTeam(defender.stringUUID, scoreboardTeam)
-        if (level.addFreshEntity(defender) && level is ServerLevel) {
-            level.eventQueue.queueEntityExpiry(DOOMED_DEFENDER_EXPIRY_TIME_TICKS, defender.uuid)
+        if (level.addFreshEntity(defender)) {
+            level.eventQueue.queueEntityExpiry(DOOMED_DEFENDER_EXPIRY_TIME, defender.uuid)
             // "Doomed to death of KARMA!" - NarraChara UnderTale
         }
         if (!player.isCreative) item.count -= 1
