@@ -45,7 +45,7 @@ val DEATHMATCH_TIME = 10.minutes // change if i'm wrong
 const val BORDER_SIZE: Double = 300.0 // change if needed
 val RESPAWN_TIME = 5.seconds
 
-val RESPAWN_TIME_MESSAGE = {seconds_left: Int -> "${ChatFormatting.YELLOW}You will respawn in ${ChatFormatting.RED}${seconds_left + 1} ${ChatFormatting.YELLOW}seconds!"}
+val RESPAWN_TIME_MESSAGE = {seconds_left: Int -> "${ChatFormatting.YELLOW}You will respawn in ${ChatFormatting.RED}${seconds_left} ${ChatFormatting.YELLOW}seconds!"}
 
 class GameManager {
     companion object {
