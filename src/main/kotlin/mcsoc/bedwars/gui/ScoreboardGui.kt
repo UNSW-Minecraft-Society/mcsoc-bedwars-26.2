@@ -1,5 +1,7 @@
 package mcsoc.bedwars.gui
 
+import mcsoc.bedwars.datatrackers.GamePeriod
+import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.gameState
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
@@ -12,13 +14,18 @@ import net.minecraft.world.scores.criteria.ObjectiveCriteria
 object ScoreboardGui {
     private val TITLE = "Vedwars"
 
-    fun initialiseScoreboard(level: ServerLevel) {
+    fun displayScoreboard(level: ServerLevel) {
         val scoreboard = level.scoreboard
-
+        // Clear stuff
+        clearScoreboard(level)
         // Set title
         scoreboard.setDisplayObjective(DisplaySlot.SIDEBAR, getOrCreateDummyObjective(scoreboard))
         // Add lines
-        displayLines(level)
+        val lines = getLines(level)
+
+        for ((index, line) in lines.withIndex()) {
+            scoreboard.getOrCreatePlayerScore(ScoreHolder.forNameOnly(line), getOrCreateDummyObjective(scoreboard)).set(lines.size - index)
+        }
     }
 
     fun getOrCreateDummyObjective(scoreboard: Scoreboard) : Objective {
@@ -27,31 +34,33 @@ object ScoreboardGui {
             ObjectiveCriteria.RenderType.INTEGER, true, null)
     }
 
-    private fun displayLines(level: ServerLevel) {
-        val scoreboard = level.scoreboard
-        val lines = getLines(level)
-        for ((index, line) in lines.withIndex()) {
-            scoreboard.getOrCreatePlayerScore(ScoreHolder.forNameOnly(line), getOrCreateDummyObjective(scoreboard)).set(lines.size - index)
-        }
-    }
-
     private fun getLines(level: ServerLevel): List<String> {
         val lines = mutableListOf<String>()
-        lines += "Imagine this works:"
-        lines += "12:25"
+
+        lines += getGamePeriodLine(level)
         lines += ""
         for (team in level.gameState.getActiveTeams()) {
             var teamStatus : String
             if (level.gameState.getBedDestroyed(team)) {
                 val teamPlayers = level.gameState.getPlayersInTeam(team)
-                val numAlive = teamPlayers.filter {
+                val numAlive = teamPlayers.count {
                     level.getPlayerByUUID(it)?.let { player -> !level.gameState.isPlayerEliminated(player) } ?: false
-                }.count()
-                teamStatus = "$numAlive left"
-            } else teamStatus = "bed active"
-            lines += team.getName() + teamStatus
+                }
+                teamStatus = if (numAlive > 0) "$§e$numAlive left" else "§c✖ eliminated"
+            } else teamStatus = "§a✔ bed active"
+            lines += team.getName() + " " + teamStatus
         }
         return lines
+    }
+
+    private fun getGamePeriodLine(level: ServerLevel): String {
+        val nextPhase = when (level.gameState.getGamePeriod()) {
+            GamePeriod.ACTIVE -> "Deathmatch in "
+            GamePeriod.DEATHMATCH -> "Dragons in "
+            GamePeriod.INACTIVE -> return ""
+        }
+        val time = "§a12:25"
+        return nextPhase + time
     }
 
     fun clearScoreboard(level: ServerLevel) {

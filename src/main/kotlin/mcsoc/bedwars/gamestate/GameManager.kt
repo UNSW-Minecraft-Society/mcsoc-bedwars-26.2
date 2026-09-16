@@ -1,6 +1,5 @@
 package mcsoc.bedwars.gamestate
 
-import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
@@ -13,9 +12,7 @@ import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.gui.ScoreboardGui
 import mcsoc.bedwars.utils.Team
-import mcsoc.bedwars.utils.ticks
 import mcsoc.bedwars.utils.toBlockPos
-import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.minecraft.ChatFormatting
 import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.core.BlockPos
@@ -178,7 +175,7 @@ class GameManager {
             // start generators
             // maybe show a title saying game begin or something
             // maybe a little tooltip in the bottom left
-            ScoreboardGui.initialiseScoreboard(level)
+            ScoreboardGui.displayScoreboard(level)
 
             level.clock.reset()
             level_mod_data.setGamePhase(GamePhase.ACTIVE)
