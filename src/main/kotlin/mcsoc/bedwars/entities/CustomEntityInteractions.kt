@@ -27,6 +27,7 @@ object CustomEntityInteractions {
         when (type) {
             CustomEntityType.PLAYER_SHOPKEEPER -> ShopGui.displayShop(player, ShopType.PLAYER_SHOP)
             CustomEntityType.TEAM_SHOPKEEPER -> ShopGui.displayShop(player, ShopType.TEAM_SHOP)
+            else -> {}
         }
         return InteractionResult.SUCCESS
     }

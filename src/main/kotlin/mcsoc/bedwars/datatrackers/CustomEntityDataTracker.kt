@@ -3,13 +3,16 @@ package mcsoc.bedwars.datatrackers
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+import mcsoc.bedwars.utils.Team
 import net.minecraft.core.UUIDUtil
 import net.minecraft.world.entity.Entity
 import java.util.UUID
 
 enum class CustomEntityType(val title: String) {
     PLAYER_SHOPKEEPER("Player Shopkeeper"),
-    TEAM_SHOPKEEPER("Team Shopkeeper");
+    TEAM_SHOPKEEPER("Team Shopkeeper"),
+    DREAM_DEFENDER("Dream Defender"),
+    DEATHMATCH_DRAGON("Deathmatch Dragon");
 
     companion object {
         val CODEC: Codec<CustomEntityType> = Codec.STRING.xmap(::valueOf, CustomEntityType::name)
@@ -18,13 +21,18 @@ enum class CustomEntityType(val title: String) {
 
 internal interface CustomEntityHolder {
     val custom_entity_types: MutableMap<UUID, CustomEntityType>
+    val custom_entity_team_data: MutableMap<UUID, Team>
 }
 
 internal interface CustomEntityExposer {
     fun getEntityType(id: UUID): CustomEntityType?
-    fun getEntityType(entity: Entity): CustomEntityType?
+    fun getEntityType(entity: Entity): CustomEntityType? = getEntityType(entity.uuid)
+    fun getEntityTeam(id: UUID): Team?
+    fun getEntityTeam(entity: Entity): Team? = getEntityTeam(entity.uuid)
     fun addEntity(id: UUID, type: CustomEntityType)
-    fun addEntity(entity: Entity, type: CustomEntityType)
+    fun addEntity(entity: Entity, type: CustomEntityType) = addEntity(entity.uuid, type)
+    fun addTeamEntity(id: UUID, type: CustomEntityType, team: Team)
+    fun addTeamEntity(entity: Entity, type: CustomEntityType, team: Team) = addTeamEntity(entity.uuid, type, team)
     fun getEntityIds(): List<UUID>
     fun getEntityIds(type: CustomEntityType): List<UUID>
     fun removeEntity(id: UUID)
@@ -32,6 +40,7 @@ internal interface CustomEntityExposer {
 
 class CustomEntityDataTracker : LevelTiedData, CustomEntityExposer, CustomEntityHolder {
     override val custom_entity_types: MutableMap<UUID, CustomEntityType> = mutableMapOf()
+    override val custom_entity_team_data: MutableMap<UUID, Team> = mutableMapOf()
     override val type get() = LevelDataType.CustomEntityData
 
     companion object {
@@ -53,16 +62,21 @@ class CustomEntityDataTracker : LevelTiedData, CustomEntityExposer, CustomEntity
         return custom_entity_types[id]
     }
 
-    override fun getEntityType(entity: Entity): CustomEntityType? {
-        return getEntityType(entity.uuid)
+    override fun getEntityTeam(id: UUID): Team? {
+        return custom_entity_team_data[id]
     }
 
     override fun addEntity(id: UUID, type: CustomEntityType) {
         custom_entity_types[id] = type
     }
 
-    override fun addEntity(entity: Entity, type: CustomEntityType) {
-        addEntity(entity.uuid, type)
+    override fun addTeamEntity(
+        id: UUID,
+        type: CustomEntityType,
+        team: Team
+    ) {
+        addEntity(id, type)
+        custom_entity_team_data[id] = team
     }
 
     override fun getEntityIds(): List<UUID> {

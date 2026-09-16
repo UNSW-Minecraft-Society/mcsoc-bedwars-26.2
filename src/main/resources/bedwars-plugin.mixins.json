@@ -3,17 +3,18 @@
 	"package": "mcsoc.bedwars.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"ProjectileMixin",
-		"ThrowableProjectileMixin",
-		"BlockPlacementMixin",
-		"SnowReplacementMixin",
-		"LevelSetBlockMixin",
-		"DisableCraftingMixin",
-		"DisableRecipeBookMixin",
-		"PickupMixin",
 		"BedBlockMixin",
 		"BlockBehaviourMixin",
-		"ContainerHelperMixin"
+		"BlockPlacementMixin",
+		"ContainerHelperMixin",
+		"DisableCraftingMixin",
+		"DisableRecipeBookMixin",
+		"LevelSetBlockMixin",
+		"NeutralMobMixin",
+		"PickupMixin",
+		"ProjectileMixin",
+		"SnowReplacementMixin",
+		"ThrowableProjectileMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
