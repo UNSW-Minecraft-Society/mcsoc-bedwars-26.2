@@ -11,6 +11,7 @@ import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
+import mcsoc.bedwars.gui.ScoreboardGui
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.ticks
 import mcsoc.bedwars.utils.toBlockPos
@@ -137,6 +138,8 @@ class GameManager {
                 level_mod_entity_data.removeEntity(id)
             }
 
+            ScoreboardGui.clearScoreboard(level)
+
             level.worldBorder.size = ServerLevel.ACROSS_THE_WHOLE_WORLD.toDouble()
             level.worldBorder.setCenter(0.0, 0.0)
         }
@@ -175,6 +178,8 @@ class GameManager {
             // start generators
             // maybe show a title saying game begin or something
             // maybe a little tooltip in the bottom left
+            ScoreboardGui.initialiseScoreboard(level)
+
             level.clock.reset()
             level_mod_data.setGamePhase(GamePhase.ACTIVE)
             level_mod_data.setGamePeriod(GamePeriod.ACTIVE)
