@@ -1,5 +1,6 @@
 package mcsoc.bedwars.gui
 
+import mcsoc.bedwars.datatrackers.gameState
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.scores.DisplaySlot
@@ -17,7 +18,7 @@ object ScoreboardGui {
         // Set title
         scoreboard.setDisplayObjective(DisplaySlot.SIDEBAR, getOrCreateDummyObjective(scoreboard))
         // Add lines
-        addLines(scoreboard, listOf("AAAA", "BBBB"))
+        displayLines(level)
     }
 
     fun getOrCreateDummyObjective(scoreboard: Scoreboard) : Objective {
@@ -26,10 +27,31 @@ object ScoreboardGui {
             ObjectiveCriteria.RenderType.INTEGER, true, null)
     }
 
-    private fun addLines(scoreboard: Scoreboard, lines: List<String>) {
+    private fun displayLines(level: ServerLevel) {
+        val scoreboard = level.scoreboard
+        val lines = getLines(level)
         for ((index, line) in lines.withIndex()) {
-            scoreboard.getOrCreatePlayerScore(ScoreHolder.forNameOnly(line), getOrCreateDummyObjective(scoreboard)).set(index)
+            scoreboard.getOrCreatePlayerScore(ScoreHolder.forNameOnly(line), getOrCreateDummyObjective(scoreboard)).set(lines.size - index)
         }
+    }
+
+    private fun getLines(level: ServerLevel): List<String> {
+        val lines = mutableListOf<String>()
+        lines += "Imagine this works:"
+        lines += "12:25"
+        lines += ""
+        for (team in level.gameState.getActiveTeams()) {
+            var teamStatus : String
+            if (level.gameState.getBedDestroyed(team)) {
+                val teamPlayers = level.gameState.getPlayersInTeam(team)
+                val numAlive = teamPlayers.filter {
+                    level.getPlayerByUUID(it)?.let { player -> !level.gameState.isPlayerEliminated(player) } ?: false
+                }.count()
+                teamStatus = "$numAlive left"
+            } else teamStatus = "bed active"
+            lines += team.getName() + teamStatus
+        }
+        return lines
     }
 
     fun clearScoreboard(level: ServerLevel) {
