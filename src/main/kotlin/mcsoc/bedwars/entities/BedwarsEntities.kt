@@ -4,17 +4,20 @@ import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.utils.Team
+import mcsoc.bedwars.utils.withEnchant
 import mcsoc.bedwars.utils.withTrim
 import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.EntityTypes
+import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.animal.golem.IronGolem
 import net.minecraft.world.entity.monster.Endermite
 import net.minecraft.world.entity.monster.piglin.PiglinBrute
 import net.minecraft.world.entity.npc.villager.Villager
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.component.DyedItemColor
+import net.minecraft.world.item.enchantment.Enchantments
 import net.minecraft.world.item.equipment.trim.TrimPatterns
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
@@ -59,10 +62,19 @@ fun spawnDreamDefender(level: ServerLevel, position: Vec3, team: Team) {
 fun spawnBedBrute(level: ServerLevel, position: Vec3, team: Team) {
     val brute = PiglinBrute(EntityTypes.PIGLIN_BRUTE, level)
     brute.setPos(position)
-    brute.equipItemIfPossible(level, Items.GOLDEN_LEGGINGS.defaultInstance.withTrim(team.trimMaterial, BED_BRUTE_TRIM, level))
-    brute.equipItemIfPossible(level, Items.LEATHER_BOOTS.defaultInstance.also {
-        it.set(DataComponents.DYED_COLOR, DyedItemColor(team.dyeColour.textureDiffuseColor))
-    })
+    brute.equipItemIfPossible(level, Items.GOLDEN_LEGGINGS.defaultInstance
+        .withTrim(team.trimMaterial, BED_BRUTE_TRIM, level)
+        .withEnchant(Enchantments.VANISHING_CURSE, 1, level)
+    )
+    brute.equipItemIfPossible(level, Items.LEATHER_BOOTS.defaultInstance
+        .also {it.set(DataComponents.DYED_COLOR, DyedItemColor(team.dyeColour.textureDiffuseColor))}
+        .withEnchant(Enchantments.VANISHING_CURSE, 1, level)
+    )
+    brute.equipItemIfPossible(level, Items.GOLDEN_AXE.defaultInstance
+        .withEnchant(Enchantments.VANISHING_CURSE, 1, level)
+        .also { it.damageValue = 0 }
+    )
+    brute.getAttribute(Attributes.ATTACK_DAMAGE)?.let { it.baseValue = 0.0 }
     val scoreboardTeam = level.scoreboard.getPlayerTeam(team.getName())
     if (scoreboardTeam != null) level.scoreboard.addPlayerToTeam(brute.stringUUID, scoreboardTeam)
     if (level.addFreshEntity(brute)) {
