@@ -3,9 +3,12 @@ package mcsoc.bedwars.gamestate
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.CODEC
+import mcsoc.bedwars.utils.getProgressBar
 import net.minecraft.ChatFormatting
 import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.core.Holder
@@ -81,11 +84,12 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
         }
     }
 
-    class EntityExpiryEvent private constructor(triggerTime: Duration, val entityId: UUID, count: Long) :
+    class EntityExpiryEvent private constructor(triggerTime: Duration, val entityId: UUID, count: Long, val lifetime: Long) :
             RecursiveGameEvent<EntityExpiryEvent>(triggerTime, id, count, 1.seconds) {
         constructor(currTime: Duration, lifetime: Duration, entityId: UUID) : this(
             currTime,
             entityId,
+            lifetime.inWholeSeconds,
             lifetime.inWholeSeconds
         )
         
@@ -94,19 +98,22 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
             override val codec: MapCodec<EntityExpiryEvent> = RecordCodecBuilder.mapCodec{it.group(
                 Duration.CODEC.fieldOf("time").forGetter(EntityExpiryEvent::triggerTime),
                 UUIDUtil.CODEC.fieldOf("id").forGetter(EntityExpiryEvent::entityId),
-                Codec.LONG.fieldOf("depth").forGetter(EntityExpiryEvent::count)
+                Codec.LONG.fieldOf("depth").forGetter(EntityExpiryEvent::count),
+                Codec.LONG.fieldOf("lifetime").forGetter(EntityExpiryEvent::count)
             ).apply(it, ::EntityExpiryEvent)}
         }
 
         override fun recurseTrigger(level: ServerLevel) {
             val entity = level.getEntity(entityId) ?: return
-            entity.customName = Component.literal("${ChatFormatting.RED}$count SECONDS")
+            val team = level.customEntityData.getEntityTeam(entity)
+            BedwarsPlugin.LOGGER.info("$count/$lifetime = ${count.toDouble() / lifetime}")
+            entity.customName = Component.literal("${team?.chatColour ?: ""}${getProgressBar(count.toDouble()/lifetime, 10)}")
         }
         override fun concludeTrigger(level: ServerLevel) {
             val entity = level.getEntity(entityId) ?: return
             entity.discard()
         }
-        override fun createEvent(triggerTime: Duration, count: Long) = EntityExpiryEvent(triggerTime, entityId, count)
+        override fun createEvent(triggerTime: Duration, count: Long) = EntityExpiryEvent(triggerTime, entityId, count, lifetime)
     }
     
     class RespawnCounterEvent private constructor(triggerTime: Duration, val player: UUID, count: Long) :
