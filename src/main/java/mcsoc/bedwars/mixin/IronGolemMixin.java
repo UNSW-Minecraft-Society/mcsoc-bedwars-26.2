@@ -1,6 +1,7 @@
 package mcsoc.bedwars.mixin;
 
 import mcsoc.bedwars.datatrackers.LevelData;
+import mcsoc.bedwars.mixin.accessor.MobAccessor;
 import mcsoc.bedwars.utils.Team;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
@@ -18,7 +19,9 @@ public class IronGolemMixin {
     @Inject(at = @At("HEAD"), method = "registerGoals")
     private void onRegisterGoals(CallbackInfo ci) {
         IronGolem golem = (IronGolem) (Object) this;
-        golem.getGoalSelector().addGoal(3, new NearestAttackableTargetGoal<>(golem, Player.class, 5, false, false, (target, level) -> isDefenderAggro(golem, target, level)));
+        ((MobAccessor) golem).bedwars$getTargetSelector().addGoal(3, new NearestAttackableTargetGoal<>(
+                golem, Player.class, 5, false, false,
+                (target, level) -> isDefenderAggro(golem, target, level)));
     }
 
     @Unique

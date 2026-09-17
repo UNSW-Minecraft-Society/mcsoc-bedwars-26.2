@@ -14,7 +14,8 @@
 		"PickupMixin",
 		"ProjectileMixin",
 		"SnowReplacementMixin",
-		"ThrowableProjectileMixin"
+		"ThrowableProjectileMixin",
+		"accessor.MobAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1
