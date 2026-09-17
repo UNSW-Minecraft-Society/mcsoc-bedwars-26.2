@@ -14,7 +14,6 @@ import net.minecraft.server.permissions.PermissionLevel
 import net.minecraft.commands.arguments.coordinates.Vec3Argument
 import net.minecraft.server.permissions.Permissions
 
-
 const val ROOT_NODE = "bedwars"
 
 const val POSITION_ARGUMENT = "pos"
@@ -31,7 +30,7 @@ const val SHOP_TYPE_ARG = "type3"
 const val CUSTOM_ITEM_ARG = "custom_item"
 
 const val GEN_TYPE_ARG = "type"
-const val GEN_TEAM_ARG = "team"
+const val TEAM_ARG = "team"
 const val GEN_ID_ARG = "id"
 
 val BEDWARS_GM_PERMISSION_NODE = Identifier.fromNamespaceAndPath(BedwarsPlugin.MOD_ID, "runner")
@@ -140,7 +139,7 @@ fun registerCommands() {
                     )
                 ).then(Commands.literal("add_team_gen")
                     .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
-                        .then(Commands.argument(GEN_TEAM_ARG, StringArgumentType.word())
+                        .then(Commands.argument(TEAM_ARG, StringArgumentType.word())
                             .suggests(TeamSuggestionProvider())
                             .executes(CommandActions::addTeamGenerator)
                         )
@@ -163,7 +162,7 @@ fun registerCommands() {
                     )
                 )
                 .then(Commands.literal("upgrade_team_gen")
-                    .then(Commands.argument(GEN_TEAM_ARG, StringArgumentType.word())
+                    .then(Commands.argument(TEAM_ARG, StringArgumentType.word())
                         .suggests(TeamSuggestionProvider())
                         .executes(CommandActions::upgradeTeamGen)
                     )
@@ -189,6 +188,15 @@ fun registerCommands() {
                     .then(Commands.argument(ENTITY_TYPE_ARG, StringArgumentType.word())
                         .suggests(EntityTypeSuggestionProvider())
                         .executes(CommandActions::summonShopkeeper)
+                    )
+                )
+            )
+            .then(Commands.literal("summon_dream_defender")
+                .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
+                .then(Commands.argument(POSITION_ARGUMENT, Vec3Argument.vec3())
+                    .then(Commands.argument(TEAM_ARG, StringArgumentType.word())
+                        .suggests(TeamSuggestionProvider())
+                        .executes(CommandActions::summonDreamDefender)
                     )
                 )
             )
