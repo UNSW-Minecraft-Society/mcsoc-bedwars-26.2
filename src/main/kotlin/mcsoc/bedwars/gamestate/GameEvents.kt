@@ -112,6 +112,7 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
         override fun concludeTrigger(level: ServerLevel) {
             val entity = level.getEntity(entityId) ?: return
             entity.discard()
+            // oooohh. performative coding.
         }
         override fun createEvent(triggerTime: Duration, count: Long) = EntityExpiryEvent(triggerTime, entityId, count, lifetime)
     }
