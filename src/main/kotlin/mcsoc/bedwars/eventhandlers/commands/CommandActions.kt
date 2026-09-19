@@ -5,10 +5,8 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import mcsoc.bedwars.BedwarsPlugin
-import mcsoc.bedwars.items.BedwarsItems
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.blockProtection
-import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
 import mcsoc.bedwars.datatrackers.blockprotection.ProtectionZone
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.configloader.MapData
@@ -17,23 +15,21 @@ import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.datatrackers.generatorState
-import mcsoc.bedwars.entities.spawnDoomedDefender
+import mcsoc.bedwars.entities.spawnDreamDefender
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.items.CustomItemTypes
 import mcsoc.bedwars.gui.ShopGui.displayShop
 import mcsoc.bedwars.gui.ShopType
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.generators.GeneratorType
+import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.format
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.arguments.coordinates.Vec3Argument
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
-import net.minecraft.server.level.ServerPlayer
 import net.minecraft.network.chat.TextColor
-import net.minecraft.world.phys.AABB
-import net.minecraft.world.item.ItemStack
 import net.minecraft.world.phys.Vec3
 
 
@@ -227,7 +223,25 @@ internal object CommandActions {
         when (type) {
             CustomEntityType.PLAYER_SHOPKEEPER -> spawnShopkeeper(player.level(), posInput, type)
             CustomEntityType.TEAM_SHOPKEEPER -> spawnShopkeeper(player.level(), posInput, type)
+            else -> {}
         }
+        return 1
+    }
+
+    fun summonDreamDefender(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player ?: run {
+            ctx.source.sendFailure(Component.literal("Command must be run by a player"))
+            return 0
+        }
+        val posInput = Vec3Argument.getVec3(ctx, POSITION_ARGUMENT)
+        val teamInput = StringArgumentType.getString(ctx, TEAM_ARG)
+        val team = try {
+            Team.valueOf(teamInput.uppercase())
+        } catch (e: IllegalArgumentException) {
+            player.sendSystemMessage(Component.literal("$teamInput is not a valid team"))
+            return 0
+        }
+        spawnDreamDefender(player.level(), posInput, team)
         return 1
     }
 
@@ -295,7 +309,7 @@ internal object CommandActions {
     }
 
     fun addTeamGenerator(ctx: CommandContext<CommandSourceStack>): Int {
-        val teamArg = StringArgumentType.getString(ctx, GEN_TEAM_ARG)
+        val teamArg = StringArgumentType.getString(ctx, TEAM_ARG)
         val bpos: BlockPos = BlockPosArgument.getBlockPos(ctx, POSITION_ARGUMENT
         ).above()
         val pos = Vec3.atBottomCenterOf(bpos)
@@ -328,7 +342,7 @@ internal object CommandActions {
     }
 
     fun upgradeTeamGen(ctx: CommandContext<CommandSourceStack>): Int {
-        val teamArg = StringArgumentType.getString(ctx, GEN_TEAM_ARG)
+        val teamArg = StringArgumentType.getString(ctx, TEAM_ARG)
         val team = ctx.source.level.gameState.getActiveTeams().find { it.getName() == teamArg }
         if (team == null) {
             ctx.source.sendFailure(Component.literal("$teamArg is not a valid team"))
@@ -336,17 +350,6 @@ internal object CommandActions {
         }
 
         ctx.source.level.gameState.upgradeGen(team)
-        return 1
-    }
-    
-    fun summonGolem(ctx: CommandContext<CommandSourceStack>): Int {
-        val caller = ctx.source.player ?: run {
-            ctx.source.sendFailure(Component.literal("This command must be sent by a Player!"))
-            return 0
-        }
-        val team = ctx.source.level.gameState.getPlayersTeam(caller.uuid)
-        val posInput = Vec3Argument.getVec3(ctx, POSITION_ARGUMENT)
-        spawnDoomedDefender(ctx.source.level, posInput, team)
         return 1
     }
 }

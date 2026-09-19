@@ -2,9 +2,11 @@ package mcsoc.bedwars.datatrackers
 
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.gamestate.GameEvent
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.level.block.state.BlockState
 import java.util.PriorityQueue
 import java.util.UUID
 import kotlin.time.Duration
@@ -41,6 +43,9 @@ class GameEventTracker() : LevelTiedData() {
     }
     fun queuePlayerRespawn(respawnTime: Duration, uuid: UUID) {
         queueEvent(GameEvent.RespawnCounterEvent(level.clock.time, respawnTime, uuid))
+    }
+    fun queuePopupTowerConstruction(centrePos: BlockPos, buildingBlockState: BlockState, orientation: Direction) {
+        queueEvent(GameEvent.PopupTowerConstructionEvent(level.clock.time, centrePos, buildingBlockState, orientation))
     }
 
     private fun dequeueEventsToTrigger(): Iterable<GameEvent> {
