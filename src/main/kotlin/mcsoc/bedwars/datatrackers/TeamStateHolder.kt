@@ -1,18 +1,26 @@
 package mcsoc.bedwars.datatrackers
 
 import mcsoc.bedwars.utils.Team
+import net.minecraft.core.BlockPos
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.phys.Vec3
+import net.minecraft.world.scores.Scoreboard
 import java.util.UUID
-import kotlin.uuid.Uuid
 
 internal interface TeamStateRecord {
-    fun getPlayers(): MutableList<Uuid>
+    fun getPlayers(): List<UUID>
     fun getBedAlive(): Boolean
+    fun getBedPosition(): BlockPos
+    fun getBedBreaker(): UUID?
     fun getSpawn(): Vec3
 
+    fun setSpawn(pos: Vec3)
     fun setBedAlive(bedAlive: Boolean)
-    fun addPlayer(player: Uuid)
+    fun setBedPosition(pos: BlockPos)
+    fun setBedBreaker(bedBreaker: UUID)
+    fun addPlayer(player: UUID)
+    
+    fun tick(level: ServerLevel)
 }
 
 internal interface PlayerTeamState {
@@ -21,27 +29,46 @@ internal interface PlayerTeamState {
 }
 
 internal interface TeamStateExposer {
-    fun getPlayersInTeam(team: Team): List<Uuid>
+    fun getPlayersInTeam(team: Team): List<UUID>
     fun getBedDestroyed(team: Team): Boolean
+    fun getBedBreaker(team: Team): UUID?
     fun getTeamSpawn(team: Team): Vec3
+    fun getTeamBedPosition(team: Team): BlockPos
     fun getActiveTeams(): List<Team>
 
     fun setBedAlive(team: Team, state: Boolean)
-    fun addPlayer(player: Uuid, team: Team)
-    fun initialiseTeams(numTeams: Int)
+    fun setTeamSpawn(team: Team, pos: Vec3) 
+    fun setTeamBedPosition(team: Team, pos: BlockPos)
+    fun setBedBreaker(team: Team, player: UUID)
+    fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?)
+    fun initialiseTeams(teams: Set<Team>, scoreboard: Scoreboard)
 
-    fun getPlayersTeam(player: Uuid): Team
+    fun getPlayersTeam(player: UUID): Team
     
     fun getActivePlayers(): Set<UUID>
     fun addActivePlayer(uuid: UUID): Boolean
     fun removeActivePlayer(uuid: UUID): Boolean
+    fun clearActivePlayers()
+    
+    fun tickTeams(level: ServerLevel)
 }
 
 internal interface TeamStateHolder : TeamStateExposer {
     fun getTeam(team: Team): TeamStateRecord
+    
+    override fun tickTeams(level: ServerLevel) {
+        for (team in getActiveTeams()) {
+            getTeam(team).tick(level)
+        }
+    }
 
-    override fun getBedDestroyed(team: Team): Boolean = getTeam(team).getBedAlive()
+    override fun getBedDestroyed(team: Team): Boolean = !getTeam(team).getBedAlive()
+    override fun getBedBreaker(team: Team): UUID? = getTeam(team).getBedBreaker()
     override fun getTeamSpawn(team: Team): Vec3 = getTeam(team).getSpawn()
-    override fun getPlayersInTeam(team: Team): List<Uuid> = getTeam(team).getPlayers()
+    override fun setTeamSpawn(team: Team, pos: Vec3) = getTeam(team).setSpawn(pos)
+    override fun getTeamBedPosition(team: Team): BlockPos = getTeam(team).getBedPosition()
+    override fun setTeamBedPosition(team: Team, pos: BlockPos) = getTeam(team).setBedPosition(pos)
+    override fun getPlayersInTeam(team: Team): List<UUID> = getTeam(team).getPlayers()
     override fun setBedAlive(team: Team, state: Boolean) = getTeam(team).setBedAlive(state)
+    override fun setBedBreaker(team: Team, player: UUID) = getTeam(team).setBedBreaker(player)
 }

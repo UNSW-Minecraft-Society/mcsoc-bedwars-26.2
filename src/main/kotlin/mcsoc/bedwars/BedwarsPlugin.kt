@@ -6,7 +6,9 @@ import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier
 import org.slf4j.LoggerFactory
 
+
 object BedwarsPlugin : ModInitializer {
+	const val CONFIG_PATH = "bedwars"
 	const val MOD_ID: String = "bedwars-plugin"
 
 	val LOGGER = LoggerFactory.getLogger(MOD_ID)
@@ -16,7 +18,7 @@ object BedwarsPlugin : ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-		LOGGER.info("Hello Fabric world!")
+		LOGGER.info("Bedwars plugin started")
 
 		registerCommands()
 		registerEventHandlers()
