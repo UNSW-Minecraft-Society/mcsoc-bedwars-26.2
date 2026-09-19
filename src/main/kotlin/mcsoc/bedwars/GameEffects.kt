@@ -1,11 +1,11 @@
 package mcsoc.bedwars
 
-import mcsoc.bedwars.TeamEffects.destroyBed
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.Team
+import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
 
 // replace with config
@@ -23,16 +23,6 @@ object TeamEffects {
         players.shuffled().forEachIndexed { index, player ->
             val team = teams[index % num_teams]
             mod_level_data.addPlayer(player, team, level.scoreboard, level.getPlayerByUUID(player)?.scoreboardName)
-        }
-    }
-
-
-    fun destroyBed(level: ServerLevel, team: Team) {
-        val gameState = level.gameState
-        gameState.setBedAlive(team, false)
-        for (player in gameState.getPlayersInTeam(team)) {
-            TODO()
-            // other things related to bed destruction like title and sound
         }
     }
 }
@@ -55,7 +45,12 @@ object GameEffects {
         // destroy remaining beds
         gameState.getActiveTeams().forEach { team ->
             if (!gameState.getBedDestroyed(team)) {
-                destroyBed(level, team)
+                gameState.setBedAlive(team, false)
+            }
+            
+            for (player in gameState.getPlayersInTeam(team)) {
+                level.getPlayerByUUID(player)?.sendSystemMessage(Component.literal("deathmatch has begun"))
+                // todo other things related to bed destruction like title and sound
             }
         }
     }
