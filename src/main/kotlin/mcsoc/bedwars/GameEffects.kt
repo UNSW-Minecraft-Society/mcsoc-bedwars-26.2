@@ -1,5 +1,6 @@
 package mcsoc.bedwars
 
+import mcsoc.bedwars.TeamEffects.destroyBed
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.Team
 import net.minecraft.server.level.ServerLevel
@@ -31,7 +32,9 @@ object TeamEffects {
             // other things related to bed destruction like title and sound
         }
     }
+}
 
+object GameEffects {
     fun triggerDeathmatch(level: ServerLevel) {
         val gameState = level.gameState
         // destroy remaining beds

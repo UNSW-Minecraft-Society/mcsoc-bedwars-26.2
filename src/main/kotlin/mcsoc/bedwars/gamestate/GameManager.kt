@@ -1,6 +1,7 @@
 package mcsoc.bedwars.gamestate
 
 import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.GameEffects
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
@@ -395,6 +396,7 @@ class GameManager {
                         // Hi gabs im dumb and forgot how code works
                         // you'll probably want to trigger your deathmatch stuff elsewhere under the condition
                         // gameperiod is deathmatch
+                        GameEffects.triggerDeathmatch(level)
                     }
                 }
             }
