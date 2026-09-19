@@ -229,7 +229,7 @@ private class TeamDataRecord(
             trapCooldown--
             return
         }
-
+        
         val playersInBase = PlayerLookup.around(level, bedPosition, TRAP_RANGE.toDouble())
         val enemies = playersInBase.filter { it.uuid !in players }
         val teammates = playersInBase.filter {it.uuid in players}
@@ -237,6 +237,8 @@ private class TeamDataRecord(
             val trap = popTrap()
             trap?.enemyEffect(level, enemies)
             trap?.teamEffect(level, teammates)
+            
+            trapCooldown = TRAP_COOLDOWN
             // todo notify teammates about trap being triggered with title and sfx
         }
     }
