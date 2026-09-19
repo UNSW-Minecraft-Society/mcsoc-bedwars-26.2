@@ -56,8 +56,8 @@ object ScoreboardGui {
     }
 
     private fun getGamePeriodLine(level: ServerLevel): String {
-        val nextPeriod = level.gameState.getGamePeriod().next ?: return ""
-        val time = level.clock.time - (nextPeriod.startTime ?: return "")
+        val nextPeriod = level.gameState.getGamePeriod().next ?: return "err1"
+        val time = level.clock.time - (nextPeriod.startTime ?: return "err2")
         return nextPeriod.title + " in " + time.formatMMSS
     }
 

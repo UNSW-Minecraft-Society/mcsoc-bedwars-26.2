@@ -376,6 +376,7 @@ class GameManager {
         fun tick(level: ServerLevel) {
             val level_mod_data = level.gameState
             level.eventQueue.tick()
+            ScoreboardGui.displayScoreboard(level)
             if (level_mod_data.getGamePhase() == GamePhase.INACTIVE) return
 
             if (level_mod_data.getGamePhase() == GamePhase.ACTIVE) {
