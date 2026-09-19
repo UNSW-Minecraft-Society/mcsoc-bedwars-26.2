@@ -41,10 +41,10 @@ object GameEffects {
     fun triggerNewPeriod(level: ServerLevel, nextPeriod: GamePeriod) {
         val generatorTracker = level.generatorState
         when (nextPeriod) {
-            GamePeriod.DIAMOND_I -> generatorTracker.upgradeGenerator(GeneratorType.DIAMOND)
-            GamePeriod.EMERALD_I -> generatorTracker.upgradeGenerator(GeneratorType.EMERALD)
             GamePeriod.DIAMOND_II -> generatorTracker.upgradeGenerator(GeneratorType.DIAMOND)
             GamePeriod.EMERALD_II -> generatorTracker.upgradeGenerator(GeneratorType.EMERALD)
+            GamePeriod.DIAMOND_III -> generatorTracker.upgradeGenerator(GeneratorType.DIAMOND)
+            GamePeriod.EMERALD_III -> generatorTracker.upgradeGenerator(GeneratorType.EMERALD)
             GamePeriod.DEATHMATCH -> triggerDeathmatch(level)
             else -> {}
         }
