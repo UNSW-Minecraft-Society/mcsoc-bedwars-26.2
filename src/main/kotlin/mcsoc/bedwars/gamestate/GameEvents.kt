@@ -9,10 +9,16 @@ import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.CODEC
 import mcsoc.bedwars.utils.getProgressBar
+import mcsoc.bedwars.utils.placeBlockIfValid
+import mcsoc.bedwars.utils.rotate
+import mcsoc.bedwars.utils.ticks
 import net.minecraft.ChatFormatting
 import net.minecraft.commands.arguments.EntityAnchorArgument
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
 import net.minecraft.core.Holder
 import net.minecraft.core.UUIDUtil
+import net.minecraft.core.Vec3i
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket
@@ -23,6 +29,9 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.level.GameType
+import net.minecraft.world.level.block.Blocks
+import net.minecraft.world.level.block.Rotation
+import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.phys.Vec3
 import java.util.UUID
 import kotlin.reflect.KClass
@@ -85,7 +94,7 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
     }
 
     class EntityExpiryEvent private constructor(triggerTime: Duration, val entityId: UUID, count: Long, val lifetime: Long) :
-            RecursiveGameEvent<EntityExpiryEvent>(triggerTime, id, count, 1.seconds) {
+            RecursiveGameEvent<EntityExpiryEvent>(triggerTime, id, count, INTERVAL) {
         constructor(currTime: Duration, lifetime: Duration, entityId: UUID) : this(
             currTime,
             entityId,
@@ -94,12 +103,14 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
         )
         
         companion object : GameEventCompanion<EntityExpiryEvent> {
+            val INTERVAL = 1.seconds
+
             override val id: String = "entityExpiry"
             override val codec: MapCodec<EntityExpiryEvent> = RecordCodecBuilder.mapCodec{it.group(
                 Duration.CODEC.fieldOf("time").forGetter(EntityExpiryEvent::triggerTime),
                 UUIDUtil.CODEC.fieldOf("id").forGetter(EntityExpiryEvent::entityId),
                 Codec.LONG.fieldOf("depth").forGetter(EntityExpiryEvent::count),
-                Codec.LONG.fieldOf("lifetime").forGetter(EntityExpiryEvent::count)
+                Codec.LONG.fieldOf("lifetime").forGetter(EntityExpiryEvent::lifetime)
             ).apply(it, ::EntityExpiryEvent)}
         }
 
@@ -217,5 +228,86 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
             GameManager.start(level)
         }
         override fun createEvent(triggerTime: Duration, count: Long) = GameStartCounterEvent(triggerTime, count)
+    }
+
+    class PopupTowerConstructionEvent private constructor(
+        triggerTime: Duration, count: Long, val centerPos: BlockPos, val buildingBlockState: BlockState, val orientation: Direction
+    ) : RecursiveGameEvent<PopupTowerConstructionEvent>(triggerTime, id, count, INTERVAL) {
+        constructor(currTime: Duration, centrePos: BlockPos, buildingBlockState: BlockState, orientation: Direction) : this(
+            currTime, POPUP_TOWER_HEIGHT.toLong() + 2, centrePos, buildingBlockState, orientation
+        )
+
+        companion object : GameEventCompanion<PopupTowerConstructionEvent> {
+            val INTERVAL = 4.ticks
+
+            const val POPUP_TOWER_HEIGHT = 6 // needs to be >5
+            val POPUP_TOWER_WOOL_OFFSETS = buildSet {
+                for (y in -1..POPUP_TOWER_HEIGHT-3) {
+                    add(Vec3i(-1, y, -1))
+                    add(Vec3i(-1, y, +1))
+                    add(Vec3i(0, y, -2))
+                    add(Vec3i(0, y, +2))
+                    add(Vec3i(+1, y, -2))
+                    add(Vec3i(+1, y, +2))
+                    add(Vec3i(+2, y, -1))
+                    add(Vec3i(+2, y, 0))
+                    add(Vec3i(+2, y, +1))
+                }
+                for (y in (2..POPUP_TOWER_HEIGHT-3)) add(Vec3i(-1, y, 0))
+                add(Vec3i(-1, -1, 0))
+                for (x in -1..2) for (y in intArrayOf(-1,POPUP_TOWER_HEIGHT-2)) for (z in -2..2) {
+                    if (x != 1 || y == -1 || z != 0 )
+                        add(Vec3i(x, y, z))
+                }
+                for (x in intArrayOf(-2, 3)) for (z in -2..2) {
+                    add(Vec3i(x, POPUP_TOWER_HEIGHT-1, z))
+                    if (z % 2 == 0) {
+                        add(Vec3i(x, POPUP_TOWER_HEIGHT-2, z))
+                        add(Vec3i(x, POPUP_TOWER_HEIGHT, z))
+                    }
+                }
+                for (x in -1..2) for (z in intArrayOf(-3, 3)) {
+                    add(Vec3i(x, POPUP_TOWER_HEIGHT-1, z))
+                    if (x == -1 || x == 2) {
+                        add(Vec3i(x, POPUP_TOWER_HEIGHT-2, z))
+                        add(Vec3i(x, POPUP_TOWER_HEIGHT, z))
+                    }
+                }
+            }
+            val POPUP_TOWER_LADDER_OFFSETS = buildSet { for (y in 0..POPUP_TOWER_HEIGHT-2) add(Vec3i(1,y,0))}
+
+            override val id: String = "popupTower"
+            override val codec: MapCodec<PopupTowerConstructionEvent> = RecordCodecBuilder.mapCodec{it.group(
+                Duration.CODEC.fieldOf("time").forGetter(PopupTowerConstructionEvent::triggerTime),
+                Codec.LONG.fieldOf("depth").forGetter(PopupTowerConstructionEvent::count),
+                BlockPos.CODEC.fieldOf("pos").forGetter(PopupTowerConstructionEvent::centerPos),
+                BlockState.CODEC.fieldOf("block").forGetter(PopupTowerConstructionEvent::buildingBlockState),
+                Direction.CODEC.fieldOf("orientation").forGetter(PopupTowerConstructionEvent::orientation)
+            ).apply(it, ::PopupTowerConstructionEvent)}
+        }
+
+        override fun recurseTrigger(level: ServerLevel) {
+            val rotation = when (orientation) {
+                Direction.NORTH -> Rotation.COUNTERCLOCKWISE_90
+                Direction.EAST -> Rotation.NONE
+                Direction.SOUTH -> Rotation.CLOCKWISE_90
+                Direction.WEST -> Rotation.CLOCKWISE_180
+                else -> Rotation.NONE
+            }
+            val ladderBlockState = Blocks.LADDER.defaultBlockState().rotate(Rotation.COUNTERCLOCKWISE_90).rotate(rotation)
+
+            for (offset in POPUP_TOWER_WOOL_OFFSETS.filter { it.y == 7 - count.toInt() }) {
+                placeBlockIfValid(level, centerPos.offset(offset.rotate(rotation)), buildingBlockState)
+            }
+            for (offset in POPUP_TOWER_LADDER_OFFSETS.filter { it.y == 7 - count.toInt() }) {
+                placeBlockIfValid(level, centerPos.offset(offset.rotate(rotation)), ladderBlockState)
+            }
+        }
+
+        override fun concludeTrigger(level: ServerLevel) {}
+
+        override fun createEvent(triggerTime: Duration, count: Long) = PopupTowerConstructionEvent(
+            triggerTime, count, centerPos, buildingBlockState, orientation
+        )
     }
 }

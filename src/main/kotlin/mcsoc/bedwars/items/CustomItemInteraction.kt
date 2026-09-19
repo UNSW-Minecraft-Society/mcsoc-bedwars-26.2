@@ -1,16 +1,15 @@
 package mcsoc.bedwars.items
 
 import mcsoc.bedwars.BedwarsPlugin
-import mcsoc.bedwars.datatrackers.blockProtection
+import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.entities.spawnBedBrute
 import mcsoc.bedwars.entities.spawnBedBug
 import mcsoc.bedwars.entities.spawnDreamDefender
 import mcsoc.bedwars.utils.Team
-import mcsoc.bedwars.utils.rotate
+import mcsoc.bedwars.utils.placeBlockIfValid
 import mcsoc.bedwars.utils.toCardinalDirection
 import mcsoc.bedwars.utils.toBlockPos
-import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.core.GlobalPos
 import net.minecraft.core.Vec3i
@@ -31,10 +30,7 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.component.LodestoneTracker
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.Blocks
-import net.minecraft.world.level.block.Rotation
-import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.phys.HitResult
-import net.minecraft.world.phys.Vec3
 import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 import kotlin.math.roundToInt
@@ -162,17 +158,6 @@ object CustomItemInteraction {
         return InteractionResult.SUCCESS
     }
 
-    private fun placeBlockIfValid(level: Level, blockPos: BlockPos, blockState: BlockState) {
-        if (level !is ServerLevel) return
-        val curBlockState = level.getBlockState(blockPos)
-        if (curBlockState.`is`(Blocks.AIR) && level.blockProtection.isBlockPlacementAllowed(blockPos))
-            level.setBlockAndUpdate(blockPos, blockState)
-    }
-
-    private fun placeBlockIfValid(level: Level, pos: Vec3, blockState: BlockState) {
-        placeBlockIfValid(level, pos.toBlockPos(), blockState)
-    }
-
     private fun tickBridgeEggEffect(level: Level, egg: ThrowableItemProjectile, team: Team): InteractionResult {
         val bridgePos = egg.position().relative(Direction.DOWN, 2.0)
         val newBlockState = Blocks.WOOL.pick(team.dyeColour).defaultBlockState()
@@ -190,28 +175,15 @@ object CustomItemInteraction {
     }
 
     private fun usePopupTowerEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, team: Team): InteractionResult {
-        val direction = player.lookAngle.toCardinalDirection()
-        val rotation = when (direction) {
-            Direction.NORTH -> Rotation.COUNTERCLOCKWISE_90
-            Direction.EAST -> Rotation.NONE
-            Direction.SOUTH -> Rotation.CLOCKWISE_90
-            Direction.WEST -> Rotation.CLOCKWISE_180
-            else -> Rotation.NONE
-        }
-        if (hitResult !is HitResult)
+        if (hitResult !is HitResult || level !is ServerLevel)
             return InteractionResult.PASS
         val centerPos = hitResult.location.toBlockPos()
-        val woolBlockState = Blocks.WOOL.pick(team.dyeColour).defaultBlockState()
-        val ladderBlockState = Blocks.LADDER.defaultBlockState().rotate(Rotation.COUNTERCLOCKWISE_90).rotate(rotation)
-        for (offset in POPUP_TOWER_WOOL_OFFSETS) {
-            placeBlockIfValid(level, centerPos.offset(offset.rotate(rotation)), woolBlockState)
-        }
-        for (offset in POPUP_TOWER_LADDER_OFFSETS) {
-            placeBlockIfValid(level, centerPos.offset(offset.rotate(rotation)), ladderBlockState)
-        }
+        val buildingBlockState = Blocks.WOOL.pick(team.dyeColour).defaultBlockState()
+        val direction = player.lookAngle.toCardinalDirection()
+        level.eventQueue.queuePopupTowerConstruction(centerPos, buildingBlockState, direction)
         if (!player.isCreative) item.count -= 1
         player.playSound(SoundEvents.ITEM_PICKUP, 1.0f, 1.0f)
-        player.sendSystemMessage(Component.literal("Tower deployed."))
+        player.sendSystemMessage(Component.literal("Deploying tower."))
         return InteractionResult.SUCCESS
     }
 
