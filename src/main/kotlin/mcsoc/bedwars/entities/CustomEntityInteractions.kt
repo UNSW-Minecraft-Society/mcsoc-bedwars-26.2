@@ -3,6 +3,8 @@ package mcsoc.bedwars.entities
 import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.customEntityData
+import mcsoc.bedwars.datatrackers.eventQueue
+import mcsoc.bedwars.gamestate.GameEvent
 import mcsoc.bedwars.gui.ShopGui
 import mcsoc.bedwars.gui.ShopType
 import net.minecraft.server.level.ServerLevel
@@ -25,6 +27,7 @@ object CustomEntityInteractions {
         when (type) {
             CustomEntityType.PLAYER_SHOPKEEPER -> ShopGui.displayShop(player, ShopType.PLAYER_SHOP)
             CustomEntityType.TEAM_SHOPKEEPER -> ShopGui.displayShop(player, ShopType.TEAM_SHOP)
+            else -> {}
         }
         return InteractionResult.SUCCESS
     }

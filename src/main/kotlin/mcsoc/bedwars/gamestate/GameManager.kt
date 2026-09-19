@@ -1,17 +1,19 @@
 package mcsoc.bedwars.gamestate
 
-import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.GameEffects
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.blockProtection
+import mcsoc.bedwars.datatrackers.clock
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.customEntityData
+import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
+import mcsoc.bedwars.gui.ScoreboardGui
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.toBlockPos
-import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.minecraft.ChatFormatting
 import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.core.BlockPos
@@ -35,11 +37,12 @@ import net.minecraft.world.level.storage.LevelData
 import net.minecraft.world.phys.Vec3
 import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
-
-val DEATHMATCH_TIME = 10.minutes // change if i'm wrong
 const val BORDER_SIZE: Double = 300.0 // change if needed
-const val RESPAWN_TIME: Int = 5
+val RESPAWN_TIME = 5.seconds
+
+val RESPAWN_TIME_MESSAGE = {seconds_left: Int -> "${ChatFormatting.YELLOW}You will respawn in ${ChatFormatting.RED}${seconds_left} ${ChatFormatting.YELLOW}seconds!"}
 
 class GameManager {
     companion object {
@@ -93,13 +96,14 @@ class GameManager {
 
             // sets time to sunrise (maybe change to noon?)
             val clock = level.dimensionType().defaultClock().orElseThrow()
-            level.clockManager().setTotalTicks(clock, 0);
+            level.clockManager().setTotalTicks(clock, 0)
 
             // Clears the weather
             level.resetWeatherCycle()
 
-            level_mod_data.resetGameTime()
+            level.clock.reset()
             level_mod_data.setGamePhase(GamePhase.STARTING)
+            level.eventQueue.queueGameStartCounter(10.seconds)
         }
 
         fun endGame(level: ServerLevel) {
@@ -108,6 +112,7 @@ class GameManager {
             
             val level_mod_data = level.gameState
             val level_mod_entity_data = level.customEntityData
+            level.eventQueue.reset()
             level_mod_data.clearActivePlayers()
             // clear teams - todo
 
@@ -121,6 +126,7 @@ class GameManager {
             // Clears Active players, all teams data and player data
             level_mod_data.resetModData()
             level.generatorState.clearGenerators()
+            level.generatorState.resetGenUpgrades()
             
             // Clear entities
             for (id in level_mod_entity_data.getEntityIds()) {
@@ -129,11 +135,13 @@ class GameManager {
                 level_mod_entity_data.removeEntity(id)
             }
 
+            ScoreboardGui.clearScoreboard(level)
+
             level.worldBorder.size = ServerLevel.ACROSS_THE_WHOLE_WORLD.toDouble()
             level.worldBorder.setCenter(0.0, 0.0)
         }
 
-        private fun start(level: ServerLevel) {
+        fun start(level: ServerLevel) {
             level.blockProtection.protectionEnabled = true
 
             val level_mod_data = level.gameState
@@ -157,15 +165,21 @@ class GameManager {
                     level, spawn.x, spawn.y, spawn.z,
                     setOf(), 0F, 0F, true
                 )
+                player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atBottomCenterOf(level_mod_data.map_centre))
+                player.inventory.clearContent()
+                player.enderChestInventory.clearContent()
+                player.health = player.maxHealth
                 level_mod_data.updateItems(player)
             }
             // tp players to spawn points
             // start generators
             // maybe show a title saying game begin or something
             // maybe a little tooltip in the bottom left
-            level_mod_data.resetGameTime()
+            ScoreboardGui.displayScoreboard(level)
+
+            level.clock.reset()
             level_mod_data.setGamePhase(GamePhase.ACTIVE)
-            level_mod_data.setGamePeriod(GamePeriod.ACTIVE)
+            level_mod_data.setGamePeriod(GamePeriod.INITIAL)
         }
 
         fun handlePlayerJoin(scoreboard: ServerScoreboard, player: ServerPlayer) {
@@ -187,11 +201,19 @@ class GameManager {
             val player_team = level_mod_data.getPlayersTeam(player.uuid)
             val bed_destroyed = level_mod_data.getBedDestroyed(player_team)
 
-            var killer: UUID = (player.killCredit as? ServerPlayer)?.uuid ?: level_mod_data.getBedBreaker(player_team) ?:
-                    return BedwarsPlugin.LOGGER.error("handlePlayerDeath player: ${player.name.string}, source: ${death_source.msgId}: ", IllegalStateException("Cannot destroy bed without breaker?"))
+            // Downgrade or like reset player item upgrades on death
+            player.inventory.clearContent()
+            level_mod_data.downgradeItems(player)
+            level_mod_data.incrementPlayerDeaths(player.uuid)
+
+            // store player's death position to summon lightning later. Due to the nature of this event handler,
+            // all players are forced to enter "DEAD" state upon death.
+            level_mod_data.setPlayerDead(player, player.position())
+            
+            var killer: UUID = (player.killCredit as? ServerPlayer)?.uuid ?: level_mod_data.getBedBreaker(player_team) ?: return
+                    // return BedwarsPlugin.LOGGER.error("handlePlayerDeath player: ${player.name.string}, source: ${death_source.msgId}: ", IllegalStateException("Cannot destroy bed without breaker?"))
 
             // Need to playtest see if final kill off void death transfers loot
-
             level_mod_data.incrementPlayerKills(killer)
 
             if (bed_destroyed) {
@@ -203,15 +225,6 @@ class GameManager {
                     player.level().getPlayerByUUID(killer)?.inventory?.add(stack)
                 }
             }
-
-            // Downgrade or like reset player item upgrades on death
-            player.inventory.clearContent()
-            level_mod_data.downgradeItems(player)
-            level_mod_data.incrementPlayerDeaths(player.uuid)
-
-            // store player's death position to summon lightning later. Due to the nature of this event handler,
-            // all players are forced to enter "DEAD" state upon death.
-            level_mod_data.setPlayerDead(player, player.position())
         }
 
         fun handlePlayerRespawn(player: ServerPlayer) {
@@ -221,6 +234,7 @@ class GameManager {
             player.setGameMode(GameType.SPECTATOR)
 
             if (!level_mod_data.getBedDestroyed(level_mod_data.getPlayersTeam(player.uuid))) {
+                player.level().eventQueue.queuePlayerRespawn(RESPAWN_TIME, player.uuid)
                 // tp above map
                 val respawn_position: Vec3 = Vec3.atBottomCenterOf(level_mod_data.map_centre.offset(0, 30, 0))
                 player.teleportTo(player.level(), respawn_position.x, respawn_position.y, respawn_position.z,
@@ -229,21 +243,6 @@ class GameManager {
 
                 level_mod_data.setPlayerRespawning(player)
                 level_mod_data.resetPlayerRespawnTime(player)
-                val respawn_time_message = ChatFormatting.YELLOW.toString() + "You will respawn in " + ChatFormatting.RED.toString() + RESPAWN_TIME.toString() + ChatFormatting.YELLOW.toString() + " seconds!"
-                player.connection.send(
-                    ClientboundSetTitlesAnimationPacket(0, 30, 0)
-                )
-                player.connection.send(
-                    ClientboundSetSubtitleTextPacket(
-                        Component.literal(respawn_time_message)
-                    )
-                )
-                player.connection.send(
-                    ClientboundSetTitleTextPacket(
-                        Component.literal((ChatFormatting.RED.toString() + "YOU DIED!"))
-                    )
-                )
-                player.sendSystemMessage(Component.literal(respawn_time_message))
             } else {
                 eliminatePlayer(player)
             }
@@ -376,98 +375,30 @@ class GameManager {
 
         fun tick(level: ServerLevel) {
             val level_mod_data = level.gameState
+            level.eventQueue.tick()
             if (level_mod_data.getGamePhase() == GamePhase.INACTIVE) return
 
             if (level_mod_data.getGamePhase() == GamePhase.ACTIVE) {
-                level.generatorState.tick()
-            }
-
-            level_mod_data.tick()
-            level_mod_data.tickTeams(level)
-
-            if (level_mod_data.getTimerTick()) {
-                level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach { player ->
-                    if (level_mod_data.isPlayerEliminated(player)) return@forEach
-
-                    if (level_mod_data.isPlayerRespawning(player)) {
-                        val seconds_left = level_mod_data.getPlayerRespawnSeconds(player)
-
-                        if (seconds_left == 0) {
-                            // tp player to base location for respawn
-                            val centre = Vec3.atBottomCenterOf(level_mod_data.map_centre)
-                            val spawn = level_mod_data.getTeamSpawn(level_mod_data.getPlayersTeam(player.uuid))
-                            player.teleportTo(
-                                level, spawn.x, spawn.y, spawn.z,
-                                setOf(), 0F, 0F, true
-                            )
-                            player.lookAt(EntityAnchorArgument.Anchor.EYES, centre)
-
-                            player.setGameMode(GameType.SURVIVAL)
-                            level_mod_data.setPlayerAlive(player)
-                            player.connection.send(
-                                ClientboundClearTitlesPacket(true)
-                            )
-                            player.connection.send(
-                                ClientboundSetTitlesAnimationPacket(10, 40, 10)
-                            )
-                            player.connection.send(
-                                ClientboundSetTitleTextPacket(
-                                    Component.literal((ChatFormatting.GREEN.toString() + "RESPAWNED!"))
-                                )
-                            )
-                            player.sendSystemMessage(Component.literal(ChatFormatting.YELLOW.toString() + "You have respawned!"))
-                        } else if (level_mod_data.playerTimerSecondPassed(player)) {
-                            val respawn_time_message = ChatFormatting.YELLOW.toString() + "You will respawn in " + ChatFormatting.RED.toString() + seconds_left.toString() + ChatFormatting.YELLOW.toString() + " seconds!"
-                            player.connection.send(
-                                ClientboundSetTitlesAnimationPacket(0, 30, 0)
-                            )
-                            player.connection.send(
-                                ClientboundSetSubtitleTextPacket(
-                                    Component.literal(respawn_time_message)
-                                )
-                            )
-                            player.connection.send(
-                                ClientboundSetTitleTextPacket(
-                                    Component.literal((ChatFormatting.RED.toString() + "YOU DIED!"))
-                                )
-                            )
-                            player.sendSystemMessage(Component.literal(respawn_time_message))
-                        }
-                    }
+                for (i in 0 until level.clock.timerTick) {
+                    level.generatorState.tick()
+                    level_mod_data.tick()
+                    level_mod_data.tickTeams(level)
                 }
             }
 
-            val time = level_mod_data.getGameTime()
-            if (level_mod_data.getTimerSecond()) {
-                if (level_mod_data.getGamePhase() == GamePhase.STARTING) {
-                    if (time.inWholeSeconds.toInt() >= 10) {
-                        start(level)
-                    } else {
-                        val time_left = (10.0 - time.inWholeSeconds).toInt()
-                        level_mod_data.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach{player ->
-                            player.connection.send(
-                                ClientboundSetTitleTextPacket(
-                                    Component.literal(time_left.toString())
-                                )
-                            )
-                            player.connection.send(
-                                ClientboundSoundPacket(
-                                    Holder.direct(SoundEvents.NOTE_BLOCK_PLING.value()),
-                                    SoundSource.MASTER, player.x, player.y, player.z,
-                                    1.0F, 1.0F, level.getRandom().nextLong()
-                                )
-                            )
-                        }
-                    }
-                } else if (level_mod_data.getGamePhase() == GamePhase.ACTIVE) {
+            val time = level.clock.time
+            if (level.clock.timerSecond > 0) {
+                if (level_mod_data.getGamePhase() == GamePhase.ACTIVE) {
                     // periodic things to hit when game active
-                    if (time >= DEATHMATCH_TIME && level_mod_data.getGamePeriod() == GamePeriod.ACTIVE) {
+                    val nextPeriod = level_mod_data.getGamePeriod().next
+                    if (nextPeriod?.startTime != null && time >= nextPeriod.startTime) {
                         // trigger deathmatch, you can mess with the deathmatch time constant
-                        level_mod_data.setGamePeriod(GamePeriod.DEATHMATCH)
+                        level_mod_data.setGamePeriod(nextPeriod)
 
                         // Hi gabs im dumb and forgot how code works
                         // you'll probably want to trigger your deathmatch stuff elsewhere under the condition
                         // gameperiod is deathmatch
+                        GameEffects.triggerNewPeriod(level, nextPeriod)
                     }
                 }
             }
