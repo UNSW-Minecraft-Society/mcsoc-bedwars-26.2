@@ -24,11 +24,24 @@ object TeamEffects {
 
 
     fun destroyBed(level: ServerLevel, team: Team) {
-        val mod_level_data = level.gameState
-        mod_level_data.setBedAlive(team, false)
-        for (player in mod_level_data.getPlayersInTeam(team)) {
+        val gameState = level.gameState
+        gameState.setBedAlive(team, false)
+        for (player in gameState.getPlayersInTeam(team)) {
             TODO()
             // other things related to bed destruction like title and sound
         }
+    }
+
+    fun triggerDeathmatch(level: ServerLevel) {
+        val gameState = level.gameState
+        // destroy remaining beds
+        gameState.getActiveTeams().forEach { team ->
+            if (!gameState.getBedDestroyed(team)) {
+                destroyBed(level, team)
+            }
+        }
+        // close border
+        // spawn dragons
+
     }
 }
