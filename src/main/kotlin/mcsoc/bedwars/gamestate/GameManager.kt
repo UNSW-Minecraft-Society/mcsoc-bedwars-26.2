@@ -41,7 +41,7 @@ import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-
+val GEN_UPGRADE_TIMES = arrayOf(3.minutes, 5.minutes, 7.minutes, 9.minutes)
 val DEATHMATCH_TIME = 10.minutes // change if i'm wrong
 const val BORDER_SIZE: Double = 300.0 // change if needed
 val RESPAWN_TIME = 5.seconds
@@ -178,7 +178,7 @@ class GameManager {
             // maybe a little tooltip in the bottom left
             level.clock.reset()
             level_mod_data.setGamePhase(GamePhase.ACTIVE)
-            level_mod_data.setGamePeriod(GamePeriod.ACTIVE)
+            level_mod_data.setGamePeriod(GamePeriod.INITIAL)
         }
 
         fun handlePlayerJoin(scoreboard: ServerScoreboard, player: ServerPlayer) {
@@ -389,14 +389,15 @@ class GameManager {
             if (level.clock.timerSecond > 0) {
                 if (level_mod_data.getGamePhase() == GamePhase.ACTIVE) {
                     // periodic things to hit when game active
-                    if (time >= DEATHMATCH_TIME && level_mod_data.getGamePeriod() == GamePeriod.ACTIVE) {
+                    val nextPeriod = level_mod_data.getGamePeriod().next
+                    if (nextPeriod?.startTime != null && time >= nextPeriod.startTime) {
                         // trigger deathmatch, you can mess with the deathmatch time constant
-                        level_mod_data.setGamePeriod(GamePeriod.DEATHMATCH)
+                        level_mod_data.setGamePeriod(nextPeriod)
 
                         // Hi gabs im dumb and forgot how code works
                         // you'll probably want to trigger your deathmatch stuff elsewhere under the condition
                         // gameperiod is deathmatch
-                        GameEffects.triggerDeathmatch(level)
+                        GameEffects.triggerNewPeriod(level, nextPeriod)
                     }
                 }
             }

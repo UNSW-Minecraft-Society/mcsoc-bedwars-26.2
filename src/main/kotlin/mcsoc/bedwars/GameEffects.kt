@@ -1,7 +1,10 @@
 package mcsoc.bedwars
 
 import mcsoc.bedwars.TeamEffects.destroyBed
+import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.generatorState
+import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.Team
 import net.minecraft.server.level.ServerLevel
 
@@ -35,6 +38,18 @@ object TeamEffects {
 }
 
 object GameEffects {
+    fun triggerNewPeriod(level: ServerLevel, nextPeriod: GamePeriod) {
+        val generatorTracker = level.generatorState
+        when (nextPeriod) {
+            GamePeriod.DIAMOND_I -> generatorTracker.upgradeGenerator(GeneratorType.DIAMOND)
+            GamePeriod.EMERALD_I -> generatorTracker.upgradeGenerator(GeneratorType.EMERALD)
+            GamePeriod.DIAMOND_II -> generatorTracker.upgradeGenerator(GeneratorType.DIAMOND)
+            GamePeriod.EMERALD_II -> generatorTracker.upgradeGenerator(GeneratorType.EMERALD)
+            GamePeriod.DEATHMATCH -> triggerDeathmatch(level)
+            else -> {}
+        }
+    }
+
     fun triggerDeathmatch(level: ServerLevel) {
         val gameState = level.gameState
         // destroy remaining beds
@@ -43,8 +58,5 @@ object GameEffects {
                 destroyBed(level, team)
             }
         }
-        // close border
-        // spawn dragons
-
     }
 }
