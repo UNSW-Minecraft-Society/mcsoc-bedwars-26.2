@@ -37,6 +37,7 @@ internal interface GeneratorsExposer {
     fun clearGenerators()
     fun getGeneratorUpgrade(type: GeneratorType): Int
     fun upgradeGenerator(type: GeneratorType)
+    fun resetGenUpgrades()
 }
 
 internal interface GeneratorsHolder : GeneratorsExposer {

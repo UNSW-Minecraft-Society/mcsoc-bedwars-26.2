@@ -130,6 +130,7 @@ class GameManager {
             // Clears Active players, all teams data and player data
             level_mod_data.resetModData()
             level.generatorState.clearGenerators()
+            level.generatorState.resetGenUpgrades()
             
             // Clear entities
             for (id in level_mod_entity_data.getEntityIds()) {
