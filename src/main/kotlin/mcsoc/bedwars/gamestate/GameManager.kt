@@ -1,6 +1,5 @@
 package mcsoc.bedwars.gamestate
 
-import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.GameEffects
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
@@ -40,8 +39,6 @@ import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-val GEN_UPGRADE_TIMES = arrayOf(3.minutes, 5.minutes, 7.minutes, 9.minutes)
-val DEATHMATCH_TIME = 10.minutes // change if i'm wrong
 const val BORDER_SIZE: Double = 300.0 // change if needed
 val RESPAWN_TIME = 5.seconds
 

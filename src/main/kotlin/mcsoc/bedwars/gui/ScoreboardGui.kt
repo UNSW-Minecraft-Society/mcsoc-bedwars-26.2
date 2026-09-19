@@ -2,7 +2,9 @@ package mcsoc.bedwars.gui
 
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
+import mcsoc.bedwars.datatrackers.clock
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.utils.formatMMSS
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.scores.DisplaySlot
@@ -54,13 +56,9 @@ object ScoreboardGui {
     }
 
     private fun getGamePeriodLine(level: ServerLevel): String {
-        val nextPhase = when (level.gameState.getGamePeriod()) {
-            GamePeriod.ACTIVE -> "Deathmatch in "
-            GamePeriod.DEATHMATCH -> "Dragons in "
-            GamePeriod.INACTIVE -> return ""
-        }
-        val time = "§a12:25"
-        return nextPhase + time
+        val nextPeriod = level.gameState.getGamePeriod().next ?: return ""
+        val time = level.clock.time - (nextPeriod.startTime ?: return "")
+        return nextPeriod.title + " in " + time.formatMMSS
     }
 
     fun clearScoreboard(level: ServerLevel) {
