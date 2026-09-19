@@ -1,6 +1,5 @@
 package mcsoc.bedwars.gamestate
 
-import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.GameEffects
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
@@ -12,10 +11,9 @@ import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
+import mcsoc.bedwars.gui.ScoreboardGui
 import mcsoc.bedwars.utils.Team
-import mcsoc.bedwars.utils.ticks
 import mcsoc.bedwars.utils.toBlockPos
-import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.minecraft.ChatFormatting
 import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.core.BlockPos
@@ -41,8 +39,6 @@ import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-val GEN_UPGRADE_TIMES = arrayOf(3.minutes, 5.minutes, 7.minutes, 9.minutes)
-val DEATHMATCH_TIME = 10.minutes // change if i'm wrong
 const val BORDER_SIZE: Double = 300.0 // change if needed
 val RESPAWN_TIME = 5.seconds
 
@@ -139,6 +135,8 @@ class GameManager {
                 level_mod_entity_data.removeEntity(id)
             }
 
+            ScoreboardGui.clearScoreboard(level)
+
             level.worldBorder.size = ServerLevel.ACROSS_THE_WHOLE_WORLD.toDouble()
             level.worldBorder.setCenter(0.0, 0.0)
         }
@@ -177,6 +175,8 @@ class GameManager {
             // start generators
             // maybe show a title saying game begin or something
             // maybe a little tooltip in the bottom left
+            ScoreboardGui.displayScoreboard(level)
+
             level.clock.reset()
             level_mod_data.setGamePhase(GamePhase.ACTIVE)
             level_mod_data.setGamePeriod(GamePeriod.INITIAL)

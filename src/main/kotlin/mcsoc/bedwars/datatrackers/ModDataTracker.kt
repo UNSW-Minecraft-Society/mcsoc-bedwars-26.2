@@ -45,14 +45,14 @@ enum class GamePhase {
     INACTIVE;
 }
 
-enum class GamePeriod(val next: GamePeriod?, val startTime: Duration?) {
-    INACTIVE(null, null),
-    DEATHMATCH(null, 10.minutes),
-    EMERALD_II(GamePeriod.DEATHMATCH, 7.minutes),
-    DIAMOND_II(GamePeriod.EMERALD_II, 6.minutes),
-    EMERALD_I(GamePeriod.DIAMOND_II, 4.minutes),
-    DIAMOND_I(GamePeriod.EMERALD_I, 3.minutes),
-    INITIAL(GamePeriod.DIAMOND_I, null)
+enum class GamePeriod(val next: GamePeriod?, val startTime: Duration?, val title: String) {
+    INACTIVE(null, null, "Inactive"),
+    DEATHMATCH(null, 10.minutes, "Deathmatch"),
+    EMERALD_III(GamePeriod.DEATHMATCH, 7.minutes, "Emerald Generator III"),
+    DIAMOND_III(GamePeriod.EMERALD_III, 6.minutes, "Diamond Generator III"),
+    EMERALD_II(GamePeriod.DIAMOND_III, 4.minutes, "Emerald Generator II"),
+    DIAMOND_II(GamePeriod.EMERALD_II, 3.minutes, "Emerald Generator II"),
+    INITIAL(GamePeriod.DIAMOND_II, null, "Initial")
 }
 
 private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord, PlayerTimeRecord, PlayerStatsRecord {
