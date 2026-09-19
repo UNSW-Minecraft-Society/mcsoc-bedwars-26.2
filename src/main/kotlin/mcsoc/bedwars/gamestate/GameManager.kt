@@ -166,6 +166,9 @@ class GameManager {
                     setOf(), 0F, 0F, true
                 )
                 player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atBottomCenterOf(level_mod_data.map_centre))
+                player.inventory.clearContent()
+                player.enderChestInventory.clearContent()
+                player.health = player.maxHealth
                 level_mod_data.updateItems(player)
             }
             // tp players to spawn points

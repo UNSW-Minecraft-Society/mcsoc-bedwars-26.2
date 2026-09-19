@@ -17,11 +17,10 @@ import net.minecraft.server.level.ServerPlayer
 import mcsoc.bedwars.upgrades.TeamUpgrade
 import mcsoc.bedwars.upgrades.TeamUpgradeType
 import mcsoc.bedwars.upgrades.TrapUpgrade
-import mcsoc.bedwars.utils.inWholeTicks
 import kotlin.time.Duration
-import kotlin.time.TimeSource
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.ticks
+import mcsoc.bedwars.utils.toBlockPos
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup
@@ -33,7 +32,6 @@ import net.minecraft.world.level.saveddata.SavedData
 import java.util.UUID
 import net.minecraft.world.phys.Vec3
 import java.util.Optional
-import kotlin.math.ceil
 import kotlin.uuid.Uuid
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
@@ -193,29 +191,33 @@ private class TeamDataRecord(
             BlockPos.CODEC.fieldOf("bed_position").forGetter(TeamDataRecord::bedPosition),
             Codec.INT.fieldOf("gen_upgrade").forGetter(TeamDataRecord::genUpgrade),
             Vec3.CODEC.fieldOf("spawn").forGetter(TeamDataRecord::spawn),
-            UUIDUtil.CODEC.optionalFieldOf("bed_breaker").forGetter{Optional.ofNullable(it.bedBreaker)},
+            UUIDUtil.CODEC.optionalFieldOf("bed_breaker").forGetter{ r -> Optional.ofNullable(r.bedBreaker)},
         ).apply(it, ::TeamDataRecord)}
 
         private const val PLAYER_RANGE = 15
+        private const val TRAP_RANGE = 15
         private const val TRAP_COOLDOWN = 10 * 20
     }
 
     private var trapCooldown = 0
 
     override fun tick(level: ServerLevel) {
-
         if (getUpgrade(TeamUpgradeType.HEAL_POOL)) {
             players
                 .mapNotNull {level.getPlayerByUUID(it)}
                 .filter { spawn.distanceTo(it.position()) < PLAYER_RANGE }
-                .forEach { it.addEffect(MobEffectInstance(MobEffects.REGENERATION, 1, 0, false, false)) }
+                .forEach {
+                    it.addEffect(MobEffectInstance(MobEffects.REGENERATION, 2 * 20, 0, false, false))
+                }
         }
 
         val haste = getUpgrade(TeamUpgradeType.HASTE)
         if (haste > 0) {
             players
                 .mapNotNull {level.getPlayerByUUID(it)}
-                .forEach { it.addEffect(MobEffectInstance(MobEffects.HASTE, 1, haste - 1, false, false)) }
+                .forEach {
+                    it.addEffect(MobEffectInstance(MobEffects.HASTE, 2 * 20, haste - 1, false, false))
+                }
         }
 
         if (trapCooldown > 0) {
@@ -223,14 +225,14 @@ private class TeamDataRecord(
             return
         }
 
-        val playersInBase = PlayerLookup.around(level, spawn, PLAYER_RANGE.toDouble())
+        val playersInBase = PlayerLookup.around(level, bedPosition, TRAP_RANGE.toDouble())
         val enemies = playersInBase.filter { it.uuid !in players }
         val teammates = playersInBase.filter {it.uuid in players}
         if (traps.isNotEmpty() && enemies.isNotEmpty()) {
             val trap = popTrap()
             trap?.enemyEffect(level, enemies)
             trap?.teamEffect(level, teammates)
-            // notify teammates about trap being triggered with title and sfx
+            // todo notify teammates about trap being triggered with title and sfx
         }
     }
 
