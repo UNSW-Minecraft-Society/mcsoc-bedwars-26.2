@@ -38,8 +38,8 @@ object ScoreboardGui {
 
     private fun getLines(level: ServerLevel): List<String> {
         val lines = mutableListOf<String>()
-
         lines += getGamePeriodLine(level)
+        lines += getNextPeriodLine(level)
         lines += ""
         for (team in level.gameState.getActiveTeams()) {
             var teamStatus : String
@@ -56,6 +56,10 @@ object ScoreboardGui {
     }
 
     private fun getGamePeriodLine(level: ServerLevel): String {
+        return level.gameState.getGamePeriod().name ?: "err0"
+    }
+
+    private fun getNextPeriodLine(level: ServerLevel): String {
         val nextPeriod = level.gameState.getGamePeriod().next ?: return "err1"
         val time = level.clock.time - (nextPeriod.startTime ?: return "err2")
         return nextPeriod.title + " in " + time.formatMMSS
