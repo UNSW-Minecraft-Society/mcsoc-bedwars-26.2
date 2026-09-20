@@ -90,7 +90,6 @@ class GameManager {
             gamerules.set(GameRules.IMMEDIATE_RESPAWN, true, level.server)
             gamerules.set(GameRules.KEEP_INVENTORY, true, level.server)
             gamerules.set(GameRules.SPAWN_MOBS, false, level.server)
-            gamerules.set(GameRules.NATURAL_HEALTH_REGENERATION, false, level.server)
             gamerules.set(GameRules.ADVANCE_TIME, false, level.server)
             gamerules.set(GameRules.ADVANCE_WEATHER, false, level.server)
 
