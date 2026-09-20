@@ -102,6 +102,7 @@ class GameManager {
 
             level.clock.reset()
             level_mod_data.setGamePhase(GamePhase.STARTING)
+            level_mod_data.setGamePeriod(GamePeriod.INACTIVE)
             level.eventQueue.queueGameStartCounter(10.seconds)
         }
 
@@ -338,7 +339,9 @@ class GameManager {
 
                 stats_list.forEach(player::sendSystemMessage)
             }
+            ScoreboardGui.displayScoreboard(level)
             level_mod_data.setGamePhase(GamePhase.ENDED)
+            level_mod_data.setGamePeriod(GamePeriod.INACTIVE)
         }
 
         fun afterBedBreak(level: ServerLevel, breaker: ServerPlayer, team: Team) {
@@ -392,13 +395,8 @@ class GameManager {
                     // periodic things to hit when game active
                     val nextPeriod = level_mod_data.getGamePeriod().next
                     if (nextPeriod?.startTime != null && time >= nextPeriod.startTime) {
-                        // trigger deathmatch, you can mess with the deathmatch time constant
-                        level_mod_data.setGamePeriod(nextPeriod)
-
-                        // Hi gabs im dumb and forgot how code works
-                        // you'll probably want to trigger your deathmatch stuff elsewhere under the condition
-                        // gameperiod is deathmatch
                         GameEffects.triggerNewPeriod(level, nextPeriod)
+                        level_mod_data.setGamePeriod(nextPeriod)
                     }
                 }
             }
