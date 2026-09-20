@@ -20,7 +20,6 @@ import mcsoc.bedwars.upgrades.TrapUpgrade
 import kotlin.time.Duration
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.ticks
-import mcsoc.bedwars.utils.toBlockPos
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup
@@ -52,7 +51,7 @@ enum class GamePeriod(val next: GamePeriod?, val startTime: Duration?, val title
     DIAMOND_III(GamePeriod.EMERALD_III, 6.minutes, "Diamond Generator III"),
     EMERALD_II(GamePeriod.DIAMOND_III, 4.minutes, "Emerald Generator II"),
     DIAMOND_II(GamePeriod.EMERALD_II, 3.minutes, "Emerald Generator II"),
-    INITIAL(GamePeriod.DIAMOND_II, null, "Initial")
+    INITIAL(GamePeriod.DIAMOND_II, null, "Game Start")
 }
 
 private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord, PlayerTimeRecord, PlayerStatsRecord {

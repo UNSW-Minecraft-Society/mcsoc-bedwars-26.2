@@ -36,7 +36,7 @@ import net.minecraft.world.level.gamerules.GameRules
 import net.minecraft.world.level.storage.LevelData
 import net.minecraft.world.phys.Vec3
 import java.util.UUID
-import kotlin.time.Duration.Companion.minutes
+
 import kotlin.time.Duration.Companion.seconds
 
 const val BORDER_SIZE: Double = 300.0 // change if needed
@@ -376,7 +376,6 @@ class GameManager {
         fun tick(level: ServerLevel) {
             val level_mod_data = level.gameState
             level.eventQueue.tick()
-            ScoreboardGui.displayScoreboard(level)
             if (level_mod_data.getGamePhase() == GamePhase.INACTIVE) return
 
             if (level_mod_data.getGamePhase() == GamePhase.ACTIVE) {
@@ -385,6 +384,7 @@ class GameManager {
                     level_mod_data.tick()
                     level_mod_data.tickTeams(level)
                 }
+                ScoreboardGui.displayScoreboard(level)
             }
 
             val time = level.clock.time

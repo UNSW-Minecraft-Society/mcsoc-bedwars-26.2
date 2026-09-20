@@ -19,4 +19,4 @@ fun getProgressBar(fraction: Double, size: Int): String {
     return "[" + "||".repeat(numBar) + " ".repeat(numSpace) + "]"
 }
 
-val Duration.formatMMSS: String get() = "${this.inWholeMinutes}:${this.inWholeSeconds - this.inWholeMinutes * 60}"
+val Duration.formatMMSS: String get() = "${this.inWholeMinutes}:${"%02d".format(this.inWholeSeconds - this.inWholeMinutes * 60)}"
