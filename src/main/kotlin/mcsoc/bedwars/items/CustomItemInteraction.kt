@@ -37,6 +37,7 @@ import kotlin.math.roundToInt
 
 
 const val FIREBALL_SPEED = 1.0
+const val FIREBALL_POWER = 3
 const val BRIDGE_EGG_OFFSET = -0.5
 const val POPUP_TOWER_HEIGHT = 6 // needs to be >5
 val POPUP_TOWER_WOOL_OFFSETS = buildSet {
@@ -139,7 +140,7 @@ object CustomItemInteraction {
     private fun useFireballEffect(player: Player, level: Level, item: ItemStack): InteractionResult {
         BedwarsPlugin.LOGGER.info("Doing fireball thing")
         val directionVector = player.getViewVector(1.0f)
-        val fireball = LargeFireball(EntityTypes.FIREBALL, level)
+        val fireball = LargeFireball(level, player, directionVector.scale(FIREBALL_SPEED), FIREBALL_POWER)
         fireball.setPos(player.eyePosition.add(directionVector.scale(0.5)))
         fireball.owner = player
         fireball.deltaMovement = directionVector.scale(FIREBALL_SPEED)
