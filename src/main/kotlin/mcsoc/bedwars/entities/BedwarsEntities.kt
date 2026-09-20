@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.animal.golem.IronGolem
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.world.entity.monster.Endermite
 import net.minecraft.world.entity.monster.piglin.PiglinBrute
 import net.minecraft.world.entity.npc.villager.Villager
@@ -81,4 +82,11 @@ fun spawnBedBrute(level: ServerLevel, position: Vec3, team: Team) {
         level.eventQueue.queueEntityExpiry(BED_BRUTE_EXPIRY_TIME, brute.uuid)
         // "Doomed to death of KARMA!" - NarraChara UnderTale
     }
+}
+
+fun spawnDeathmatchDragon(level: ServerLevel, position: Vec3) {
+    val dragon = EnderDragon(EntityTypes.ENDER_DRAGON, level)
+    dragon.setPos(position)
+    dragon.customName = Component.literal("Deathmatch Dragon")
+    if (level.addFreshEntity(dragon)) level.customEntityData.addEntity(dragon, CustomEntityType.DEATHMATCH_DRAGON)
 }
