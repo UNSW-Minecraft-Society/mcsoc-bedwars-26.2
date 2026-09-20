@@ -66,6 +66,7 @@ object ScoreboardGui {
     }
 
     private fun getNextPeriodLine(level: ServerLevel): String {
+
         val nextPeriod = level.gameState.getGamePeriod().next ?: return "err1"
         val time = (nextPeriod.startTime ?: return "err2") - level.clock.time
         return "${nextPeriod.title} in ${ChatFormatting.GREEN}${time.formatMMSS}"

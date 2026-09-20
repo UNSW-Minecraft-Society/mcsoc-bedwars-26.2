@@ -5,10 +5,14 @@ import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.entities.spawnDeathmatchDragon
 import mcsoc.bedwars.gamestate.BORDER_SIZE
+import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.Team
+import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.phys.Vec3
 
 // replace with config
@@ -41,6 +45,7 @@ object GameEffects {
             GamePeriod.DIAMOND_III -> generatorTracker.upgradeGenerator(GeneratorType.DIAMOND)
             GamePeriod.EMERALD_III -> generatorTracker.upgradeGenerator(GeneratorType.EMERALD)
             GamePeriod.DEATHMATCH -> triggerDeathmatch(level)
+            GamePeriod.TERMINAL -> triggerGameEnd(level)
             else -> {}
         }
     }
@@ -57,12 +62,30 @@ object GameEffects {
             // spawn dragon
             spawnDeathmatchDragon(level, Vec3.atCenterOf(bedPos.offset(0, 32, 0)))
             // notify players
-            for (player in gameState.getPlayersInTeam(team)) {
-                level.getPlayerByUUID(player)?.sendSystemMessage(Component.literal("Deathmatch has begun."))
+            for (playerId in gameState.getPlayersInTeam(team)) {
+                val player = level.getPlayerByUUID(playerId)
+                player?.sendSystemMessage(Component.literal("Deathmatch has begun."))
+                player?.sendSystemMessage(Component.literal("All beds broken, dragons spawned, world border shrinking."))
+                if (player is ServerPlayer) {
+                    player.connection.send(
+                        ClientboundSetTitleTextPacket(
+                            Component.literal("${ChatFormatting.RED}DEATHMATCH")
+                        )
+                    )
+                }
             }
         }
         // shrink border
         val worldBorder = level.worldBorder
         worldBorder.lerpSizeBetween(BORDER_SIZE, MIN_DEATHMATCH_BORDER_SIZE, DEATHMATCH_BORDER_TIME, level.gameTime)
+    }
+
+    fun triggerGameEnd(level: ServerLevel) {
+        val gameState = level.gameState
+        for (playerId in gameState.getActivePlayers()) {
+            val player = level.getPlayerByUUID(playerId) ?: continue
+            player.kill(level)
+        }
+        GameManager.endGame(level)
     }
 }

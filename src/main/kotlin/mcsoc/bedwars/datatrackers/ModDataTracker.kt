@@ -36,6 +36,7 @@ import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 import net.minecraft.world.scores.Scoreboard
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 enum class GamePhase {
     STARTING,
@@ -46,11 +47,12 @@ enum class GamePhase {
 
 enum class GamePeriod(val next: GamePeriod?, val startTime: Duration?, val title: String) {
     INACTIVE(null, null, "Inactive"),
-    DEATHMATCH(null, 10.minutes, "Deathmatch"),
-    EMERALD_III(GamePeriod.DEATHMATCH, 7.minutes, "Emerald Generator III"),
-    DIAMOND_III(GamePeriod.EMERALD_III, 6.minutes, "Diamond Generator III"),
-    EMERALD_II(GamePeriod.DIAMOND_III, 4.minutes, "Emerald Generator II"),
-    DIAMOND_II(GamePeriod.EMERALD_II, 3.minutes, "Emerald Generator II"),
+    TERMINAL(null, 15.seconds, "Game End"),
+    DEATHMATCH(null, 10.seconds, "Deathmatch"),
+    EMERALD_III(GamePeriod.DEATHMATCH, 7.seconds, "Emerald Generator III"),
+    DIAMOND_III(GamePeriod.EMERALD_III, 6.seconds, "Diamond Generator III"),
+    EMERALD_II(GamePeriod.DIAMOND_III, 4.seconds, "Emerald Generator II"),
+    DIAMOND_II(GamePeriod.EMERALD_II, 3.seconds, "Emerald Generator II"),
     INITIAL(GamePeriod.DIAMOND_II, null, "Game Start")
 }
 
