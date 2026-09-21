@@ -14,13 +14,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
-
+import mcsoc.bedwars.datatrackers.GamePhase;
 import mcsoc.bedwars.datatrackers.LevelData;
 
 
 @Mixin(Level.class)
 public abstract class LevelSetBlockMixin {
-    private int MAX_HEIGHT = 30;
+    private int MAX_HEIGHT = 50;
 
     @Inject(at = @At("HEAD"), method = "setBlock(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;II)Z", cancellable = true)
     private void onSetBlock(BlockPos pos, BlockState newState, int flags, int maxUpdateDepth, CallbackInfoReturnable<Boolean> cir) {
@@ -35,10 +35,12 @@ public abstract class LevelSetBlockMixin {
          * * block is replaced and not replaceable - fail
         */
 
+        var isAboveBuildHeigh = pos.getY() > LevelData.getGameState(level).getMap_centre().getY() + MAX_HEIGHT;
+        var isGameActive = LevelData.getGameState(level).getGamePhase().equals(GamePhase.ACTIVE);
 
         if (!(block_protection.isBlockPlacementAllowed(pos)) ||
             !(self.getBlockState(pos).canBeReplaced() || newState.is(BlockTags.AIR)) ||
-            pos.getY() > LevelData.getGameState(level).getMap_centre().getY() + MAX_HEIGHT
+            (isAboveBuildHeigh && isGameActive)
         ) { 
             cir.setReturnValue(false);
         } else if (!self.getBlockState(pos).getBlock().equals(newState.getBlock())) {
