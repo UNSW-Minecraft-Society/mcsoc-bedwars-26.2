@@ -30,7 +30,7 @@ import kotlin.reflect.KClass
 
 
 private fun CylindricalBlockPos.relToMapOrigin(island_origin: BlockPos, island_pos: CylindricalBlockPos): BlockPos =
-    rotated(FLOAT_PI - island_pos.angle).toBlockPos(island_origin)
+    rotated(island_pos.angle).toBlockPos(island_origin)
     
     
 private sealed class LoadedGeneratorType(val name: String, protected val type: GeneratorType) {
@@ -81,7 +81,7 @@ private interface Island {
     val cpos: CylindricalBlockPos
     val structure: String
     val protection_zones: Iterable<ProtectionZoneData>
-    open val rotation: (Float) -> Double get() = {0.0}
+    val rotation: (Float) -> Double get() = {0.0}
     
     fun place(level: ServerLevel, origin: BlockPos): BlockPos {
         val pos = cpos.toBlockPos(origin)
@@ -157,9 +157,9 @@ data class MapData private constructor(
     private val misc_islands: List<@Serializable(with=IslandDataSerialiser::class) IslandData>,
 ) {
     constructor() : this(
-        GeneratorIslandData(generators = listOf(Pair(LoadedGeneratorType.Emerald, CylindricalBlockPos(0F, 0F, 0)))), 
-        listOf(BaseIslandData()), 
-        listOf(GeneratorIslandData()), 
+        GeneratorIslandData(generators = listOf(Pair(LoadedGeneratorType.Emerald, CylindricalBlockPos(0F, 0F, 0)))),
+        listOf(BaseIslandData()),
+        listOf(GeneratorIslandData()),
         listOf(IslandData())
     )
     
