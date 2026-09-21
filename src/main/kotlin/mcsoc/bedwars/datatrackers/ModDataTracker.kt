@@ -24,6 +24,7 @@ import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup
 import net.minecraft.core.BlockPos
+import net.minecraft.util.StringRepresentable
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.player.Player
@@ -39,14 +40,20 @@ import net.minecraft.world.scores.TeamColor
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-enum class GamePhase {
+enum class GamePhase : StringRepresentable {
     STARTING,
     ACTIVE,
     ENDED,
     INACTIVE;
+    
+    companion object {
+        val CODEC: Codec<GamePhase> = StringRepresentable.fromEnum(GamePhase::values)
+    }
+
+    override fun getSerializedName(): String = this.name
 }
 
-enum class GamePeriod(val next: GamePeriod?, val startTime: Duration?, val title: String) {
+enum class GamePeriod(val next: GamePeriod?, val startTime: Duration?, val title: String) : StringRepresentable {
     INACTIVE(null, null, "Inactive"),
     TERMINAL(null, 15.minutes, "Game End"),
     DEATHMATCH(TERMINAL, 10.minutes, "Deathmatch"),
@@ -54,7 +61,13 @@ enum class GamePeriod(val next: GamePeriod?, val startTime: Duration?, val title
     DIAMOND_III(EMERALD_III, 6.minutes, "Diamond Generator III"),
     EMERALD_II(DIAMOND_III, 4.minutes, "Emerald Generator II"),
     DIAMOND_II(EMERALD_II, 3.minutes, "Emerald Generator II"),
-    INITIAL(DIAMOND_II, null, "Game Start")
+    INITIAL(DIAMOND_II, null, "Game Start");
+    
+    companion object {
+        val CODEC: Codec<GamePeriod> = StringRepresentable.fromEnum(GamePeriod::values)
+    }
+
+    override fun getSerializedName(): String = this.name
 }
 
 private class PlayerDataRecord() : PlayerInvisHolder, PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord, PlayerTimeRecord, PlayerStatsRecord {
@@ -308,21 +321,22 @@ private class ModDataStore() : PlayerInvisSwitcher, PlayerStateHolder, TeamState
             Codec.unboundedMap(UUIDUtil.STRING_CODEC, PlayerDataRecord.CODEC)
                 .fieldOf("player_data_map")
                 .forGetter(ModDataStore::player_data_map),
-
             Codec.unboundedMap(Team.CODEC, TeamDataRecord.CODEC)
                 .fieldOf("teams_map")
                 .forGetter(ModDataStore::teams_map),
-                    
             BlockPos.CODEC
                 .fieldOf("map_centre")
                 .forGetter(ModDataStore::map_centre),
-                    
-                
-            
+            GamePeriod.CODEC
+                .fieldOf("game_period")
+                .forGetter(ModDataStore::game_period),
+            GamePhase.CODEC
+                .fieldOf("game_phase")
+                .forGetter(ModDataStore::game_phase)
         ).apply(it, ::ModDataStore)}
     }
 
-
+    
     private val player_data_map = HashMap<UUID, PlayerDataRecord>()
     private val teams_map = HashMap<Team, TeamDataRecord>()
     private val active_players = mutableSetOf<UUID>()
@@ -333,13 +347,15 @@ private class ModDataStore() : PlayerInvisSwitcher, PlayerStateHolder, TeamState
     private constructor(
         playerMap: Map<UUID, PlayerDataRecord>,
         teamMap: Map<Team, TeamDataRecord>,
-        map_centre: BlockPos
-        // game_phase: GamePhase,
-        // game_period: GamePhase
+        map_centre: BlockPos,
+        game_period: GamePeriod,
+        game_phase: GamePhase
     ) : this() {
         this.player_data_map.putAll(playerMap)
         this.teams_map.putAll(teamMap)
         this.map_centre = map_centre
+        this.game_phase = game_phase
+        this.game_period = game_period
     }
 
 
