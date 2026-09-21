@@ -44,6 +44,35 @@ val RESPAWN_TIME = 5.seconds
 
 val RESPAWN_TIME_MESSAGE = {seconds_left: Int -> "${ChatFormatting.YELLOW}You will respawn in ${ChatFormatting.RED}${seconds_left} ${ChatFormatting.YELLOW}seconds!"}
 
+
+private fun ServerLevel.getActivePlayers(): Iterable<ServerPlayer> = this.gameState.getActivePlayers().mapNotNull(this.server.playerList::getPlayer)
+
+
+// TODO make these RNG
+private fun ServerPlayer.getSelfDeathMessage(): Component {
+    return (this.displayName as MutableComponent)
+        .append("${ChatFormatting.GRAY} should have been more careful!")
+}
+private fun ServerPlayer.getSelfFinalDeathMessage(): Component {
+    return (this.displayName as MutableComponent)
+        .append("${ChatFormatting.GRAY} forgot that their bed was broken.")
+}
+private fun ServerPlayer.getKillMessage(killer: UUID): Component {
+    val killer_name: Component = this.level().server.playerList.getPlayer(killer)?.displayName ?: Component.literal("Someone")
+    return (this.displayName as MutableComponent)
+        .append("${ChatFormatting.GRAY} slipped on ")
+        .append(killer_name)
+        .append("${ChatFormatting.GRAY}'s banana peel.")
+}
+private fun ServerPlayer.getFinalKillMessage(killer: UUID): Component {
+    val killer_name: Component = this.level().server.playerList.getPlayer(killer)?.displayName ?: Component.literal("Someone")
+    return (this.displayName as MutableComponent)
+        .append("${ChatFormatting.GRAY} was sent to the afterlife by ")
+        .append(killer_name)
+        .append("${ChatFormatting.GRAY}.")
+}
+
+
 class GameManager {
     companion object {
         fun setupGame(map_name: String, level: ServerLevel, start_pos: BlockPos) {
@@ -92,6 +121,7 @@ class GameManager {
             gamerules.set(GameRules.SPAWN_MOBS, false, level.server)
             gamerules.set(GameRules.ADVANCE_TIME, false, level.server)
             gamerules.set(GameRules.ADVANCE_WEATHER, false, level.server)
+            gamerules.set(GameRules.SHOW_DEATH_MESSAGES, false, level.server)
 
             // sets time to sunrise (maybe change to noon?)
             val clock = level.dimensionType().defaultClock().orElseThrow()
@@ -195,7 +225,8 @@ class GameManager {
         }
 
         fun handlePlayerDeath(player: ServerPlayer, death_source: DamageSource) {
-            val level_mod_data = player.level().gameState
+            val level = player.level()
+            val level_mod_data = level.gameState
             if (level_mod_data.getGamePhase() != GamePhase.ACTIVE) return
 
             val player_team = level_mod_data.getPlayersTeam(player.uuid)
@@ -210,7 +241,14 @@ class GameManager {
             // all players are forced to enter "DEAD" state upon death.
             level_mod_data.setPlayerDead(player, player.position())
             
-            var killer: UUID = (player.killCredit as? ServerPlayer)?.uuid ?: level_mod_data.getBedBreaker(player_team) ?: return
+            var killer: UUID = (player.killCredit as? ServerPlayer)?.uuid ?: level_mod_data.getBedBreaker(player_team) ?: run {
+                if (bed_destroyed) {
+                    level.getActivePlayers().forEach{it.sendSystemMessage(it.getSelfFinalDeathMessage())}
+                } else {
+                    level.getActivePlayers().forEach{it.sendSystemMessage(it.getSelfDeathMessage())}
+                }
+                return
+            }
                     // return BedwarsPlugin.LOGGER.error("handlePlayerDeath player: ${player.name.string}, source: ${death_source.msgId}: ", IllegalStateException("Cannot destroy bed without breaker?"))
 
             // Need to playtest see if final kill off void death transfers loot
@@ -218,6 +256,9 @@ class GameManager {
 
             if (bed_destroyed) {
                 level_mod_data.incrementPlayerFinalKills(killer)
+                level.getActivePlayers().forEach{it.sendSystemMessage(it.getFinalKillMessage(killer))}
+            } else {
+                level.getActivePlayers().forEach{it.sendSystemMessage(it.getKillMessage(killer))}
             }
 
             for (stack in player.inventory) {
