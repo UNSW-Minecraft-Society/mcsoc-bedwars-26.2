@@ -30,7 +30,7 @@ import kotlin.reflect.KClass
 
 
 private fun CylindricalBlockPos.relToMapOrigin(island_origin: BlockPos, island_pos: CylindricalBlockPos): BlockPos =
-    rotated(island_pos.angle).toBlockPos(island_origin)
+    rotated(FLOAT_PI - island_pos.angle).toBlockPos(island_origin)
     
     
 private sealed class LoadedGeneratorType(val name: String, protected val type: GeneratorType) {
