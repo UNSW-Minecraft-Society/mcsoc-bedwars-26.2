@@ -13,6 +13,7 @@ import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.animal.golem.IronGolem
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
+import net.minecraft.world.entity.boss.wither.WitherBoss
 import net.minecraft.world.entity.monster.Endermite
 import net.minecraft.world.entity.monster.piglin.PiglinBrute
 import net.minecraft.world.entity.npc.villager.Villager
@@ -85,8 +86,8 @@ fun spawnBedBrute(level: ServerLevel, position: Vec3, team: Team) {
 }
 
 fun spawnDeathmatchDragon(level: ServerLevel, position: Vec3) {
-    val dragon = EnderDragon(EntityTypes.ENDER_DRAGON, level)
+    val dragon = WitherBoss(EntityTypes.WITHER, level)
     dragon.setPos(position)
-    dragon.customName = Component.literal("Deathmatch Dragon")
+    dragon.customName = Component.literal("Waking Wither")
     if (level.addFreshEntity(dragon)) level.customEntityData.addEntity(dragon, CustomEntityType.DEATHMATCH_DRAGON)
 }

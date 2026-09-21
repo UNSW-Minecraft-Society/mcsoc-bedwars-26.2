@@ -75,6 +75,7 @@ object GameEffects {
                 }
             }
         }
+        spawnDeathmatchDragon(level, Vec3.atCenterOf(gameState.map_centre.offset(0, 128, 0)))
         // shrink border
         val worldBorder = level.worldBorder
         worldBorder.lerpSizeBetween(BORDER_SIZE, MIN_DEATHMATCH_BORDER_SIZE, DEATHMATCH_BORDER_TIME, level.gameTime)
