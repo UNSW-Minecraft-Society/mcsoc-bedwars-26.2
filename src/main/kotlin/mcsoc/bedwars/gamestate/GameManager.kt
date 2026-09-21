@@ -49,11 +49,23 @@ private fun ServerLevel.getActivePlayers(): Iterable<ServerPlayer> = this.gameSt
 
 
 // TODO make these RNG
-private fun ServerPlayer.getSelfDeathMessage(): Component {
+private fun ServerPlayer.getSelfDeathMessage(killer: UUID?): Component {
+    if (killer != null && this.level().customEntityData.getEntityType(killer) != null) {
+        return (this.displayName as MutableComponent)
+            .append("${ChatFormatting.GRAY} tried to befriend a ")
+            .append(getKillerName(this.level(), killer))
+            .append("${ChatFormatting.GRAY}.")
+    }
     return (this.displayName as MutableComponent)
         .append("${ChatFormatting.GRAY} should have been more careful!")
 }
-private fun ServerPlayer.getSelfFinalDeathMessage(): Component {
+private fun ServerPlayer.getSelfFinalDeathMessage(killer: UUID?): Component {
+    if (killer != null && this.level().customEntityData.getEntityType(killer) != null) {
+        return (this.displayName as MutableComponent)
+            .append("${ChatFormatting.GRAY} couldn't handle the ")
+            .append(getKillerName(this.level(), killer))
+            .append("${ChatFormatting.GRAY}.")
+    }
     return (this.displayName as MutableComponent)
         .append("${ChatFormatting.GRAY} forgot that their bed was broken.")
 }
@@ -77,7 +89,7 @@ private fun getKillerName(level: ServerLevel, killer: UUID): Component {
     } else if (maybeCustomEntityType != null) {
         val entityName = maybeCustomEntityType.title
         val entityTeam = level.customEntityData.getEntityTeam(killer)
-        return Component.literal("${entityTeam?.chatColour ?: ""}$entityName")
+        return Component.literal("${entityTeam?.chatColour ?: ChatFormatting.WHITE}$entityName")
     }
     return Component.literal("Someone")
 }
@@ -252,10 +264,11 @@ class GameManager {
             level_mod_data.setPlayerDead(player, player.position())
             
             var killer: UUID = (player.killCredit as? ServerPlayer)?.uuid ?: level_mod_data.getBedBreaker(player_team) ?: run {
+                val maybeKiller = death_source.entity?.uuid
                 if (bed_destroyed) {
-                    level.getActivePlayers().forEach{it.sendSystemMessage(it.getSelfFinalDeathMessage())}
+                    level.getActivePlayers().forEach{it.sendSystemMessage(it.getSelfFinalDeathMessage(maybeKiller))}
                 } else {
-                    level.getActivePlayers().forEach{it.sendSystemMessage(it.getSelfDeathMessage())}
+                    level.getActivePlayers().forEach{it.sendSystemMessage(it.getSelfDeathMessage(maybeKiller))}
                 }
                 return
             }
