@@ -17,7 +17,8 @@
 		"ProjectileMixin",
 		"SnowReplacementMixin",
 		"ThrowableProjectileMixin",
-		"accessor.MobAccessor"
+		"accessor.MobAccessor",
+		"HungerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
