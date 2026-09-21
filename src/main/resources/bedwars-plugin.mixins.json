@@ -18,6 +18,8 @@
 		"SnowReplacementMixin",
 		"ThrowableProjectileMixin",
 		"accessor.MobAccessor",
+		"VoidDamageMixin",
+		"accessor.MobAccessor",
 		"HungerMixin"
 	],
 	"injectors": {

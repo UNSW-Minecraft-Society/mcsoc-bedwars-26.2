@@ -18,7 +18,7 @@ class GameEventTracker() : LevelTiedData() {
             GameEvent.CODEC.listOf().fieldOf("queuedEvents").forGetter(GameEventTracker::listQueuedEvents)
         ).apply(it, ::GameEventTracker)}
     }
-    override val type get() = LevelDataType.EventQueue
+    override fun getType() = LevelDataType.EventQueue
     
     lateinit var level: ServerLevel
     private val eventQueue = PriorityQueue<GameEvent>()

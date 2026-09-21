@@ -2,9 +2,12 @@ package mcsoc.bedwars.eventhandlers.commands
 
 
 import com.mojang.brigadier.arguments.BoolArgumentType
+import com.mojang.brigadier.arguments.DoubleArgumentType
+import com.mojang.brigadier.arguments.FloatArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.datatrackers.clockSpeed
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
@@ -33,8 +36,11 @@ const val GEN_TYPE_ARG = "type"
 const val TEAM_ARG = "team"
 const val GEN_ID_ARG = "id"
 
-val BEDWARS_GM_PERMISSION_NODE = Identifier.fromNamespaceAndPath(BedwarsPlugin.MOD_ID, "runner")
+val BEDWARS_GM_PERMISSION_NODE = BedwarsPlugin.id("runner")
+val BEDWARS_ADMIN_PERMISSION_NODE = BedwarsPlugin.id("admin")
 val GAMEMASTER_PERMS_REQUIREMENT: (CommandSourceStack) -> Boolean = {it.permissionContext.checkPermission(BEDWARS_GM_PERMISSION_NODE, PermissionLevel.GAMEMASTERS)}
+val ADMIN_PERMS_REQUIREMENT: (CommandSourceStack) -> Boolean = {it.permissionContext.checkPermission(BEDWARS_ADMIN_PERMISSION_NODE, PermissionLevel.OWNERS)}
+
 
 /**
  * Function to register commands for the plugin
@@ -199,6 +205,14 @@ fun registerCommands() {
                         .executes(CommandActions::summonDreamDefender)
                     )
                 )
+            )
+            .then(Commands.literal("set_clock_speed")
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
+                .then(Commands.argument("clockspeed", DoubleArgumentType.doubleArg(0.0, 10.0))
+                .executes{ctx ->
+                    ctx.source.level.clockSpeed = DoubleArgumentType.getDouble(ctx, "clockspeed")
+                    1
+                })
             )
         )
     }

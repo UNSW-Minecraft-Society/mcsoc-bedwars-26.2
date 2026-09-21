@@ -41,7 +41,7 @@ internal interface CustomEntityExposer {
 class CustomEntityDataTracker : LevelTiedData, CustomEntityExposer, CustomEntityHolder {
     override val custom_entity_types: MutableMap<UUID, CustomEntityType> = mutableMapOf()
     override val custom_entity_team_data: MutableMap<UUID, Team> = mutableMapOf()
-    override val type get() = LevelDataType.CustomEntityData
+    override fun getType() = LevelDataType.CustomEntityData
 
     companion object {
         val CODEC: MapCodec<CustomEntityDataTracker> = RecordCodecBuilder.mapCodec {it.group(
