@@ -257,12 +257,10 @@ enum class Armour(private val boots: Item, private val leggings: Item) : Upgrada
 enum class Shears(override val material: Item, override val level: Int) : EnchantableItem {
     NONE(Items.AIR, 0) {
         override fun next() = SHEARS
-        override fun prev() = NONE
         override fun tier() = 0
     },
     SHEARS(Items.SHEARS, 1) {
         override fun next() = null
-        override fun prev() = NONE
         override fun tier() = 1
     }, ;
 
