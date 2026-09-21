@@ -58,18 +58,28 @@ private fun ServerPlayer.getSelfFinalDeathMessage(): Component {
         .append("${ChatFormatting.GRAY} forgot that their bed was broken.")
 }
 private fun ServerPlayer.getKillMessage(killer: UUID): Component {
-    val killer_name: Component = this.level().server.playerList.getPlayer(killer)?.displayName ?: Component.literal("Someone")
     return (this.displayName as MutableComponent)
         .append("${ChatFormatting.GRAY} slipped on ")
-        .append(killer_name)
+        .append(getKillerName(this.level(), killer))
         .append("${ChatFormatting.GRAY}'s banana peel.")
 }
 private fun ServerPlayer.getFinalKillMessage(killer: UUID): Component {
-    val killer_name: Component = this.level().server.playerList.getPlayer(killer)?.displayName ?: Component.literal("Someone")
     return (this.displayName as MutableComponent)
         .append("${ChatFormatting.GRAY} was sent to the afterlife by ")
-        .append(killer_name)
+        .append(getKillerName(this.level(), killer))
         .append("${ChatFormatting.GRAY}.")
+}
+private fun getKillerName(level: ServerLevel, killer: UUID): Component {
+    val maybePlayer = level.server.playerList.getPlayer(killer)
+    val maybeCustomEntityType = level.customEntityData.getEntityType(killer)
+    if (maybePlayer != null) {
+        return maybePlayer.displayName
+    } else if (maybeCustomEntityType != null) {
+        val entityName = maybeCustomEntityType.title
+        val entityTeam = level.customEntityData.getEntityTeam(killer)
+        return Component.literal("${entityTeam?.chatColour ?: ""}$entityName")
+    }
+    return Component.literal("Someone")
 }
 
 
