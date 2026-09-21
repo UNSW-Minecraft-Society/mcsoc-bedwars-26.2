@@ -14,6 +14,7 @@
 		"IronGolemMixin",
 		"LevelSetBlockMixin",
 		"PickupMixin",
+		"PlayerInvisibilityTickMixin",
 		"ProjectileMixin",
 		"SnowReplacementMixin",
 		"ThrowableProjectileMixin",

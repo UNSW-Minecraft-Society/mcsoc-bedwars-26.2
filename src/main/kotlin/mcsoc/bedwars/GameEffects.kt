@@ -7,13 +7,17 @@ import mcsoc.bedwars.entities.spawnDeathmatchDragon
 import mcsoc.bedwars.gamestate.BORDER_SIZE
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.generators.GeneratorType
-import mcsoc.bedwars.utils.Team
+import com.mojang.datafixers.util.Pair
 import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
+import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.entity.EquipmentSlot
+import net.minecraft.world.item.ItemStack
 import net.minecraft.world.phys.Vec3
+
 
 // replace with config
 // useful if method for switching teams is added
@@ -36,7 +40,19 @@ object TeamEffects {
     }
 }
 
+private val emptyArmourSlots: List<Pair<EquipmentSlot, ItemStack>> = listOf(
+    Pair(EquipmentSlot.HEAD, ItemStack.EMPTY),
+    Pair(EquipmentSlot.CHEST, ItemStack.EMPTY),
+    Pair(EquipmentSlot.LEGS, ItemStack.EMPTY),
+    Pair(EquipmentSlot.FEET, ItemStack.EMPTY),
+)
+
 object GameEffects {
+    @JvmStatic
+    fun ServerPlayer.broadcastInvisibility() {
+        this.level().chunkSource.sendToTrackingPlayers(this, ClientboundSetEquipmentPacket(this.id, emptyArmourSlots))
+    }
+    
     fun triggerNewPeriod(level: ServerLevel, nextPeriod: GamePeriod) {
         val generatorTracker = level.generatorState
         when (nextPeriod) {

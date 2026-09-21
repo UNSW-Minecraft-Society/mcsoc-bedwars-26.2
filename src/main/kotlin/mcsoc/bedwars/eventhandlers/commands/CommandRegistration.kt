@@ -8,9 +8,11 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.clockSpeed
+import mcsoc.bedwars.datatrackers.gameState
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
+import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.resources.Identifier
 import net.minecraft.server.permissions.PermissionLevel
@@ -213,6 +215,19 @@ fun registerCommands() {
                     ctx.source.level.clockSpeed = DoubleArgumentType.getDouble(ctx, "clockspeed")
                     1
                 })
+            )
+            .then(Commands.literal("set_invis")
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
+                .then(Commands.argument("player", EntityArgument.player())
+                    .then(Commands.argument("state", BoolArgumentType.bool())
+                    .executes{ctx ->
+                        val player = EntityArgument.getEntity(ctx, "player")
+                        val state = BoolArgumentType.getBool(ctx, "state")
+                        
+                        ctx.source.level.gameState.setPlayerInvisibility(player.uuid, state)
+                        1
+                    })
+                )
             )
         )
     }

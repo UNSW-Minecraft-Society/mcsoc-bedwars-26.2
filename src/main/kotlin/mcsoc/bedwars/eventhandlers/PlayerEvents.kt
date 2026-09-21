@@ -1,10 +1,13 @@
 package mcsoc.bedwars.eventhandlers
 
+import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.gamestate.GameManager
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents
+import net.fabricmc.fabric.api.entity.event.v1.effect.ServerMobEffectEvents
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.effect.MobEffects
 
 
 fun registerAfterDeathEvent() {
@@ -21,6 +24,22 @@ fun registerAfterRespawnEvent() {
 }
 
 
+fun registerAfterEffectAppliedEvent() {
+    ServerMobEffectEvents.AFTER_ADD.register{effect, maybe_player, ctx ->
+        if (maybe_player !is ServerPlayer) return@register
+        if (effect.`is`(MobEffects.INVISIBILITY)) maybe_player.level().gameState.setPlayerInvisibility(maybe_player.uuid, true)
+    }
+}
+
+
+fun registerPlayerDamageEvent() {
+    ServerLivingEntityEvents.AFTER_DAMAGE.register{maybe_player, source, baseDamageTaken, damageTaken, blocked ->
+        if (maybe_player !is ServerPlayer || blocked) return@register
+        maybe_player.level().gameState.setPlayerInvisibility(maybe_player.uuid, false)
+    }
+}
+
+
 fun registerPlayerJoinEvent() {
     /* TODO have players given info on join
      * If joining between games, tell them to ready up with /bedwars join
@@ -30,5 +49,4 @@ fun registerPlayerJoinEvent() {
     ServerPlayConnectionEvents.JOIN.register{ handler, _, server ->
         GameManager.handlePlayerJoin(server.scoreboard, handler.player)
     }
-
 }

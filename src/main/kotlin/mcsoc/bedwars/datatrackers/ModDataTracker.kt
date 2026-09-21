@@ -57,7 +57,7 @@ enum class GamePeriod(val next: GamePeriod?, val startTime: Duration?, val title
     INITIAL(DIAMOND_II, null, "Game Start")
 }
 
-private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord, PlayerTimeRecord, PlayerStatsRecord {
+private class PlayerDataRecord() : PlayerInvisHolder, PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord, PlayerTimeRecord, PlayerStatsRecord {
     companion object {
         val TOOL_UPGRADES_CODEC: Codec<HashMap<UpgradeItemType, UpgradableItem>> =
             Codec.unboundedMap(UpgradeItemType.CODEC, Codec.STRING).xmap(
@@ -74,6 +74,7 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
         ).apply(it, ::PlayerDataRecord)}
     }
 
+    override var isInvis: Boolean = false
     private var life_state: LifeState = LifeState.ALIVE
     private var team: Team = Team.NONE
     private var toolUpgrades = HashMap<UpgradeItemType, UpgradableItem>()
@@ -300,7 +301,7 @@ private class TeamDataRecord(
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, PlayerUpgradesHolder, PlayerTimeHolder, PlayerStatsHolder, TeamGeneratorHolder, TeamUpgradesHolder,
+private class ModDataStore() : PlayerInvisSwitcher, PlayerStateHolder, TeamStateHolder, PlayerUpgradesHolder, PlayerTimeHolder, PlayerStatsHolder, TeamGeneratorHolder, TeamUpgradesHolder,
     LoadedMapHolder {
     companion object {
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
@@ -320,7 +321,8 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
             
         ).apply(it, ::ModDataStore)}
     }
-    
+
+
     private val player_data_map = HashMap<UUID, PlayerDataRecord>()
     private val teams_map = HashMap<Team, TeamDataRecord>()
     private val active_players = mutableSetOf<UUID>()
@@ -366,6 +368,8 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     fun setGamePeriod(period: GamePeriod) {
         game_period = period
     }
+    
+    override fun getPlayerState(player: UUID): PlayerInvisHolder = player_data_map.getOrPut(player) { PlayerDataRecord() }
 
     private fun getPlayerData(id: UUID): PlayerDataRecord {
         return player_data_map.getOrPut(id) { PlayerDataRecord() }
@@ -441,7 +445,7 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 }
 
 
-class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, PlayerUpgradesExposer, PlayerTimeExposer, PlayerStatsExposer, TeamGeneratorExposer, TeamUpgradesExposer,
+class ModDataTracker : PlayerInvisSwitchExposer, LevelTiedData, PlayerStateExposer, TeamStateExposer, PlayerUpgradesExposer, PlayerTimeExposer, PlayerStatsExposer, TeamGeneratorExposer, TeamUpgradesExposer,
     LoadedMapExposer {
     companion object {
         val CODEC: MapCodec<ModDataTracker> = RecordCodecBuilder.mapCodec{ it.group(
@@ -602,4 +606,7 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Play
         setDirty()
         mod_data.addTrap(team, type)
     }
+    
+    override fun setPlayerInvisibility(player: UUID, invis: Boolean) = mod_data.setPlayerInvisibility(player, invis)
+    override fun getPlayerInvisibility(player: UUID): Boolean = mod_data.getPlayerInvisibility(player)
 }

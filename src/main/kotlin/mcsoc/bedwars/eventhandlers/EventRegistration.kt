@@ -35,6 +35,8 @@ fun registerEventHandlers() {
     registerBlockUseEvents()
     registerAfterDeathEvent()
     registerAfterRespawnEvent()
-    registerEquipmentChangeEvents()
+    registerPlayerDamageEvent()
+    registerAfterEffectAppliedEvent()
+    // registerEquipmentChangeEvents()
     registerPlayerJoinEvent()
 }
