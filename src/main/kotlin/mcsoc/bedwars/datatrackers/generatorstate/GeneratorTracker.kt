@@ -81,7 +81,7 @@ class GeneratorDataTracker : LevelTiedData, GeneratorsExposer {
         }
     }
 
-    override val type get() = LevelDataType.GeneratorState
+    override fun getType() = LevelDataType.GeneratorState
 
     private val generator_data: GeneratorDataStore
 

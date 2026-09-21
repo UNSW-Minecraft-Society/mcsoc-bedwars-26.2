@@ -78,7 +78,7 @@ class BlockProtectionTracker : LevelTiedData, BlockProtectionExposer {
             BlockProtectionStore.CODEC.fieldOf("block_protection_data").forGetter(BlockProtectionTracker::protection_data)
         ).apply(it, ::BlockProtectionTracker)}
     }
-    override val type get() = LevelDataType.BlockProtection
+    override fun getType() = LevelDataType.BlockProtection
     
     private val protection_data: BlockProtectionStore
     private constructor(protection_data: BlockProtectionStore) {

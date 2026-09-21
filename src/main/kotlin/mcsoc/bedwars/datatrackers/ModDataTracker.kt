@@ -446,7 +446,7 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Play
             ModDataStore.CODEC.fieldOf("mod_data").forGetter(ModDataTracker::mod_data)
         ).apply(it, ::ModDataTracker)}
     }
-    override val type get() = LevelDataType.GameState
+    override fun getType() = LevelDataType.GameState
 
     private val mod_data: ModDataStore
     private constructor(mod_data: ModDataStore) {

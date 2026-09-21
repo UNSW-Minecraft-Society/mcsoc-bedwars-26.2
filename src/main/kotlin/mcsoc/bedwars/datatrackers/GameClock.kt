@@ -5,6 +5,7 @@ import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.utils.CODEC
 import mcsoc.bedwars.utils.inWholeTicks
+import net.minecraft.server.level.ServerLevel
 import kotlin.time.Duration
 import kotlin.time.TimeSource
 
@@ -37,6 +38,7 @@ private class HiddenGameTicker() : TickHolder {
         this.time = time
     }
     
+    lateinit var level: ServerLevel
     override var time: Duration = Duration.ZERO
     var prevTickTime = TimeSource.Monotonic.markNow()
     override var timerTick: Int = 0
@@ -45,7 +47,7 @@ private class HiddenGameTicker() : TickHolder {
     override fun tick() {
         if (prevTickTime.hasNotPassedNow()) return
         
-        var tickDelta = prevTickTime.elapsedNow()
+        var tickDelta = prevTickTime.elapsedNow() * level.clockSpeed
         val oldTime = time
         time += tickDelta
         timerTick = (time.inWholeTicks - oldTime.inWholeTicks).toInt()
@@ -60,6 +62,10 @@ private class HiddenGameTicker() : TickHolder {
 
 class GameTimer() : LevelTiedData(), TickExposer {
     private var timer: HiddenGameTicker = HiddenGameTicker()
+    var level: ServerLevel 
+        get() = timer.level
+        set(v) {timer.level = v}
+    
     companion object {
         val CODEC: MapCodec<GameTimer> = RecordCodecBuilder.mapCodec{it.group(
             HiddenGameTicker.CODEC.fieldOf("timer").forGetter(GameTimer::timer)
@@ -69,7 +75,7 @@ class GameTimer() : LevelTiedData(), TickExposer {
         this.timer = timer
     }
 
-    override val type: LevelDataType<*> get() = LevelDataType.GameClock
+    override fun getType() = LevelDataType.GameClock
     
     override val time: Duration get() = timer.time
     override val timerTick: Int get() = timer.timerTick
