@@ -116,6 +116,7 @@ object BedwarsItems {
         return Items.IRON_GOLEM_SPAWN_EGG.defaultInstance
             .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.DREAM_DEFENDER.value)
             .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.DREAM_DEFENDER.value)
+            .renamedTo("Dream Defender Spawn Egg")
             .withItemLore("Spawn an iron golem on your team that lasts one minute.")
     }
 
@@ -123,7 +124,7 @@ object BedwarsItems {
         return Items.PIGLIN_BRUTE_SPAWN_EGG.defaultInstance
             .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.BED_BRUTE.value)
             .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.BED_BRUTE.value)
-            .renamedTo("Bed Brute")
+            .renamedTo("Bed Brute Spawn Egg")
             .withItemLore("Spawn a temporary piglin brute on your team.")
     }
 }
