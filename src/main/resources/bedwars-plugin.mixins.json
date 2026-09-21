@@ -8,6 +8,8 @@
 		"BlockPlacementMixin",
 		"ContainerHelperMixin",
 		"DisableCraftingMixin",
+		"DisableOffhandMenuMixin",
+		"DisableOffhandHotkeyMixin",
 		"DisableRecipeBookMixin",
 		"IronGolemMixin",
 		"LevelSetBlockMixin",
