@@ -11,8 +11,10 @@ import java.util.UUID
 enum class CustomEntityType(val title: String) {
     PLAYER_SHOPKEEPER("Player Shopkeeper"),
     TEAM_SHOPKEEPER("Team Shopkeeper"),
+    BED_BUG("Bed Bug"),
     DREAM_DEFENDER("Dream Defender"),
-    DEATHMATCH_DRAGON("Deathmatch Dragon");
+    BED_BRUTE("Bed Brute"),
+    WAKING_WITHER("Waking Wither");
 
     companion object {
         val CODEC: Codec<CustomEntityType> = Codec.STRING.xmap(::valueOf, CustomEntityType::name)

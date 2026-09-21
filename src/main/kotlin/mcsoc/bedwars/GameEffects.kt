@@ -3,11 +3,10 @@ package mcsoc.bedwars
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
-import mcsoc.bedwars.entities.spawnDeathmatchDragon
+import mcsoc.bedwars.entities.spawnWakingWither
 import mcsoc.bedwars.gamestate.BORDER_SIZE
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.generators.GeneratorType
-import mcsoc.bedwars.utils.Team
 import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
@@ -60,7 +59,7 @@ object GameEffects {
                 level.destroyBlock(bedPos, false)
             }
             // spawn dragon
-            spawnDeathmatchDragon(level, Vec3.atCenterOf(bedPos.offset(0, 32, 0)))
+            spawnWakingWither(level, Vec3.atCenterOf(bedPos.offset(0, 32, 0)))
             // notify players
             for (playerId in gameState.getPlayersInTeam(team)) {
                 val player = level.getPlayerByUUID(playerId)
@@ -75,7 +74,7 @@ object GameEffects {
                 }
             }
         }
-        spawnDeathmatchDragon(level, Vec3.atCenterOf(gameState.map_centre.offset(0, 128, 0)))
+        spawnWakingWither(level, Vec3.atCenterOf(gameState.map_centre.offset(0, 128, 0)))
         // shrink border
         val worldBorder = level.worldBorder
         worldBorder.lerpSizeBetween(BORDER_SIZE, MIN_DEATHMATCH_BORDER_SIZE, DEATHMATCH_BORDER_TIME, level.gameTime)

@@ -12,7 +12,6 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.animal.golem.IronGolem
-import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.world.entity.boss.wither.WitherBoss
 import net.minecraft.world.entity.monster.Endermite
 import net.minecraft.world.entity.monster.piglin.PiglinBrute
@@ -21,7 +20,6 @@ import net.minecraft.world.item.Items
 import net.minecraft.world.item.component.DyedItemColor
 import net.minecraft.world.item.enchantment.Enchantments
 import net.minecraft.world.item.equipment.trim.TrimPatterns
-import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
 import kotlin.time.Duration
 
@@ -39,14 +37,14 @@ fun spawnShopkeeper(level: ServerLevel, position: Vec3, type: CustomEntityType) 
     if (level.addFreshEntity(shopkeeper)) level.customEntityData.addEntity(shopkeeper, type)
 }
 
-fun spawnBedBug(level: Level, position: Vec3, team: Team) {
+fun spawnBedBug(level: ServerLevel, position: Vec3, team: Team) {
     val bug = Endermite(EntityTypes.ENDERMITE, level)
     bug.setPos(position)
     bug.health = 1.0f
     bug.speed = 2.0f
     val scoreboardTeam = level.scoreboard.getPlayerTeam(team.getName())
     if (scoreboardTeam != null) level.scoreboard.addPlayerToTeam(bug.stringUUID, scoreboardTeam)
-    level.addFreshEntity(bug)
+    if (level.addFreshEntity(bug)) level.customEntityData.addTeamEntity(bug, CustomEntityType.BED_BUG, team)
 }
 
 fun spawnDreamDefender(level: ServerLevel, position: Vec3, team: Team) {
@@ -81,13 +79,14 @@ fun spawnBedBrute(level: ServerLevel, position: Vec3, team: Team) {
     if (scoreboardTeam != null) level.scoreboard.addPlayerToTeam(brute.stringUUID, scoreboardTeam)
     if (level.addFreshEntity(brute)) {
         level.eventQueue.queueEntityExpiry(BED_BRUTE_EXPIRY_TIME, brute.uuid)
+        level.customEntityData.addTeamEntity(brute, CustomEntityType.BED_BRUTE, team)
         // "Doomed to death of KARMA!" - NarraChara UnderTale
     }
 }
 
-fun spawnDeathmatchDragon(level: ServerLevel, position: Vec3) {
-    val dragon = WitherBoss(EntityTypes.WITHER, level)
-    dragon.setPos(position)
-    dragon.customName = Component.literal("Waking Wither")
-    if (level.addFreshEntity(dragon)) level.customEntityData.addEntity(dragon, CustomEntityType.DEATHMATCH_DRAGON)
+fun spawnWakingWither(level: ServerLevel, position: Vec3) {
+    val wither = WitherBoss(EntityTypes.WITHER, level)
+    wither.setPos(position)
+    wither.customName = Component.literal("Waking Wither")
+    if (level.addFreshEntity(wither)) level.customEntityData.addEntity(wither, CustomEntityType.WAKING_WITHER)
 }
