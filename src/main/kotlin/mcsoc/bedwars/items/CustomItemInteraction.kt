@@ -20,7 +20,6 @@ import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.item.PrimedTnt
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.entity.projectile.Projectile
@@ -170,6 +169,8 @@ object CustomItemInteraction {
     }
 
     private fun doBallOfBugsEffect(level: Level, ball: ThrowableItemProjectile, team: Team, hitResult: HitResult): InteractionResult {
+        if (level !is ServerLevel)
+            return InteractionResult.PASS
         spawnBedBug(level, hitResult.location, team)
         ball.owner = null
         return InteractionResult.SUCCESS
