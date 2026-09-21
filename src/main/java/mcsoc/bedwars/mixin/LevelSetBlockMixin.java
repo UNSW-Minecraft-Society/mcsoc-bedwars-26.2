@@ -20,7 +20,7 @@ import mcsoc.bedwars.datatrackers.LevelData;
 
 @Mixin(Level.class)
 public abstract class LevelSetBlockMixin {
-    private int MAX_HEIGHT = 30;
+    private int MAX_HEIGHT = 50;
 
     @Inject(at = @At("HEAD"), method = "setBlock(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;II)Z", cancellable = true)
     private void onSetBlock(BlockPos pos, BlockState newState, int flags, int maxUpdateDepth, CallbackInfoReturnable<Boolean> cir) {
