@@ -35,6 +35,7 @@ import kotlin.uuid.Uuid
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 import net.minecraft.world.scores.Scoreboard
+import net.minecraft.world.scores.TeamColor
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -414,7 +415,8 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         for (team in scoreboard.playerTeams) scoreboard.removePlayerTeam(team)
         teams.forEach { 
             teams_map[it] = TeamDataRecord()
-            scoreboard.addPlayerTeam(it.getName())
+            val scoreboardTeam = scoreboard.addPlayerTeam(it.getName())
+            scoreboardTeam.color = Optional.of(it.teamColour)
         }
         
         for (scoreboardTeam in scoreboard.playerTeams) scoreboardTeam.isAllowFriendlyFire = false
