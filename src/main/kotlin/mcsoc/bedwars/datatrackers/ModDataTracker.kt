@@ -60,7 +60,7 @@ enum class GamePeriod(val next: GamePeriod?, val startTime: Duration?, val title
     EMERALD_III(DEATHMATCH, 7.minutes, "Emerald Generator III"),
     DIAMOND_III(EMERALD_III, 6.minutes, "Diamond Generator III"),
     EMERALD_II(DIAMOND_III, 4.minutes, "Emerald Generator II"),
-    DIAMOND_II(EMERALD_II, 3.minutes, "Emerald Generator II"),
+    DIAMOND_II(EMERALD_II, 3.minutes, "Diamond Generator II"),
     INITIAL(DIAMOND_II, null, "Game Start");
     
     companion object {
