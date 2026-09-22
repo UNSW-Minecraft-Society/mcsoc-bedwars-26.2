@@ -18,7 +18,7 @@ import net.minecraft.world.level.saveddata.SavedDataType
 abstract class LevelTiedData {
     companion object {                
         internal val CODEC: Codec<LevelTiedData> = LevelDataType.CODEC.dispatch(
-            { inst -> inst.type },
+            { inst -> inst.getType() },
             { type -> type.codec }
         )
     }
@@ -27,32 +27,11 @@ abstract class LevelTiedData {
         this.isDirty = true
     }
     
-    abstract val type: LevelDataType<*>
-}
-
-// codec can be null, indicating that the datatype should be level-tied but not saved
-sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>?, val default: T) {
-    companion object {
-        private val REGISTRY: Map<String, LevelDataType<*>> by lazy {
-            LevelDataType::class.sealedSubclasses
-                .mapNotNull { it.objectInstance }
-                .associateBy { it.id }
-        }
-        fun fromId(id: String): LevelDataType<*> = REGISTRY[id] ?: throw IllegalArgumentException("Unknown LevelDataType: \"$id\"")
-            
-        val CODEC: Codec<LevelDataType<*>> = Codec.STRING.xmap(::fromId, LevelDataType<*>::id)
-    }
-    internal val codec: MapCodec<T> = codec ?: MapCodec.unit(default)
-    
-    object GameState : LevelDataType<ModDataTracker>("game_state", ModDataTracker.CODEC, ModDataTracker())
-    object BlockProtection: LevelDataType<BlockProtectionTracker>("block_protection", BlockProtectionTracker.CODEC, BlockProtectionTracker())
-    object GeneratorState : LevelDataType<GeneratorDataTracker>("generator_state", GeneratorDataTracker.CODEC, GeneratorDataTracker())
-    // put another enum value for each tracked data type
-    object CustomEntityData : LevelDataType<CustomEntityDataTracker>("custom_entity_data",
-        CustomEntityDataTracker.CODEC, CustomEntityDataTracker())
+    abstract fun getType(): LevelDataType<*>
 }
 
 private class LevelTiedDataTracker() : SavedData() {
+    var clockSpeed: Double = 1.0
     private val tracked_data: MutableMap<LevelDataType<*>, LevelTiedData> = mutableMapOf()
     constructor(map: Map<LevelDataType<*>, LevelTiedData>) : this() {
         tracked_data.putAll(map)
@@ -66,7 +45,7 @@ private class LevelTiedDataTracker() : SavedData() {
         ).apply(it, ::LevelTiedDataTracker)}
         
         private val TYPE = SavedDataType<LevelTiedDataTracker>(
-            Identifier.fromNamespaceAndPath(BedwarsPlugin.MOD_ID, "saved_level_data"),
+            BedwarsPlugin.id("saved_level_data"),
             ::LevelTiedDataTracker, CODEC, DataFixTypes.LEVEL
         )
         fun getLevelData(level: ServerLevel): LevelTiedDataTracker = level.dataStorage.computeIfAbsent(TYPE)
@@ -79,16 +58,47 @@ private class LevelTiedDataTracker() : SavedData() {
         }
     }
     
-    fun getDataOfType(type: LevelDataType<*>): LevelTiedData {
-        return this.tracked_data.getOrPut(type){type.default}
+    @Suppress("UNCHECKED_CAST")
+    fun <T : LevelTiedData> getDataOfType(type: LevelDataType<T>): T {
+        return this.tracked_data.getOrPut(type){type.default} as T 
     }
 }
 
 private val ServerLevel.levelTiedData get() = LevelTiedDataTracker.getLevelData(this)
 
 
-val ServerLevel.gameState: ModDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GameState) as ModDataTracker
-val ServerLevel.blockProtection: BlockProtectionTracker get() = levelTiedData.getDataOfType(LevelDataType.BlockProtection) as BlockProtectionTracker
-val ServerLevel.generatorState: GeneratorDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GeneratorState) as GeneratorDataTracker
-val ServerLevel.customEntityData get() = levelTiedData.getDataOfType(LevelDataType.CustomEntityData) as CustomEntityDataTracker
+// codec can be null, indicating that the datatype should be level-tied but not saved
+sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>?, val default: T) {
+    companion object {
+        private val REGISTRY: Map<String, LevelDataType<*>> by lazy {
+            LevelDataType::class.sealedSubclasses
+                .mapNotNull { it.objectInstance }
+                .associateBy { it.id }
+        }
+        fun fromId(id: String): LevelDataType<*> = REGISTRY[id] ?: throw IllegalArgumentException("Unknown LevelDataType: \"$id\"")
+            
+        val CODEC: Codec<LevelDataType<*>> = Codec.STRING.xmap(::fromId, LevelDataType<*>::id)
+    }
+    val codec: MapCodec<T> = codec ?: MapCodec.unit(default)
+    
+    // put another enum value for each tracked data type
+    object GameState : LevelDataType<ModDataTracker>("game_state", ModDataTracker.CODEC, ModDataTracker())
+    object BlockProtection: LevelDataType<BlockProtectionTracker>("block_protection", BlockProtectionTracker.CODEC, BlockProtectionTracker())
+    object GeneratorState : LevelDataType<GeneratorDataTracker>("generator_state", GeneratorDataTracker.CODEC, GeneratorDataTracker())
+    // put another enum value for each tracked data type
+    object CustomEntityData : LevelDataType<CustomEntityDataTracker>("custom_entity_data", CustomEntityDataTracker.CODEC, CustomEntityDataTracker())
+    object EventQueue : LevelDataType<GameEventTracker>("event_queue", GameEventTracker.CODEC, GameEventTracker())
+    object GameClock : LevelDataType<GameTimer>("timer", GameTimer.CODEC, GameTimer())
+}
+
+
+val ServerLevel.gameState: ModDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GameState)
+val ServerLevel.blockProtection: BlockProtectionTracker get() = levelTiedData.getDataOfType(LevelDataType.BlockProtection)
+val ServerLevel.generatorState: GeneratorDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GeneratorState)
+val ServerLevel.customEntityData get() = levelTiedData.getDataOfType(LevelDataType.CustomEntityData)
+val ServerLevel.eventQueue get() = levelTiedData.getDataOfType(LevelDataType.EventQueue).also{it.level = this}
+val ServerLevel.clock: TickExposer get() = levelTiedData.getDataOfType(LevelDataType.GameClock).also{it.level = this}
+var ServerLevel.clockSpeed: Double
+    get() = levelTiedData.clockSpeed
+    set(v) {levelTiedData.clockSpeed = v}
 // put other level-tied data getters here

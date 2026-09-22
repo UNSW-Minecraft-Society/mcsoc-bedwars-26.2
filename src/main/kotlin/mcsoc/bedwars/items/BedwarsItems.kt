@@ -27,7 +27,9 @@ enum class CustomItemTypes(val value: String, private val item_factory: () -> It
     INSTANT_TNT("instant_tnt", {BedwarsItems.instantTNTItemStack()}),
     BALL_OF_BUGS("ball_of_bugs", {BedwarsItems.ballOfBugsItemStack()}),
     POPUP_TOWER("popup_tower", {BedwarsItems.popupTowerItemStack()}),
-    PLAYER_TRACKER("player_tracker", {BedwarsItems.playerTrackerItemStack()});
+    PLAYER_TRACKER("player_tracker", {BedwarsItems.playerTrackerItemStack()}),
+    DREAM_DEFENDER("dream_defender", { BedwarsItems.dreamDefenderItemStack() }),
+    BED_BRUTE("bed_brute", {BedwarsItems.bedBruteItemStack()});
     
     fun giveToPlayer(player: ServerPlayer?): Int {
         return if (player is ServerPlayer && player.addItem(item_factory())) 1
@@ -36,11 +38,14 @@ enum class CustomItemTypes(val value: String, private val item_factory: () -> It
 }
 
 object BedwarsItems {
-    fun potionItemStack(potion: Holder<Potion>): ItemStack {
+    fun potionItemStack(potion: Holder<Potion>, durationScale: Float): ItemStack {
         val stack = Items.POTION.defaultInstance
         stack.set(DataComponents.POTION_CONTENTS, PotionContents(potion))
+        stack.set(DataComponents.POTION_DURATION_SCALE, durationScale)
         return stack
     }
+
+    fun potionItemStack(potion: Holder<Potion>) = potionItemStack(potion, 1f)
 
     fun enchantedItemStack(item: Item, enchantment: ResourceKey<Enchantment>, enchLevel: Int, level: ServerLevel): ItemStack {
         val stack = item.defaultInstance
@@ -49,7 +54,7 @@ object BedwarsItems {
     }
 
     fun knockbackStickItemStack(level: ServerLevel): ItemStack {
-        return enchantedItemStack(Items.BREEZE_ROD, Enchantments.KNOCKBACK, 2, level)
+        return enchantedItemStack(Items.BREEZE_ROD, Enchantments.KNOCKBACK, 1, level)
         .renamedTo("Knockback Stick")
     }
 
@@ -108,5 +113,21 @@ object BedwarsItems {
             .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
             .renamedTo("Player Tracker")
             .withItemLore("Points to where the nearest player on an enemy team was, Right click to update the location.")
+    }
+
+    fun dreamDefenderItemStack(): ItemStack {
+        return Items.IRON_GOLEM_SPAWN_EGG.defaultInstance
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.DREAM_DEFENDER.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.DREAM_DEFENDER.value)
+            .renamedTo("Dream Defender Spawn Egg")
+            .withItemLore("Spawn an iron golem on your team that lasts one minute.")
+    }
+
+    fun bedBruteItemStack(): ItemStack {
+        return Items.PIGLIN_BRUTE_SPAWN_EGG.defaultInstance
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.BED_BRUTE.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.BED_BRUTE.value)
+            .renamedTo("Bed Brute Spawn Egg")
+            .withItemLore("Spawn a temporary piglin brute on your team.")
     }
 }
