@@ -38,11 +38,14 @@ enum class CustomItemTypes(val value: String, private val item_factory: () -> It
 }
 
 object BedwarsItems {
-    fun potionItemStack(potion: Holder<Potion>): ItemStack {
+    fun potionItemStack(potion: Holder<Potion>, durationScale: Float): ItemStack {
         val stack = Items.POTION.defaultInstance
         stack.set(DataComponents.POTION_CONTENTS, PotionContents(potion))
+        stack.set(DataComponents.POTION_DURATION_SCALE, durationScale)
         return stack
     }
+
+    fun potionItemStack(potion: Holder<Potion>) = potionItemStack(potion, 1f)
 
     fun enchantedItemStack(item: Item, enchantment: ResourceKey<Enchantment>, enchLevel: Int, level: ServerLevel): ItemStack {
         val stack = item.defaultInstance
