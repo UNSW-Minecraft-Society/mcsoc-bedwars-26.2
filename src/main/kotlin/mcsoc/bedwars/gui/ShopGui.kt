@@ -83,8 +83,8 @@ object ShopGui {
 
                 ShopItem(Items.ARROW, 8, Items.GOLD_INGOT, 2),
                 ShopItem(Items.GOLDEN_APPLE, 1, Items.GOLD_INGOT, 3),
-                ShopCustomItem({BedwarsItems.potionItemStack(Potions.LEAPING)}, Items.EMERALD, 1),
-                ShopCustomItem({BedwarsItems.potionItemStack(Potions.SWIFTNESS)}, Items.EMERALD, 1),
+                ShopCustomItem({BedwarsItems.potionItemStack(Potions.STRONG_LEAPING)}, Items.EMERALD, 1),
+                ShopCustomItem({BedwarsItems.potionItemStack(Potions.STRONG_SWIFTNESS)}, Items.EMERALD, 1),
                 ShopCustomItem({BedwarsItems.potionItemStack(Potions.INVISIBILITY)}, Items.EMERALD, 2),
 
                 ShopTeamItem(Team.entries.associateWith { Items.WOOL.pick(it.dyeColour) },
