@@ -71,3 +71,7 @@ fun ItemStack.withUnbreakable(): ItemStack {
     this.set(DataComponents.UNBREAKABLE, Unit.INSTANCE)
     return this
 }
+
+fun ItemStack.withUndroppable(): ItemStack {
+    return this.withTag("undroppable", "true")
+}

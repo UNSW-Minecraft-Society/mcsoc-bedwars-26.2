@@ -7,6 +7,7 @@ import mcsoc.bedwars.utils.withEnchant
 import mcsoc.bedwars.utils.hasTag
 import mcsoc.bedwars.utils.withTrim
 import mcsoc.bedwars.utils.withUnbreakable
+import mcsoc.bedwars.utils.withUndroppable
 import net.minecraft.core.component.DataComponents
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.level.ServerPlayer
@@ -176,8 +177,7 @@ enum class Sword(override val material: Item) : Single, Resettable {
     override val type = UpgradeItemType.SWORD
 
     override fun createStack(player: ServerPlayer): ItemStack {
-        val item = super.createStack(player)
-        return item.withSharp(player)
+        return super.createStack(player).withSharp(player).withUndroppable()
     }
     
     private fun ItemStack.withSharp(player: ServerPlayer): ItemStack {
@@ -224,6 +224,7 @@ enum class Armour(private val boots: Item, private val leggings: Item) : Upgrada
                 .withPlayerBasedEffects(player)
                 .withTag("bedwars_item", type.name)
                 .withUnbreakable()
+                .withUndroppable()
         player.setItemSlot(slot, item)
     }
     
