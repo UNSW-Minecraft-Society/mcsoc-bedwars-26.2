@@ -19,13 +19,12 @@ import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.CylindricalBlockPos
-import mcsoc.bedwars.utils.CylindricalBlockPos.Companion.toCylindricalBlockPos
 import mcsoc.bedwars.utils.FLOAT_PI
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.BlockPos
+import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.phys.Vec3
-import kotlin.math.PI
 import kotlin.reflect.KClass
 
 
@@ -86,7 +85,7 @@ private interface Island {
     val cpos: CylindricalBlockPos
     val structure: String
     val protection_zones: Iterable<ProtectionZoneData>
-    open val rotation: (Float) -> Double get() = {0.0}
+    val rotation: (Float) -> Double get() = {0.0}
     
     fun place(level: ServerLevel, origin: BlockPos): BlockPos {
         val pos = cpos.toBlockPos(origin)
@@ -95,8 +94,8 @@ private interface Island {
         BedwarsPlugin.LOGGER.info("  pos : {}", pos)
         level.place(structure, pos, rotation(cpos.angle))
         
-        for (zone in protection_zones) {
-            level.blockProtection.registerProtectionZone(zone.c1.offset(pos), zone.c2.offset(pos))
+        for ((c1, c2) in protection_zones) {
+            level.blockProtection.registerProtectionZone(c1.offset(pos), c2.offset(pos))
         }
         
         return pos
@@ -108,9 +107,8 @@ private interface GeneratorIsland : Island {
 
     override fun place(level: ServerLevel, origin: BlockPos): BlockPos {
         val pos = super.place(level, origin)
-        for (generator_pos in generators) {
-            val generator = generator_pos.first
-            generator.place(level, generator_pos.second.relToMapOrigin(pos, cpos))
+        for ((generator, second) in generators) {
+            generator.place(level, second.relToMapOrigin(pos, cpos))
         }
         return pos
     } 
