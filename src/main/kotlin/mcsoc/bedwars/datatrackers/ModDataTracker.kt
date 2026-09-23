@@ -28,7 +28,6 @@ import net.minecraft.util.StringRepresentable
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.player.Player
-import net.minecraft.world.level.saveddata.SavedData
 import java.util.UUID
 import net.minecraft.world.phys.Vec3
 import java.util.Optional
@@ -36,9 +35,7 @@ import kotlin.uuid.Uuid
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 import net.minecraft.world.scores.Scoreboard
-import net.minecraft.world.scores.TeamColor
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 enum class GamePhase : StringRepresentable {
     STARTING,
@@ -53,15 +50,15 @@ enum class GamePhase : StringRepresentable {
     override fun getSerializedName(): String = this.name
 }
 
-enum class GamePeriod(val next: GamePeriod?, val startTime: Duration?, val title: String) : StringRepresentable {
-    INACTIVE(null, null, "Inactive"),
-    TERMINAL(null, 15.minutes, "Game End"),
-    DEATHMATCH(TERMINAL, 10.minutes, "Deathmatch"),
-    EMERALD_III(DEATHMATCH, 7.minutes, "Emerald Generator III"),
-    DIAMOND_III(EMERALD_III, 6.minutes, "Diamond Generator III"),
-    EMERALD_II(DIAMOND_III, 4.minutes, "Emerald Generator II"),
-    DIAMOND_II(EMERALD_II, 3.minutes, "Diamond Generator II"),
-    INITIAL(DIAMOND_II, null, "Game Start");
+enum class GamePeriod(val next: GamePeriod?, val startTime: Duration?, val title: String, val notif: String) : StringRepresentable {
+    INACTIVE(null, null, "Inactive", ""),
+    TERMINAL(null, 15.minutes, "Game End", "Game has ended."),
+    DEATHMATCH(TERMINAL, 10.minutes, "Deathmatch", "Deathmatch"),
+    EMERALD_III(DEATHMATCH, 7.minutes, "Emerald Generator III", "Emerald generators have been upgraded."),
+    DIAMOND_III(EMERALD_III, 6.minutes, "Diamond Generator III", "Diamond generators have been upgraded."),
+    EMERALD_II(DIAMOND_III, 4.minutes, "Emerald Generator II", "Emerald generators have been upgraded."),
+    DIAMOND_II(EMERALD_II, 3.minutes, "Diamond Generator II", "Diamond generators have been upgraded."),
+    INITIAL(DIAMOND_II, null, "Game Start", "Game has begun.");
     
     companion object {
         val CODEC: Codec<GamePeriod> = StringRepresentable.fromEnum(GamePeriod::values)
