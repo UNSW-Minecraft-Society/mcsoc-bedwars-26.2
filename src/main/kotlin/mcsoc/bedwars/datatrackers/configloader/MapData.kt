@@ -89,9 +89,6 @@ private interface Island {
     
     fun place(level: ServerLevel, origin: BlockPos): BlockPos {
         val pos = cpos.toBlockPos(origin)
-        BedwarsPlugin.LOGGER.info("island at")
-        BedwarsPlugin.LOGGER.info("  cpos: {}", cpos)
-        BedwarsPlugin.LOGGER.info("  pos : {}", pos)
         level.place(structure, pos, rotation(cpos.angle))
         
         for ((c1, c2) in protection_zones) {
