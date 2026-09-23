@@ -91,6 +91,8 @@ fun Position.toBlockPos(): BlockPos = BlockPos.containing(this)
 fun Vec3.toCardinalDirection(): Direction = Direction.getApproximateNearest(this.horizontal())
 fun Vec3i.rotate(rotation: Rotation): Vec3i = StructureTemplate.transform(BlockPos(this), Mirror.NONE, rotation, BlockPos.ZERO)
 
+fun Vec3.pitchDeg(): Float = atan2(this.x.toFloat(), this.z.toFloat()) * 180 / FLOAT_PI
+fun Vec3.yawDeg(): Float = atan2(this.y.toFloat(), hypot(this.x.toFloat(), this.z.toFloat())) * 180 / FLOAT_PI
 
 val AABB_CODEC: Codec<AABB> = RecordCodecBuilder.create {inst -> inst.group(
         Codec.DOUBLE.fieldOf("min_x").forGetter(AABB::minX),

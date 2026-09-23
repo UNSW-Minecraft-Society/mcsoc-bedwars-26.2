@@ -7,9 +7,11 @@ import mcsoc.bedwars.entities.spawnBedBrute
 import mcsoc.bedwars.entities.spawnBedBug
 import mcsoc.bedwars.entities.spawnDreamDefender
 import mcsoc.bedwars.utils.Team
+import mcsoc.bedwars.utils.pitchDeg
 import mcsoc.bedwars.utils.placeBlockIfValid
 import mcsoc.bedwars.utils.toCardinalDirection
 import mcsoc.bedwars.utils.toBlockPos
+import mcsoc.bedwars.utils.yawDeg
 import net.minecraft.core.Direction
 import net.minecraft.core.GlobalPos
 import net.minecraft.core.Vec3i
@@ -176,14 +178,11 @@ object CustomItemInteraction {
         }
 
         val enemyPos = GlobalPos.of(level.dimension(), nearestEnemy.position().toBlockPos())
-        val distance = player.position().subtract(nearestEnemy.position()).length()
+        val displacement = player.position().subtract(nearestEnemy.position())
+        val distance = displacement.length()
         item.set(DataComponents.LODESTONE_TRACKER, LodestoneTracker(Optional.of(enemyPos), true))
-        if (distance < PLAYER_TRACKER_RANGE) {
-            nearestEnemy.addEffect(MobEffectInstance(MobEffects.GLOWING, PLAYER_TRACKER_DURATION))
-            player.sendSystemMessage(Component.literal("Enemy ${distance.roundToInt()} blocks away, they are glowing!"))
-        } else {
-            player.sendSystemMessage(Component.literal("Enemy ${distance.roundToInt()} blocks away."))
-        }
+        player.sendSystemMessage(Component.literal("Enemy ${distance.roundToInt()} blocks away."))
+        player.teleportTo(level, player.x, player.y, player.z, emptySet(), displacement.yawDeg(), displacement.pitchDeg(), true)
         return InteractionResult.SUCCESS
         
     }
