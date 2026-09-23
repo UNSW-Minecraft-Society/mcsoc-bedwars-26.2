@@ -6,6 +6,7 @@ import mcsoc.bedwars.utils.withTag
 import mcsoc.bedwars.utils.withEnchant
 import mcsoc.bedwars.utils.hasTag
 import mcsoc.bedwars.utils.withTrim
+import mcsoc.bedwars.utils.withUnbreakable
 import net.minecraft.core.component.DataComponents
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.level.ServerPlayer
@@ -53,7 +54,7 @@ internal interface Single : UpgradableItem {
     val material: Item
 
     override fun createStack(player: ServerPlayer): ItemStack {
-        return ItemStack(material).withTag("bedwars_item", type.name)
+        return ItemStack(material).withTag("bedwars_item", type.name).withUnbreakable()
     }
 
     override fun applyTo(player: ServerPlayer) {
@@ -222,6 +223,7 @@ enum class Armour(private val boots: Item, private val leggings: Item) : Upgrada
         val item = ItemStack(material)
                 .withPlayerBasedEffects(player)
                 .withTag("bedwars_item", type.name)
+                .withUnbreakable()
         player.setItemSlot(slot, item)
     }
     
