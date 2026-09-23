@@ -106,7 +106,7 @@ object ShopGui {
                 ShopCustomItem(BedwarsItems::popupTowerItemStack, Items.IRON_INGOT, 24),
                 ShopCustomItem(BedwarsItems::bridgeEggItemStack, Items.EMERALD, 1),
                 ShopItem(Items.ENDER_PEARL, 1, Items.EMERALD, 2),
-                EmptyShopProduct(),
+                ShopCustomItem(BedwarsItems::playerTrackerItemStack, Items.EMERALD, 3),
 
                 ShopCustomItem(BedwarsItems::ballOfBugsItemStack, Items.IRON_INGOT, 24),
                 ShopCustomItem(BedwarsItems::fireballItemStack, Items.IRON_INGOT, 36),

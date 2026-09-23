@@ -19,6 +19,8 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
+import net.minecraft.world.effect.MobEffectInstance
+import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.item.PrimedTnt
 import net.minecraft.world.entity.player.Player
@@ -38,41 +40,8 @@ import kotlin.math.roundToInt
 const val FIREBALL_SPEED = 1.0
 const val FIREBALL_POWER = 3
 const val BRIDGE_EGG_OFFSET = -0.5
-const val POPUP_TOWER_HEIGHT = 6 // needs to be >5
-val POPUP_TOWER_WOOL_OFFSETS = buildSet {
-    for (y in -1..POPUP_TOWER_HEIGHT-3) {
-        add(Vec3i(-1, y, -1))
-        add(Vec3i(-1, y, +1))
-        add(Vec3i(0, y, -2))
-        add(Vec3i(0, y, +2))
-        add(Vec3i(+1, y, -2))
-        add(Vec3i(+1, y, +2))
-        add(Vec3i(+2, y, -1))
-        add(Vec3i(+2, y, 0))
-        add(Vec3i(+2, y, +1))
-    }
-    for (y in (2..POPUP_TOWER_HEIGHT-3)) add(Vec3i(-1, y, 0))
-    add(Vec3i(-1, -1, 0))
-    for (x in -1..2) for (y in intArrayOf(-1,POPUP_TOWER_HEIGHT-2)) for (z in -2..2) {
-        if (x != 1 || y == -1 || z != 0 )
-            add(Vec3i(x, y, z))
-    }
-    for (x in intArrayOf(-2, 3)) for (z in -2..2) {
-        add(Vec3i(x, POPUP_TOWER_HEIGHT-1, z))
-        if (z % 2 == 0) {
-            add(Vec3i(x, POPUP_TOWER_HEIGHT-2, z))
-            add(Vec3i(x, POPUP_TOWER_HEIGHT, z))
-        }
-    }
-    for (x in -1..2) for (z in intArrayOf(-3, 3)) {
-        add(Vec3i(x, POPUP_TOWER_HEIGHT-1, z))
-        if (x == -1 || x == 2) {
-            add(Vec3i(x, POPUP_TOWER_HEIGHT-2, z))
-            add(Vec3i(x, POPUP_TOWER_HEIGHT, z))
-        }
-    }
-}
-val POPUP_TOWER_LADDER_OFFSETS = buildSet { for (y in 0..POPUP_TOWER_HEIGHT-2) add(Vec3i(1,y,0))}
+const val PLAYER_TRACKER_RANGE = 20
+const val PLAYER_TRACKER_DURATION = 60 // in ticks
 
 object CustomItemInteraction {
     fun triggerCustomItemEffect(player: Player, level: Level, hand: InteractionHand, hitResult: HitResult? = null): InteractionResult {
@@ -201,17 +170,20 @@ object CustomItemInteraction {
         fun getDistance(otherPlayer: Entity): Double {
             return player.position().subtract(otherPlayer.position()).length()
         }
-//        val nearestEnemy = level.players().filter { isEnemy(it) }.minByOrNull { getDistance(it) }
-        val nearestEnemy = level.allEntities.filter { !it.`is`(player) }.minByOrNull { getDistance(it) } ?: run {
-            item.set(DataComponents.LODESTONE_TRACKER, LodestoneTracker(Optional.ofNullable(null), false))
+        val nearestEnemy = level.players().filter { isEnemy(it) }.minByOrNull { getDistance(it) } ?: run {
             player.sendSystemMessage(Component.literal("No enemy player found."))
-            return InteractionResult.PASS
+            return InteractionResult.SUCCESS
         }
 
         val enemyPos = GlobalPos.of(level.dimension(), nearestEnemy.position().toBlockPos())
         val distance = player.position().subtract(nearestEnemy.position()).length()
         item.set(DataComponents.LODESTONE_TRACKER, LodestoneTracker(Optional.of(enemyPos), true))
-        player.sendSystemMessage(Component.literal("Enemy ${distance.roundToInt()} blocks away."))
+        if (distance < PLAYER_TRACKER_RANGE) {
+            nearestEnemy.addEffect(MobEffectInstance(MobEffects.GLOWING, PLAYER_TRACKER_DURATION))
+            player.sendSystemMessage(Component.literal("Enemy ${distance.roundToInt()} blocks away, they are glowing!"))
+        } else {
+            player.sendSystemMessage(Component.literal("Enemy ${distance.roundToInt()} blocks away."))
+        }
         return InteractionResult.SUCCESS
         
     }

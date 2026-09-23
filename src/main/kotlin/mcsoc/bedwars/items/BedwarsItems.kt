@@ -108,11 +108,11 @@ object BedwarsItems {
     }
 
     fun playerTrackerItemStack(): ItemStack {
-        return Items.COMPASS.defaultInstance
+        return Items.SPYGLASS.defaultInstance
             .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
             .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
             .renamedTo("Player Tracker")
-            .withItemLore("Points to where the nearest player on an enemy team was, Right click to update the location.")
+            .withItemLore("Right click to get the distance to the nearest enemy, applying glowing if they are close.")
     }
 
     fun dreamDefenderItemStack(): ItemStack {
