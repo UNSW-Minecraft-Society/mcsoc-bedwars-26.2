@@ -9,6 +9,7 @@ import mcsoc.bedwars.utils.withTrim
 import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.animal.golem.IronGolem
@@ -26,6 +27,7 @@ import kotlin.time.Duration
 val DREAM_DEFENDER_EXPIRY_TIME: Duration = Duration.parse("1m")
 val BED_BRUTE_TRIM = TrimPatterns.SNOUT
 val BED_BRUTE_EXPIRY_TIME: Duration = Duration.parse("14s")
+
 
 fun spawnShopkeeper(level: ServerLevel, position: Vec3, type: CustomEntityType) {
     val shopkeeper = Villager(EntityTypes.VILLAGER, level)
@@ -89,4 +91,27 @@ fun spawnWakingWither(level: ServerLevel, position: Vec3) {
     wither.setPos(position)
     wither.customName = Component.literal("Waking Wither")
     if (level.addFreshEntity(wither)) level.customEntityData.addEntity(wither, CustomEntityType.WAKING_WITHER)
+}
+    
+private fun createShopkeeper(level: ServerLevel, position: Vec3, title: Component): Entity {
+    return Villager(EntityTypes.VILLAGER, level)
+        // set Shopkeeper Entity attributes
+        .also{
+            it.setPos(position) 
+            it.isNoAi = true
+            it.isInvulnerable = true
+            it.isCustomNameVisible = true
+            it.customName = title
+        }
+}
+
+fun placeShopkeeper(level: ServerLevel, shop: Entity, type: CustomEntityType) {
+    level.customEntityData.addEntity(shop, type) 
+    level.addFreshEntity(shop)
+}
+
+fun spawnShopkeeper(level: ServerLevel, position: Vec3, type: CustomEntityType, also: (Entity) -> Unit = {}) {
+    createShopkeeper(level, position, Component.literal(type.title))
+        .also(also)
+        .also{ placeShopkeeper(level, it, type) }
 }
