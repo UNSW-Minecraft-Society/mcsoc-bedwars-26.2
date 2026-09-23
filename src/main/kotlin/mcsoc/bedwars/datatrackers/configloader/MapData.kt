@@ -65,8 +65,13 @@ private enum class LoadedShopkeeper(private val type: CustomEntityType) {
     PERSONAL(CustomEntityType.PLAYER_SHOPKEEPER),
     TEAM(CustomEntityType.TEAM_SHOPKEEPER);
     
-    fun place(level: ServerLevel, pos: BlockPos) {
-        spawnShopkeeper(level, Vec3.atBottomCenterOf(pos), type)
+    fun place(level: ServerLevel, pos: BlockPos, yRot: Float) {
+        val yRot = yRot * 180 / FLOAT_PI
+        spawnShopkeeper(level, Vec3.atBottomCenterOf(pos), type){
+            it.teleportTo(level, it.x, it.y, it.z, emptySet(), yRot, it.xRot, true)
+            it.setYBodyRot(yRot)
+            it.yHeadRot = yRot
+        }
     }
 } 
 
@@ -139,9 +144,8 @@ private data class BaseIslandData(
         val pos = super.place(level, origin)
         level.gameState.setTeamSpawn(team, Vec3.atBottomCenterOf(spawn_position.relToMapOrigin(pos, cpos)))
         level.gameState.setTeamBedPosition(team, bed_position.relToMapOrigin(pos, cpos))
-        for (shop_pos in shops) {
-            val shop = shop_pos.first
-            shop.place(level, shop_pos.second.relToMapOrigin(pos, cpos))
+        for ((shop, second) in shops) {
+            shop.place(level, second.relToMapOrigin(pos, cpos), FLOAT_PI - cpos.angle)
         }
         return pos
     }
