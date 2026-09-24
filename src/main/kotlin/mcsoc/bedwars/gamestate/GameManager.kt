@@ -145,6 +145,7 @@ class GameManager {
             gamerules.set(GameRules.ADVANCE_TIME, false, level.server)
             gamerules.set(GameRules.ADVANCE_WEATHER, false, level.server)
             gamerules.set(GameRules.SHOW_DEATH_MESSAGES, false, level.server)
+            gamerules.set(GameRules.NATURAL_HEALTH_REGENERATION, true, level.server)
 
             // sets time to sunrise (maybe change to noon?)
             val clock = level.dimensionType().defaultClock().orElseThrow()
