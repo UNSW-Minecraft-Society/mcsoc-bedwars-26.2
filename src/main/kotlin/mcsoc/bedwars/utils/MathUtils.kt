@@ -54,6 +54,24 @@ data class CylindricalBlockPos(
     )
 }
 
+
+fun Position.toBlockPos(): BlockPos = BlockPos.containing(this)
+fun Vec3.toCardinalDirection(): Direction = Direction.getApproximateNearest(this.horizontal())
+fun Vec3i.rotate(rotation: Rotation): Vec3i = StructureTemplate.transform(BlockPos(this), Mirror.NONE, rotation, BlockPos.ZERO)
+
+fun Vec3.pitchDeg(): Float = atan2(this.x.toFloat(), -this.z.toFloat()) * 180 / FLOAT_PI
+fun Vec3.yawDeg(): Float = atan2(this.y.toFloat(), hypot(this.x.toFloat(), this.z.toFloat())) * 180 / FLOAT_PI
+
+val AABB_CODEC: Codec<AABB> = RecordCodecBuilder.create {inst -> inst.group(
+        Codec.DOUBLE.fieldOf("min_x").forGetter(AABB::minX),
+        Codec.DOUBLE.fieldOf("min_y").forGetter(AABB::minY),
+        Codec.DOUBLE.fieldOf("min_z").forGetter(AABB::minZ),
+        Codec.DOUBLE.fieldOf("max_x").forGetter(AABB::maxX),
+        Codec.DOUBLE.fieldOf("max_y").forGetter(AABB::maxY),
+        Codec.DOUBLE.fieldOf("max_z").forGetter(AABB::maxZ)
+    ).apply(inst, ::AABB)}
+
+    
 object CylindricalBlockPosSerialiser: KSerializer<CylindricalBlockPos> {
     override val descriptor = buildClassSerialDescriptor("CylindricalBlockPos") {
         element<Float>("radius") // 0
@@ -86,19 +104,34 @@ object CylindricalBlockPosSerialiser: KSerializer<CylindricalBlockPos> {
     }
 }
 
-
-fun Position.toBlockPos(): BlockPos = BlockPos.containing(this)
-fun Vec3.toCardinalDirection(): Direction = Direction.getApproximateNearest(this.horizontal())
-fun Vec3i.rotate(rotation: Rotation): Vec3i = StructureTemplate.transform(BlockPos(this), Mirror.NONE, rotation, BlockPos.ZERO)
-
-fun Vec3.pitchDeg(): Float = atan2(this.x.toFloat(), -this.z.toFloat()) * 180 / FLOAT_PI
-fun Vec3.yawDeg(): Float = atan2(this.y.toFloat(), hypot(this.x.toFloat(), this.z.toFloat())) * 180 / FLOAT_PI
-
-val AABB_CODEC: Codec<AABB> = RecordCodecBuilder.create {inst -> inst.group(
-        Codec.DOUBLE.fieldOf("min_x").forGetter(AABB::minX),
-        Codec.DOUBLE.fieldOf("min_y").forGetter(AABB::minY),
-        Codec.DOUBLE.fieldOf("min_z").forGetter(AABB::minZ),
-        Codec.DOUBLE.fieldOf("max_x").forGetter(AABB::maxX),
-        Codec.DOUBLE.fieldOf("max_y").forGetter(AABB::maxY),
-        Codec.DOUBLE.fieldOf("max_z").forGetter(AABB::maxZ)
-    ).apply(inst, ::AABB)}
+object BlockPosSerialiser: KSerializer<BlockPos> {
+    override val descriptor = buildClassSerialDescriptor("BlockPos") {
+        element<Int>("x") // 0
+        element<Int>("y") // 1
+        element<Int>("z") // 2
+    }
+    override fun serialize(encoder: Encoder, value: BlockPos) {
+        encoder.encodeStructure(descriptor) {
+            encodeIntElement(descriptor, 0, value.x)
+            encodeIntElement(descriptor, 1, value.y)
+            encodeIntElement(descriptor, 2, value.z)
+        }
+    }
+    override fun deserialize(decoder: Decoder): BlockPos = decoder.decodeStructure(descriptor) {
+        var x = 0
+        var y = 0
+        var z = 0
+        
+        while (true) {
+            when (val index = decodeElementIndex(descriptor)) {
+                CompositeDecoder.DECODE_DONE -> break
+                0 -> x = decodeIntElement(descriptor, index)
+                1 -> y = decodeIntElement(descriptor, index)
+                2 -> z = decodeIntElement(descriptor, index)
+                else -> error("Unexpected index: $index")
+            }
+        }
+        
+        BlockPos(x, y, z)
+    }
+}

@@ -10,7 +10,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
-import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader.Companion.place
@@ -19,10 +18,10 @@ import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.CylindricalBlockPos
+import mcsoc.bedwars.utils.CylindricalBlockPosSerialiser
 import mcsoc.bedwars.utils.FLOAT_PI
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.BlockPos
-import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.phys.Vec3
 import kotlin.reflect.KClass
@@ -77,8 +76,8 @@ private enum class LoadedShopkeeper(private val type: CustomEntityType) {
 
 @Serializable
 private data class ProtectionZoneData(
-    val c1: @Serializable(with=BlockPosSerialiser::class) BlockPos = BlockPos(0, 0, 0), 
-    val c2: @Serializable(with=BlockPosSerialiser::class) BlockPos = BlockPos(0, 0, 0)
+    val corner1: @Serializable(with=CylindricalBlockPosSerialiser::class) CylindricalBlockPos = CylindricalBlockPos(),
+    val corner2: @Serializable(with=CylindricalBlockPosSerialiser::class) CylindricalBlockPos = CylindricalBlockPos()
 )
 
 private interface Island {
@@ -92,7 +91,7 @@ private interface Island {
         level.place(structure, pos, rotation(cpos.angle))
         
         for ((c1, c2) in protection_zones) {
-            level.blockProtection.registerProtectionZone(c1.offset(pos), c2.offset(pos))
+            level.blockProtection.registerProtectionZone(c1.relToMapOrigin(pos, cpos), c2.relToMapOrigin(pos, cpos))
         }
         
         return pos
@@ -203,38 +202,6 @@ data class MapData private constructor(
  *      structure: String
  *  ]
  */
-
-object BlockPosSerialiser: KSerializer<BlockPos> {
-    override val descriptor = buildClassSerialDescriptor("BlockPos") {
-        element<Int>("x") // 0
-        element<Int>("y") // 1
-        element<Int>("z") // 2
-    }
-    override fun serialize(encoder: Encoder, value: BlockPos) {
-        encoder.encodeStructure(descriptor) {
-            encodeIntElement(descriptor, 0, value.x)
-            encodeIntElement(descriptor, 1, value.y)
-            encodeIntElement(descriptor, 2, value.z)
-        }
-    }
-    override fun deserialize(decoder: Decoder): BlockPos = decoder.decodeStructure(descriptor) {
-        var x = 0
-        var y = 0
-        var z = 0
-        
-        while (true) {
-            when (val index = decodeElementIndex(descriptor)) {
-                CompositeDecoder.DECODE_DONE -> break
-                0 -> x = decodeIntElement(descriptor, index)
-                1 -> y = decodeIntElement(descriptor, index)
-                2 -> z = decodeIntElement(descriptor, index)
-                else -> error("Unexpected index: $index")
-            }
-        }
-        
-        BlockPos(x, y, z)
-    }
-}
 
 private object GeneratorTypeSerialiser: KSerializer<LoadedGeneratorType> {
     override val descriptor = buildClassSerialDescriptor("GeneratorType") {
