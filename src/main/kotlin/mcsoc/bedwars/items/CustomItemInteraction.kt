@@ -17,6 +17,7 @@ import net.minecraft.core.GlobalPos
 import net.minecraft.core.Vec3i
 import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.Component
+import net.minecraft.server.commands.TeleportCommand
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.InteractionHand
@@ -172,19 +173,22 @@ object CustomItemInteraction {
         fun getDistance(otherPlayer: Entity): Double {
             return player.position().subtract(otherPlayer.position()).length()
         }
+//        val nearestEnemy = level.allEntities.filter { !it.`is`(player) }.minByOrNull { getDistance(it) } ?: run {
+//            player.sendSystemMessage(Component.literal("No enemy player found."))
+//            return InteractionResult.SUCCESS
+//        }
         val nearestEnemy = level.players().filter { isEnemy(it) }.minByOrNull { getDistance(it) } ?: run {
             player.sendSystemMessage(Component.literal("No enemy player found."))
             return InteractionResult.SUCCESS
         }
 
         val enemyPos = GlobalPos.of(level.dimension(), nearestEnemy.position().toBlockPos())
-        val displacement = player.position().subtract(nearestEnemy.position())
+        val displacement = player.eyePosition.subtract(nearestEnemy.position())
         val distance = displacement.length()
         item.set(DataComponents.LODESTONE_TRACKER, LodestoneTracker(Optional.of(enemyPos), true))
         player.sendSystemMessage(Component.literal("Enemy ${distance.roundToInt()} blocks away."))
-        player.teleportTo(level, player.x, player.y, player.z, emptySet(), displacement.yawDeg(), displacement.pitchDeg(), true)
+        player.teleportTo(level, player.x, player.y, player.z, emptySet(), displacement.pitchDeg(), displacement.yawDeg(), true)
         return InteractionResult.SUCCESS
-        
     }
 
     private fun useDreamDefenderEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, team: Team): InteractionResult {
