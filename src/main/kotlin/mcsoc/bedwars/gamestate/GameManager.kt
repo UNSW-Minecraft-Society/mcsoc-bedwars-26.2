@@ -289,9 +289,12 @@ class GameManager {
                 level.getActivePlayers().forEach{it.sendSystemMessage(it.getKillMessage(killer))}
             }
 
-            for (stack in player.inventory) {
-                if (!stack.isEmpty && stack.item in arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD)) {
-                    player.level().getPlayerByUUID(killer)?.inventory?.add(stack)
+            val killer_player = player.level().getPlayerByUUID(killer);
+            if (killer_player != null && gameState.isPlayerAlive(killer_player)) {
+                for (stack in player.inventory) {
+                    if (!stack.isEmpty && stack.item in arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD)) {
+                        killer_player.inventory.add(stack)
+                    }
                 }
             }
         }
