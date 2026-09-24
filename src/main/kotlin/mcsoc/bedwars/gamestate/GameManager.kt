@@ -271,9 +271,9 @@ class GameManager {
             val killer: UUID = (player.killCredit as? ServerPlayer)?.uuid ?: gameState.getBedBreaker(playerTeam) ?: run {
                 val maybeKiller = death_source.entity?.uuid
                 if (bedDestroyed) {
-                    level.getActivePlayers().forEach{it.sendSystemMessage(it.getSelfFinalDeathMessage(maybeKiller))}
+                    level.getActivePlayers().forEach{it.sendSystemMessage(player.getSelfFinalDeathMessage(maybeKiller))}
                 } else {
-                    level.getActivePlayers().forEach{it.sendSystemMessage(it.getSelfDeathMessage(maybeKiller))}
+                    level.getActivePlayers().forEach{it.sendSystemMessage(player.getSelfDeathMessage(maybeKiller))}
                 }
                 return
             }
@@ -284,9 +284,9 @@ class GameManager {
 
             if (bedDestroyed) {
                 gameState.incrementPlayerFinalKills(killer)
-                level.getActivePlayers().forEach{it.sendSystemMessage(it.getFinalKillMessage(killer))}
+                level.getActivePlayers().forEach{it.sendSystemMessage(player.getFinalKillMessage(killer))}
             } else {
-                level.getActivePlayers().forEach{it.sendSystemMessage(it.getKillMessage(killer))}
+                level.getActivePlayers().forEach{it.sendSystemMessage(player.getKillMessage(killer))}
             }
 
             val killer_player = player.level().getPlayerByUUID(killer);
