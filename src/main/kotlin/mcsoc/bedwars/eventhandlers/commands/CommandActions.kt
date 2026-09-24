@@ -30,8 +30,11 @@ import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.TextColor
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.phys.Vec3
 
+
+private const val LOBBY_NAME = "lobby"
 
 private fun setProtectionZoneMsg(p1: BlockPos, p2: BlockPos): () -> Component = 
         {Component.literal("Created new protection zone between ${p1.format} and ${p2.format}")}
@@ -58,17 +61,18 @@ private fun blockProtectionSetMsg(state: Boolean): () -> Component {
     }
 }
 
+private fun placeStructureByName(level: ServerLevel, map_name: String, pos: BlockPos): Boolean = level.place(map_name, pos).join()
+
+
 internal object CommandActions {
     fun placeStructure(ctx: CommandContext<CommandSourceStack>): Int {
         val map_name = StringArgumentType.getString(ctx, MAP_NAME_ARGUMENT)
         val pos = BlockPosArgument.getLoadedBlockPos(ctx, POSITION_ARGUMENT)
         
         val source = ctx.source
-        
         val level = source.level
         
-        
-        return if (!level.place(map_name, pos).join()) {
+        return if (!placeStructureByName(level, map_name, pos)) {
             source.sendFailure(Component.literal("Failed to place $map_name"))
             0
         } else {
@@ -350,6 +354,29 @@ internal object CommandActions {
         }
 
         ctx.source.level.gameState.upgradeGen(team)
+        return 1
+    }
+    
+    fun setupLobby(ctx: CommandContext<CommandSourceStack>): Int {
+        val source = ctx.source
+        val level = source.level
+        val pos = BlockPosArgument.getBlockPos(ctx, POSITION_ARGUMENT)
+        
+        if (!placeStructureByName(level, LOBBY_NAME, pos)) {
+            source.sendFailure(Component.literal("Failed to place the lobby!"))
+            return 0
+        } else {
+            source.sendSystemMessage(Component.literal("Placed the lobby at ${pos.format}"))
+        }
+        
+        val vec3_pos = Vec3.atBottomCenterOf(pos)
+        for (player in level.players()) {
+            player.teleportTo(
+                level, vec3_pos.x, vec3_pos.y + 1, vec3_pos.z,
+                emptySet(), 0F, 0F, false
+            )
+        }
+        
         return 1
     }
 }

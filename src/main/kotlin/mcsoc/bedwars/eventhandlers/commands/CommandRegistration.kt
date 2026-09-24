@@ -131,6 +131,12 @@ fun registerCommands() {
                     )
                 )
             )
+            .then(Commands.literal("setup")
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
+                .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
+                .executes(CommandActions::setupLobby)
+                )
+            )
             .then(Commands.literal("reload")
             .requires{it.permissionContext.permissionLevel().isEqualOrHigherThan(PermissionLevel.GAMEMASTERS)}
             .executes(CommandActions::reload)
