@@ -112,7 +112,7 @@ object BedwarsItems {
             .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
             .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
             .renamedTo("Player Tracker")
-            .withItemLore("Right click to get the distance to the nearest enemy, applying glowing if they are close.")
+            .withItemLore("Right click to look in the direction of the nearest enemy.")
     }
 
     fun dreamDefenderItemStack(): ItemStack {
