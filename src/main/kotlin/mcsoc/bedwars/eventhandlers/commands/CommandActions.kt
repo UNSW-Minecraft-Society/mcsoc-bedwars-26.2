@@ -142,7 +142,7 @@ internal object CommandActions {
     fun assignPlayersToTeam(ctx: CommandContext<CommandSourceStack>): Int {
         TeamEffects.assignPlayersToTeam(
             ctx.source.level,
-            Team.valueOf(StringArgumentType.getString(ctx, TEAM_ARG)),
+            Team.valueOf(StringArgumentType.getString(ctx, TEAM_ARG).uppercase()),
             EntityArgument.getPlayers(ctx, PLAYERS_ARG).map(Player::getUUID)
         )
         return 1
