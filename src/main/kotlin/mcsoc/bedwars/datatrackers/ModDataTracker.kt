@@ -53,7 +53,7 @@ enum class GamePhase : StringRepresentable {
 enum class GamePeriod(val next: GamePeriod?, val startTime: Duration?, val title: String, val notif: String) : StringRepresentable {
     INACTIVE(null, null, "Inactive", ""),
     TERMINAL(null, 15.minutes, "Game End", "Game has ended."),
-    DEATHMATCH(TERMINAL, 10.minutes, "Deathmatch", "Deathmatch"),
+    DEATHMATCH(TERMINAL, 10.minutes, "Deathmatch", "Deathmatch has begun."),
     EMERALD_III(DEATHMATCH, 7.minutes, "Emerald Generator III", "Emerald generators have been upgraded."),
     DIAMOND_III(EMERALD_III, 6.minutes, "Diamond Generator III", "Diamond generators have been upgraded."),
     EMERALD_II(DIAMOND_III, 4.minutes, "Emerald Generator II", "Emerald generators have been upgraded."),

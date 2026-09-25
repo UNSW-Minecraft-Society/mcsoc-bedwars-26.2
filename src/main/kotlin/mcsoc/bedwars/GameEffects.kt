@@ -80,8 +80,7 @@ object GameEffects {
             // notify players
             for (playerId in gameState.getPlayersInTeam(team)) {
                 val player = level.getPlayerByUUID(playerId)
-                player?.sendSystemMessage(Component.literal("Deathmatch has begun."))
-                player?.sendSystemMessage(Component.literal("All beds broken, dragons spawned, world border shrinking."))
+                player?.sendSystemMessage(Component.literal("All beds broken, wither spawned, world border shrinking."))
                 if (player is ServerPlayer) {
                     player.connection.send(
                         ClientboundSetTitleTextPacket(
