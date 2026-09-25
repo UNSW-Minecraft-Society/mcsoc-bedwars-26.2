@@ -47,6 +47,9 @@ class GameEventTracker() : LevelTiedData() {
     fun queuePopupTowerConstruction(centrePos: BlockPos, buildingBlockState: BlockState, orientation: Direction) {
         queueEvent(GameEvent.PopupTowerConstructionEvent(level.clock.time, centrePos, buildingBlockState, orientation))
     }
+    fun queueInvisExpiry(duration: Duration, uuid: UUID) {
+        queueEvent(GameEvent.InvisExpiryEvent(level.clock.time, duration, uuid))
+    }
 
     private fun dequeueEventsToTrigger(): Iterable<GameEvent> {
         val eventsToTrigger: MutableCollection<GameEvent> = mutableSetOf()

@@ -1,8 +1,10 @@
 package mcsoc.bedwars.eventhandlers
 
 import mcsoc.bedwars.datatrackers.GamePhase
+import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.gamestate.GameManager
+import mcsoc.bedwars.utils.ticks
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents
 import net.fabricmc.fabric.api.entity.event.v1.effect.ServerMobEffectEvents
@@ -31,7 +33,10 @@ fun registerAfterRespawnEvent() {
 fun registerAfterEffectAppliedEvent() {
     ServerMobEffectEvents.AFTER_ADD.register{effect, maybe_player, ctx ->
         if (maybe_player !is ServerPlayer) return@register
-        if (effect.`is`(MobEffects.INVISIBILITY)) maybe_player.level().gameState.setPlayerInvisibility(maybe_player.uuid, true)
+        if (effect.`is`(MobEffects.INVISIBILITY)) {
+            maybe_player.level().gameState.setPlayerInvisibility(maybe_player.uuid, true)
+            maybe_player.level().eventQueue.queueInvisExpiry((effect.duration + 1).ticks, maybe_player.uuid)
+        }
     }
 }
 

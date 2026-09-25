@@ -7,6 +7,7 @@ import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.gamestate.GameEvent.InvisExpiryEvent
 import mcsoc.bedwars.utils.CODEC
 import mcsoc.bedwars.utils.getProgressBar
 import mcsoc.bedwars.utils.placeBlockIfValid
@@ -28,6 +29,7 @@ import net.minecraft.network.protocol.game.ClientboundSoundPacket
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
+import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.level.GameType
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.Rotation
@@ -309,5 +311,36 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
         override fun createEvent(triggerTime: Duration, count: Long) = PopupTowerConstructionEvent(
             triggerTime, count, centerPos, buildingBlockState, orientation
         )
+    }
+
+    class InvisExpiryEvent private constructor(triggerTime: Duration, val playerId: UUID, count: Long, val duration: Long) : RecursiveGameEvent<InvisExpiryEvent>(triggerTime, id, count, INTERVAL) {
+        constructor(currTime: Duration, duration: Duration, entityId: UUID) : this(
+            currTime,
+            entityId,
+            duration.inWholeSeconds,
+            duration.inWholeSeconds
+        )
+
+        companion object : GameEventCompanion<InvisExpiryEvent> {
+            val INTERVAL = 1.seconds
+            override val id: String = "InvisExpiry"
+            override val codec: MapCodec<InvisExpiryEvent> = RecordCodecBuilder.mapCodec{it.group(
+                Duration.CODEC.fieldOf("time").forGetter(InvisExpiryEvent::triggerTime),
+                UUIDUtil.CODEC.fieldOf("id").forGetter(InvisExpiryEvent::playerId),
+                Codec.LONG.fieldOf("depth").forGetter(InvisExpiryEvent::count),
+                Codec.LONG.fieldOf("duration").forGetter(InvisExpiryEvent::duration)
+            ).apply(it, ::InvisExpiryEvent)}
+        }
+
+        override fun recurseTrigger(level: ServerLevel) {
+            val player = level.getPlayerByUUID(playerId)
+            if (player != null && !player.activeEffects.any { e -> e.`is`(MobEffects.INVISIBILITY) }) {
+                level.gameState.setPlayerInvisibility(playerId, false)
+            }
+        }
+
+        override fun concludeTrigger(level: ServerLevel) = recurseTrigger(level)
+
+        override fun createEvent(triggerTime: Duration, count: Long) = InvisExpiryEvent(triggerTime, playerId, count, duration)
     }
 }
