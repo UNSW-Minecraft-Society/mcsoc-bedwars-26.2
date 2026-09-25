@@ -253,6 +253,7 @@ enum class Armour(private val boots: Item, private val leggings: Item) : Upgrada
             .also { if (this.`is`(ItemTags.FOOT_ARMOR)) this.withFeatherFalling(player) }
             .also { if (this.`is`(ItemTags.CAULDRON_CAN_REMOVE_DYE)) this.set(DataComponents.DYED_COLOR, DyedItemColor(team.dyeColour.textureDiffuseColor)) }
             .withTrim(team.trimMaterial, TRIM_PATTERN, player.level())
+            .withEnchant(Enchantments.BINDING_CURSE, 1, player.level())
             // other effects here
     }
 }
