@@ -8,6 +8,7 @@ import mcsoc.bedwars.gamestate.BORDER_SIZE
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.generators.GeneratorType
 import com.mojang.datafixers.util.Pair
+import mcsoc.bedwars.utils.Team
 import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket
@@ -17,6 +18,7 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.phys.Vec3
+import java.util.UUID
 
 
 // replace with config
@@ -32,9 +34,16 @@ object TeamEffects {
         val players = mod_level_data.getActivePlayers()
         val teams = mod_level_data.getActiveTeams()
         val num_teams = teams.size
-
-        players.shuffled().forEachIndexed { index, player ->
+        players.filter{mod_level_data.getPlayersTeam(it) == Team.NONE}.shuffled().forEachIndexed { index, player ->
             val team = teams[index % num_teams]
+            mod_level_data.addPlayer(player, team, level.scoreboard, level.getPlayerByUUID(player)?.scoreboardName)
+        }
+    }
+    
+    fun assignPlayersToTeam(level: ServerLevel, team: Team, players: Iterable<UUID>) {
+        val mod_level_data = level.gameState
+        for (player in players) {
+            mod_level_data.addActivePlayer(player)
             mod_level_data.addPlayer(player, team, level.scoreboard, level.getPlayerByUUID(player)?.scoreboardName)
         }
     }

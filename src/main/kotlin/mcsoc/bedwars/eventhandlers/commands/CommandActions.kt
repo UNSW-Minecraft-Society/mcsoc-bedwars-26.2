@@ -25,12 +25,14 @@ import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.format
 import net.minecraft.commands.CommandSourceStack
+import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.commands.arguments.coordinates.Vec3Argument
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.TextColor
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
 
 
@@ -137,11 +139,12 @@ internal object CommandActions {
         return 1
     }
 
-    // Ideally only use for testing. Start command creates teams now
-    // Will need to make a new command that stores a number of teams in future - refer to bedhunt
-    // for template
-    fun assignTeams(ctx: CommandContext<CommandSourceStack>): Int {
-        TeamEffects.createTeamsWithPlayers(ctx.source.level)
+    fun assignPlayersToTeam(ctx: CommandContext<CommandSourceStack>): Int {
+        TeamEffects.assignPlayersToTeam(
+            ctx.source.level,
+            Team.valueOf(StringArgumentType.getString(ctx, TEAM_ARG)),
+            EntityArgument.getPlayers(ctx, PLAYERS_ARG).map(Player::getUUID)
+        )
         return 1
     }
 

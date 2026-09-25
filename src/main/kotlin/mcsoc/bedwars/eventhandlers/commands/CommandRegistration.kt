@@ -34,6 +34,8 @@ const val ENTITY_TYPE_ARG = "type2"
 const val SHOP_TYPE_ARG = "type3"
 const val CUSTOM_ITEM_ARG = "custom_item"
 
+const val PLAYERS_ARG = "players"
+
 const val GEN_TYPE_ARG = "type"
 const val TEAM_ARG = "team"
 const val GEN_ID_ARG = "id"
@@ -80,9 +82,13 @@ fun registerCommands() {
             .then(Commands.literal("get_team")
             .executes(CommandActions::getTeam)
             )
-            .then(Commands.literal("assign_teams")
+            .then(Commands.literal("assign_to_team")
             .requires(GAMEMASTER_PERMS_REQUIREMENT)
-            .executes(CommandActions::assignTeams)
+                .then(Commands.argument(TEAM_ARG, StringArgumentType.word())
+                    .then(Commands.argument(PLAYERS_ARG, EntityArgument.players())
+                    .executes(CommandActions::assignPlayersToTeam)
+                    )
+                )
             )
             .then(Commands.literal("upgrade")
             .requires(GAMEMASTER_PERMS_REQUIREMENT)
