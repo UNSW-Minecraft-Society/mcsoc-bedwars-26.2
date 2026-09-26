@@ -1,5 +1,6 @@
 package mcsoc.bedwars.gamestate
 
+import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.GameEffects
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
@@ -262,11 +263,6 @@ class GameManager {
             val playerTeam = gameState.getPlayersTeam(player.uuid)
             val bedDestroyed = gameState.getBedDestroyed(playerTeam)
 
-            // Downgrade or like reset player item upgrades on death
-            player.inventory.clearContent()
-            gameState.downgradeItems(player)
-            gameState.incrementPlayerDeaths(player.uuid)
-
             // store player's death position to summon lightning later. Due to the nature of this event handler,
             // all players are forced to enter "DEAD" state upon death.
             gameState.setPlayerDead(player, player.position())
@@ -278,6 +274,12 @@ class GameManager {
                 } else {
                     level.getActivePlayers().forEach{it.sendSystemMessage(player.getSelfDeathMessage(maybeKiller))}
                 }
+
+                // Downgrade or like reset player item upgrades on death (as done below wow copy and paste how smart)
+                player.inventory.clearContent()
+                gameState.downgradeItems(player)
+                gameState.incrementPlayerDeaths(player.uuid)
+
                 return
             }
                     // return BedwarsPlugin.LOGGER.error("handlePlayerDeath player: ${player.name.string}, source: ${death_source.msgId}: ", IllegalStateException("Cannot destroy bed without breaker?"))
@@ -300,6 +302,11 @@ class GameManager {
                     }
                 }
             }
+
+            // Downgrade or like reset player item upgrades on death
+            player.inventory.clearContent()
+            gameState.downgradeItems(player)
+            gameState.incrementPlayerDeaths(player.uuid)
         }
 
         fun handlePlayerRespawn(player: ServerPlayer) {
