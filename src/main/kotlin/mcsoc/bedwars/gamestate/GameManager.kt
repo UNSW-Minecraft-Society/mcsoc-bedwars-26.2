@@ -235,6 +235,8 @@ class GameManager {
             // maybe a little tooltip in the bottom left
             ScoreboardGui.displayScoreboard(level)
 
+            level.gameRules.set(GameRules.PVP, true, level.server)
+
             level.clock.reset()
             gameState.setGamePhase(GamePhase.ACTIVE)
             gameState.setGamePeriod(GamePeriod.INITIAL)

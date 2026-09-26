@@ -33,6 +33,8 @@ import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.TextColor
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.level.GameType
+import net.minecraft.world.level.gamerules.GameRules
 import net.minecraft.world.phys.Vec3
 
 
@@ -378,8 +380,13 @@ internal object CommandActions {
                 level, vec3_pos.x, vec3_pos.y + 1, vec3_pos.z,
                 emptySet(), 0F, 0F, false
             )
+
+            player.inventory.clearContent()
+            player.setGameMode(GameType.ADVENTURE)
         }
-        
+
+        level.gameRules.set(GameRules.PVP, false, level.server)
+
         return 1
     }
 }
