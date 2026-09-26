@@ -387,7 +387,7 @@ class GameManager {
         private fun compileGameStats(level: ServerLevel): MutableList<Component> {
             val gameState = level.gameState
             val statsList: MutableList<Component> = mutableListOf()
-            statsList += Component.literal("${ChatFormatting.UNDERLINE}Game Statistics:")
+            statsList += Component.literal("${ChatFormatting.UNDERLINE}Game Statistics:${ChatFormatting.RESET}")
 
             for (team in gameState.getActiveTeams()) {
                 for (uuid in gameState.getPlayersInTeam(team)) {
@@ -405,7 +405,7 @@ class GameManager {
 
         private fun broadcastGameStats(level: ServerLevel) {
             val stats = compileGameStats(level)
-            BedwarsPlugin.LOGGER.info("{}", stats.joinToString("\n"))
+            BedwarsPlugin.LOGGER.info("{}", stats.joinToString("\n", transform = Component::getString))
             for (player in level.players()) {
                 stats.forEach{
                     player.sendSystemMessage(it)
