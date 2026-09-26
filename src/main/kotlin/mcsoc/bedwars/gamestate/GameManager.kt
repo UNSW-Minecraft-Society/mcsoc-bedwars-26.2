@@ -405,8 +405,11 @@ class GameManager {
 
         private fun broadcastGameStats(level: ServerLevel) {
             val stats = compileGameStats(level)
+            BedwarsPlugin.LOGGER.info("{}", stats.joinToString("\n"))
             for (player in level.players()) {
-                stats.forEach(player::sendSystemMessage)
+                stats.forEach{
+                    player.sendSystemMessage(it)
+                }
             }
         }
 
