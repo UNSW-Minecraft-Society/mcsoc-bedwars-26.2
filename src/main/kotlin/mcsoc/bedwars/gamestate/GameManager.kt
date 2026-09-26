@@ -390,8 +390,10 @@ class GameManager {
             statsList += Component.literal("${ChatFormatting.UNDERLINE}Game Statistics:")
 
             for (team in gameState.getActiveTeams()) {
+                BedwarsPlugin.LOGGER.info("team: {}", team)
                 for (uuid in gameState.getPlayersInTeam(team)) {
                     val name = (level.getPlayerByUUID(uuid)?.name ?: Component.literal(uuid.toString())) as MutableComponent
+                    BedwarsPlugin.LOGGER.info("name: {}", name)
                     statsList.add(name.append(Component.literal("\n" +
                             " - Kills: ${gameState.getPlayerKills(uuid)}\n" +
                             " - Final Kills: ${gameState.getPlayerFinalKills(uuid)}\n" +
