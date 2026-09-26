@@ -418,13 +418,10 @@ private class ModDataStore() : PlayerInvisSwitcher, PlayerStateHolder, TeamState
     }
 
     override fun getTeam(team: Team): TeamDataRecord {
-        return teams_map[team] ?: run {
-            BedwarsPlugin.LOGGER.error("getTeam: ", InvalidTeamException(team))
-            TeamDataRecord()
-        }
+        return teams_map.getOrPut(team){TeamDataRecord()}
     }
 
-    override fun getActiveTeams(): List<Team> = teams_map.keys.toList()
+    override fun getActiveTeams(): Iterable<Team> = teams_map.keys.toSet()
 
     override fun initialiseTeams(teams: Set<Team>, scoreboard: Scoreboard) {
         val new_teams_map: MutableMap<Team, TeamDataRecord> = mutableMapOf()
@@ -515,7 +512,7 @@ class ModDataTracker : PlayerInvisSwitchExposer, LevelTiedData, PlayerStateExpos
 
     override fun getPlayersInTeam(team: Team): List<UUID> = mod_data.getPlayersInTeam(team)
     override fun getTeamSpawn(team: Team): Vec3 = mod_data.getTeamSpawn(team)
-    override fun getActiveTeams(): List<Team> = mod_data.getActiveTeams()
+    override fun getActiveTeams(): Iterable<Team> = mod_data.getActiveTeams()
     override fun setBedAlive(team: Team, state: Boolean) {
         setDirty()
         mod_data.setBedAlive(team, state)

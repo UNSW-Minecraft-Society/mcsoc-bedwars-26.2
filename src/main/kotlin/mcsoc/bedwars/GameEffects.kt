@@ -32,7 +32,7 @@ object TeamEffects {
     fun createTeamsWithPlayers(level: ServerLevel) {
         val mod_level_data = level.gameState
         val players = mod_level_data.getActivePlayers()
-        val teams = mod_level_data.getActiveTeams()
+        val teams = mod_level_data.getActiveTeams().toList()
         BedwarsPlugin.LOGGER.info("List of teams ${teams.map{ team -> team.name }}")
         BedwarsPlugin.LOGGER.info("List of players $players")
         for (team in teams)

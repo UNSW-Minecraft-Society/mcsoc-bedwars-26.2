@@ -34,7 +34,7 @@ internal interface TeamStateExposer {
     fun getBedBreaker(team: Team): UUID?
     fun getTeamSpawn(team: Team): Vec3
     fun getTeamBedPosition(team: Team): BlockPos
-    fun getActiveTeams(): List<Team>
+    fun getActiveTeams(): Iterable<Team>
 
     fun setBedAlive(team: Team, state: Boolean)
     fun setTeamSpawn(team: Team, pos: Vec3) 
