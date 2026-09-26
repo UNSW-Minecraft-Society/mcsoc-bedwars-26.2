@@ -82,9 +82,9 @@ object ShopGui {
 
                 ShopItem(Items.ARROW, 8, Items.GOLD_INGOT, 2),
                 ShopItem(Items.GOLDEN_APPLE, 1, Items.GOLD_INGOT, 3),
-                ShopCustomItem({BedwarsItems.potionItemStack(Potions.STRONG_LEAPING, 0.5f)}, Items.EMERALD, 1),
                 ShopCustomItem({BedwarsItems.potionItemStack(Potions.STRONG_SWIFTNESS, 0.5f)}, Items.EMERALD, 1),
                 ShopCustomItem({BedwarsItems.potionItemStack(Potions.INVISIBILITY, 0.25f)}, Items.EMERALD, 2),
+                EmptyShopProduct(),
 
                 ShopTeamItem(Team.entries.associateWith { Items.WOOL.pick(it.dyeColour) },
                     16, Items.IRON_INGOT, 4),
@@ -100,10 +100,9 @@ object ShopGui {
                 ShopItem(Items.LADDER, 16, Items.IRON_INGOT, 4),
                 EmptyShopProduct(),
 
-
-                ShopItem(Items.WIND_CHARGE, 1, Items.GOLD_INGOT, 12),
                 ShopCustomItem(BedwarsItems::popupTowerItemStack, Items.IRON_INGOT, 24),
                 ShopCustomItem(BedwarsItems::bridgeEggItemStack, Items.EMERALD, 1),
+                ShopItem(Items.WIND_CHARGE, 12, Items.EMERALD, 1),
                 ShopItem(Items.ENDER_PEARL, 1, Items.EMERALD, 2),
                 ShopCustomItem(BedwarsItems::playerTrackerItemStack, Items.EMERALD, 3),
 
