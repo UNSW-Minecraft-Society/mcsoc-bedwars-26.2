@@ -427,16 +427,17 @@ private class ModDataStore() : PlayerInvisSwitcher, PlayerStateHolder, TeamState
     override fun getActiveTeams(): List<Team> = teams_map.keys.toList()
 
     override fun initialiseTeams(teams: Set<Team>, scoreboard: Scoreboard) {
-        teams_map.clear()
-        
-        for (team in scoreboard.playerTeams) scoreboard.removePlayerTeam(team)
-        teams.forEach { 
-            teams_map[it] = TeamDataRecord()
+        val new_teams_map: MutableMap<Team, TeamDataRecord> = mutableMapOf()
+        teams.forEach{
+            new_teams_map[it] = TeamDataRecord()
+            
             val scoreboardTeam = scoreboard.addPlayerTeam(it.getName())
             scoreboardTeam.color = Optional.of(it.teamColour)
+            scoreboardTeam.isAllowFriendlyFire = false
         }
-        
-        for (scoreboardTeam in scoreboard.playerTeams) scoreboardTeam.isAllowFriendlyFire = false
+        new_teams_map.putAll(teams_map.filter{it.key in teams})
+        teams_map.clear()
+        teams_map.putAll(new_teams_map)
     }
 
     override fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?) {
