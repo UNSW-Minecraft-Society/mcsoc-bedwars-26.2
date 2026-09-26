@@ -299,7 +299,7 @@ class GameManager {
                 for (stack in player.inventory) {
                     if (!stack.isEmpty && stack.item in arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD)) {
                         killer_player.inventory.add(stack)
-                        BedwarsPlugin.LOGGER.info("adding ${stack.toString()}")
+                        BedwarsPlugin.LOGGER.info("adding $stack")
                     }
                 }
             }
