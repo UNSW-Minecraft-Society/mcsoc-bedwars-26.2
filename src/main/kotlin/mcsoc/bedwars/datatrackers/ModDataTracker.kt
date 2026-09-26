@@ -438,6 +438,8 @@ private class ModDataStore() : PlayerInvisSwitcher, PlayerStateHolder, TeamState
     }
 
     override fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?) {
+        if (team == Team.NONE) return
+        
         getTeam(team).addPlayer(player)
         getPlayerData(player).setTeamName(team)
         val team = scoreboard.getPlayerTeam(team.getName()) ?: run {
