@@ -54,7 +54,6 @@ abstract class ShopProduct {
         if (inventory.countItem(currency) < price) {
             playSound(player, FAILURE_SOUND)
             if (sendMsg) player.sendSystemMessage(Component.literal("Insufficient funds"))
-            BedwarsPlugin.LOGGER.info("$player didn't have enough ${inventory.countItem(currency)} < $price ${currency.toString()}")
             return false
         }
         val name = getProductName()
@@ -63,12 +62,10 @@ abstract class ShopProduct {
                 price, inventory)
             playSound(player, SUCCESS_SOUND)
             player.sendSystemMessage(Component.literal("Purchased ").append(name))
-            BedwarsPlugin.LOGGER.info("$player had enough ${inventory.countItem(currency)} >= $price ${currency.toString()}")
             return true
         } else {
             playSound(player, FAILURE_SOUND)
             if (sendMsg) player.sendSystemMessage(Component.literal("Transaction failed"))
-            BedwarsPlugin.LOGGER.info("$player's transaction failed somehow")
             return false
         }
     }
@@ -129,7 +126,6 @@ abstract class AbstractShopItem : ShopProduct {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player
             val inventory = player.inventory
-            BedwarsPlugin.LOGGER.info("item out: {}", getItemStack())
             if (clickType == ClickType.MOUSE_LEFT) {
                 purchaseUnit(player, {inventory.add(getItemStack().copy())})
             } else if (clickType == ClickType.MOUSE_LEFT_SHIFT) {
@@ -210,7 +206,6 @@ class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
             val player = gui.player
             setShopPlayer(player)
             val inventory = player.inventory
-            BedwarsPlugin.LOGGER.info("item out: {}", getItemStack())
             if (clickType == ClickType.MOUSE_LEFT) {
                 purchaseUnit(player, {inventory.add(getItemStack().copy())})
             } else if (clickType == ClickType.MOUSE_LEFT_SHIFT) {
@@ -255,7 +250,6 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
             val player = gui.player
             setShopPlayer(player)
             val gameState = player.level().gameState
-            BedwarsPlugin.LOGGER.info("$player wants to buy ${playerUpgrade.name}")
             purchaseUnit(player, fun(): Boolean {
                 gameState.upgradeItem(player, playerUpgrade)
                 return true

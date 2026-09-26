@@ -282,7 +282,7 @@ class GameManager {
 
                 return
             }
-                    // return BedwarsPlugin.LOGGER.error("handlePlayerDeath player: ${player.name.string}, source: ${death_source.msgId}: ", IllegalStateException("Cannot destroy bed without breaker?"))
+            // return BedwarsPlugin.LOGGER.error("handlePlayerDeath player: ${player.name.string}, source: ${death_source.msgId}: ", IllegalStateException("Cannot destroy bed without breaker?"))
 
             // Need to playtest see if final kill off void death transfers loot
             gameState.incrementPlayerKills(killer)
@@ -295,10 +295,12 @@ class GameManager {
             }
 
             val killer_player = player.level().getPlayerByUUID(killer);
+            BedwarsPlugin.LOGGER.info("Gonna transfer items to ${killer_player}, is null: ${killer_player != null}")
             if (killer_player != null && gameState.isPlayerAlive(killer_player)) {
                 for (stack in player.inventory) {
                     if (!stack.isEmpty && stack.item in arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD)) {
                         killer_player.inventory.add(stack)
+                        BedwarsPlugin.LOGGER.info("adding $stack")
                     }
                 }
             }

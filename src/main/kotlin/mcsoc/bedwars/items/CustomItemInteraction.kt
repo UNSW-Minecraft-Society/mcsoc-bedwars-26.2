@@ -56,7 +56,6 @@ object CustomItemInteraction {
             return InteractionResult.PASS
         val type = item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
         val team = gameState.getPlayersTeam(player.uuid)
-        BedwarsPlugin.LOGGER.info("Item has $CUSTOM_ITEM_TAG $type")
         when (type) {
             CustomItemTypes.FIREBALL.value -> return useFireballEffect(player, level, item)
             CustomItemTypes.INSTANT_TNT.value -> return useInstantTNTEffect(player, level, item, hitResult)
@@ -80,7 +79,6 @@ object CustomItemInteraction {
             return InteractionResult.PASS
 
         val type = projectile.item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
-        BedwarsPlugin.LOGGER.info("Entity has $CUSTOM_ITEM_TAG $type")
         val team = gameState.getPlayersTeam(owner.uuid)
         when (type) {
             CustomItemTypes.BRIDGE_EGG.value -> return tickBridgeEggEffect(level, projectile, team)
@@ -100,7 +98,6 @@ object CustomItemInteraction {
             return InteractionResult.PASS
 
         val type = projectile.item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
-        BedwarsPlugin.LOGGER.info("Entity has $CUSTOM_ITEM_TAG $type")
         val team = gameState.getPlayersTeam(owner.uuid)
         when (type) {
             CustomItemTypes.BALL_OF_BUGS.value -> return doBallOfBugsEffect(level, projectile, team, hitResult)
@@ -109,7 +106,6 @@ object CustomItemInteraction {
     }
 
     private fun useFireballEffect(player: Player, level: Level, item: ItemStack): InteractionResult {
-        BedwarsPlugin.LOGGER.info("Doing fireball thing")
         val directionVector = player.getViewVector(1.0f)
         val fireball = LargeFireball(level, player, directionVector.scale(FIREBALL_SPEED), FIREBALL_POWER)
         fireball.setPos(player.eyePosition.add(directionVector.scale(0.5)))
