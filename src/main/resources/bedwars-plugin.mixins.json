@@ -22,7 +22,8 @@
 		"accessor.MobAccessor",
 		"VoidDamageMixin",
 		"accessor.MobAccessor",
-		"HungerMixin"
+		"HungerMixin",
+		"ChestPunchMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

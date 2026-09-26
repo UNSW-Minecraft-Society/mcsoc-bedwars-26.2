@@ -18,7 +18,8 @@ import net.minecraft.world.item.equipment.trim.TrimPattern
 
 
 fun ItemStack.withTag(key: String, value: String): ItemStack {
-    val tag = CompoundTag()
+    val customData = this.get(DataComponents.CUSTOM_DATA)
+    val tag = customData?.copyTag() ?: CompoundTag()
     tag.putString(key, value)
     this.set(DataComponents.CUSTOM_DATA, CustomData.of(tag))
     return this

@@ -1,5 +1,6 @@
 package mcsoc.bedwars.gamestate
 
+import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.GameEffects
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.GamePeriod
@@ -170,15 +171,16 @@ class GameManager {
 
             val customEntityData = level.customEntityData
             level.eventQueue.reset()
+
+            for (player in gameState.getActivePlayers().mapNotNull(level.server.playerList::getPlayer)) {
+                player.inventory.clearContent()
+                player.setGameMode(GameType.SPECTATOR)
+            }
             gameState.clearActivePlayers()
             // clear teams - todo
 
             gameState.setGamePhase(GamePhase.INACTIVE)
             gameState.setGamePeriod(GamePeriod.INACTIVE)
-            for (player in gameState.getActivePlayers().mapNotNull(level.server.playerList::getPlayer)) {
-                player.inventory.clearContent()
-                player.setGameMode(GameType.SPECTATOR)
-            }
 
             // Clears Active players, all teams data and player data
             gameState.resetModData()
@@ -233,6 +235,8 @@ class GameManager {
             // maybe show a title saying game begin or something
             // maybe a little tooltip in the bottom left
             ScoreboardGui.displayScoreboard(level)
+
+            level.gameRules.set(GameRules.PVP, true, level.server)
 
             level.clock.reset()
             gameState.setGamePhase(GamePhase.ACTIVE)
@@ -289,11 +293,13 @@ class GameManager {
                 level.getActivePlayers().forEach{it.sendSystemMessage(player.getKillMessage(killer))}
             }
 
-            val killer_player = player.level().getPlayerByUUID(killer)
+            val killer_player = player.level().getPlayerByUUID(killer);
+            BedwarsPlugin.LOGGER.info("Gonna transfer items to ${killer_player}, is null: ${killer_player != null}")
             if (killer_player != null && gameState.isPlayerAlive(killer_player)) {
                 for (stack in player.inventory) {
                     if (!stack.isEmpty && stack.item in arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD)) {
                         killer_player.inventory.add(stack)
+                        BedwarsPlugin.LOGGER.info("adding ${stack.toString()}")
                     }
                 }
             }

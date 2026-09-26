@@ -33,11 +33,18 @@ object TeamEffects {
         val mod_level_data = level.gameState
         val players = mod_level_data.getActivePlayers()
         val teams = mod_level_data.getActiveTeams()
+        BedwarsPlugin.LOGGER.info("List of teams ${teams.map{ team -> team.name }}")
+        BedwarsPlugin.LOGGER.info("List of players $players")
+        for (team in teams)
+            BedwarsPlugin.LOGGER.info("Players in ${team.name} team ${mod_level_data.getPlayersInTeam(team)} (before)")
         val num_teams = teams.size
         players.filter{mod_level_data.getPlayersTeam(it) == Team.NONE}.shuffled().forEachIndexed { index, player ->
+            BedwarsPlugin.LOGGER.info("Filtered player: $player")
             val team = teams[index % num_teams]
             mod_level_data.addPlayer(player, team, level.scoreboard, level.getPlayerByUUID(player)?.scoreboardName)
         }
+        for (team in teams)
+            BedwarsPlugin.LOGGER.info("Players in ${team.name} team ${mod_level_data.getPlayersInTeam(team)} (after)")
     }
     
     fun assignPlayersToTeam(level: ServerLevel, team: Team, players: Iterable<UUID>) {
