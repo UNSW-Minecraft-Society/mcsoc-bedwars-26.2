@@ -170,15 +170,16 @@ class GameManager {
 
             val customEntityData = level.customEntityData
             level.eventQueue.reset()
+
+            for (player in gameState.getActivePlayers().mapNotNull(level.server.playerList::getPlayer)) {
+                player.inventory.clearContent()
+                player.setGameMode(GameType.SPECTATOR)
+            }
             gameState.clearActivePlayers()
             // clear teams - todo
 
             gameState.setGamePhase(GamePhase.INACTIVE)
             gameState.setGamePeriod(GamePeriod.INACTIVE)
-            for (player in gameState.getActivePlayers().mapNotNull(level.server.playerList::getPlayer)) {
-                player.inventory.clearContent()
-                player.setGameMode(GameType.SPECTATOR)
-            }
 
             // Clears Active players, all teams data and player data
             gameState.resetModData()
@@ -233,6 +234,8 @@ class GameManager {
             // maybe show a title saying game begin or something
             // maybe a little tooltip in the bottom left
             ScoreboardGui.displayScoreboard(level)
+
+            level.gameRules.set(GameRules.PVP, true, level.server)
 
             level.clock.reset()
             gameState.setGamePhase(GamePhase.ACTIVE)
