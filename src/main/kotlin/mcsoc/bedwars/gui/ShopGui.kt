@@ -28,7 +28,6 @@ enum class ShopType(val title: String) {
  * Object containing logic pertaining to storing and displaying (via a GUI) items in the shop.
  */
 object ShopGui {
-    private val LOGGER = BedwarsPlugin.LOGGER
 
     // Slot order which the `PRODUCTS` appear in.
     private val PRODUCT_SLOT_INDEX = arrayOf(
@@ -181,7 +180,6 @@ object ShopGui {
      */
     fun displayShop(player: ServerPlayer, shopType: ShopType) {
         try {
-            LOGGER.info("Displaying shop gui")
             /**
              * Update items within the shop gui.
              */
