@@ -88,8 +88,6 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
         protected abstract fun createEvent(triggerTime: Duration, count: Long): RecursiveGameEvent<T>
         
         override fun trigger(level: ServerLevel) {
-            BedwarsPlugin.LOGGER.info("EVENT count: {}, trigged from: {}", count, level.dimension())
-            
             if (count > 0) {
                 recurseTrigger(level)
                 level.eventQueue.queueEvent(createEvent(triggerTime + interval, count - 1))
