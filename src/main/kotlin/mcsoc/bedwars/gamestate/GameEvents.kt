@@ -1,5 +1,6 @@
 package mcsoc.bedwars.gamestate
 
+import com.mojang.datafixers.util.Pair
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -7,7 +8,6 @@ import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
-import mcsoc.bedwars.gamestate.GameEvent.InvisExpiryEvent
 import mcsoc.bedwars.utils.CODEC
 import mcsoc.bedwars.utils.getProgressBar
 import mcsoc.bedwars.utils.placeBlockIfValid
@@ -22,6 +22,7 @@ import net.minecraft.core.UUIDUtil
 import net.minecraft.core.Vec3i
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket
+import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket
@@ -30,6 +31,7 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.effect.MobEffects
+import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.level.GameType
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.Rotation
@@ -338,6 +340,12 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
             val player = level.getPlayerByUUID(playerId)
             if (player != null && !player.activeEffects.any { e -> e.`is`(MobEffects.INVISIBILITY) }) {
                 level.gameState.setPlayerInvisibility(playerId, false)
+                level.chunkSource.sendToTrackingPlayers(player, ClientboundSetEquipmentPacket(player.id, listOf(
+                    Pair(EquipmentSlot.HEAD, player.inventory.getItem(EquipmentSlot.HEAD.index)),
+                    Pair(EquipmentSlot.CHEST, player.inventory.getItem(EquipmentSlot.CHEST.index)),
+                    Pair(EquipmentSlot.LEGS, player.inventory.getItem(EquipmentSlot.LEGS.index)),
+                    Pair(EquipmentSlot.FEET, player.inventory.getItem(EquipmentSlot.FEET.index)),
+                )))
             }
         }
 
