@@ -96,9 +96,14 @@ private fun getKillerName(level: ServerLevel, killer: UUID): Component {
     return Component.literal("Someone")
 }
 
-
+/**
+ * Class to handle gamestate logic
+ */
 class GameManager {
     companion object {
+        /**
+         * Sets up the game, placing the map centered at `startPos`. Queues counter to the start of the game.
+         */
         fun setupGame(mapName: String, level: ServerLevel, startPos: BlockPos) {
 
             val gameState = level.gameState
@@ -200,6 +205,9 @@ class GameManager {
             level.worldBorder.setCenter(0.0, 0.0)
         }
 
+        /**
+         * Start a game which has been initialised.
+         */
         fun start(level: ServerLevel) {
             level.blockProtection.protectionEnabled = true
 

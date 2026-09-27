@@ -28,6 +28,7 @@ import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket
 import net.minecraft.network.protocol.game.ClientboundSoundPacket
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.effect.MobEffects
@@ -43,7 +44,9 @@ import kotlin.reflect.full.companionObjectInstance
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-
+/**
+ * Interface for the companion object of a GameEvent to implement
+ */
 private interface GameEventCompanion<T : GameEvent> {
     val id: String
     val codec: MapCodec<T>
@@ -59,6 +62,10 @@ fun <T : GameEvent> KClass<T>.getAllSealedSubclasses(): List<KClass<out T>> {
     }
 }
 
+/**
+ * Class to represent game events; actions that can be scheduled to trigger after some time (once `triggerTime` has
+ * passed). These are queued up to the `GameEventTracker`.
+ */
 sealed class GameEvent(protected val triggerTime: Duration, private val id: String): Comparable<GameEvent> {
     companion object {
         val REGISTRY: Map<String, MapCodec<out GameEvent>> by lazy {
@@ -79,8 +86,10 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
     override fun compareTo(other: GameEvent): Int {
         return triggerTime.compareTo(other.triggerTime)
     }
-    
-    
+
+    /**
+     * Class to represent repeating game events, actions that repeat every `interval`, `count` amount of times.
+     */
     sealed class RecursiveGameEvent<T: GameEvent>(triggerTime: Duration, id: String, protected val count: Long, private val interval: Duration) : GameEvent(triggerTime, id) {
         protected abstract fun recurseTrigger(level: ServerLevel)
         protected abstract fun concludeTrigger(level: ServerLevel)
@@ -339,10 +348,10 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
             if (player != null && !player.activeEffects.any { e -> e.`is`(MobEffects.INVISIBILITY) }) {
                 level.gameState.setPlayerInvisibility(playerId, false)
                 level.chunkSource.sendToTrackingPlayers(player, ClientboundSetEquipmentPacket(player.id, listOf(
-                    Pair(EquipmentSlot.HEAD, player.inventory.getItem(EquipmentSlot.HEAD.index)),
-                    Pair(EquipmentSlot.CHEST, player.inventory.getItem(EquipmentSlot.CHEST.index)),
-                    Pair(EquipmentSlot.LEGS, player.inventory.getItem(EquipmentSlot.LEGS.index)),
-                    Pair(EquipmentSlot.FEET, player.inventory.getItem(EquipmentSlot.FEET.index)),
+                    Pair(EquipmentSlot.HEAD, player.getItemBySlot(EquipmentSlot.HEAD)),
+                    Pair(EquipmentSlot.CHEST, player.getItemBySlot(EquipmentSlot.CHEST)),
+                    Pair(EquipmentSlot.LEGS, player.getItemBySlot(EquipmentSlot.LEGS)),
+                    Pair(EquipmentSlot.FEET, player.getItemBySlot(EquipmentSlot.FEET))
                 )))
             }
         }
