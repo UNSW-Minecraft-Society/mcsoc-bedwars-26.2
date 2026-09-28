@@ -16,6 +16,7 @@ import net.minecraft.world.item.alchemy.Potion
 import net.minecraft.world.item.alchemy.PotionContents
 import net.minecraft.world.item.enchantment.Enchantment
 import net.minecraft.world.item.enchantment.Enchantments
+import kotlin.math.abs
 
 
 const val BEDWARS_ITEM_TAG = "bedwars_item"
@@ -80,7 +81,7 @@ object BedwarsItems {
     }
 
     fun randomWoodPlanks(seed: Int): ItemStack {
-        return when (Math.abs(seed) % 12) {
+        val stack = when (abs(seed) % 12) {
             1 -> Items.ACACIA_PLANKS.defaultInstance
             2 -> Items.BAMBOO_PLANKS.defaultInstance
             3 -> Items.BIRCH_PLANKS.defaultInstance
@@ -94,6 +95,7 @@ object BedwarsItems {
             11 -> Items.WARPED_PLANKS.defaultInstance
             else -> Items.OAK_PLANKS.defaultInstance
         }
+        return stack.copyWithCount(16)
     }
 
     fun fireballItemStack(): ItemStack {
