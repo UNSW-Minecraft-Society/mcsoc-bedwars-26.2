@@ -66,6 +66,18 @@ object BedwarsItems {
         return enchantedItemStack(Items.BOW, Enchantments.PUNCH, 1, level)
     }
 
+    fun windBurstMaceItemStack(level: ServerLevel): ItemStack {
+        return enchantedItemStack(Items.MACE, Enchantments.WIND_BURST, 1, level)
+    }
+
+    fun loyaltyTridentItemStack(level: ServerLevel): ItemStack {
+        return enchantedItemStack(Items.TRIDENT, Enchantments.LOYALTY, 3, level)
+    }
+
+    fun lungeIronSpearItemStack(level: ServerLevel): ItemStack {
+        return enchantedItemStack(Items.IRON_SPEAR, Enchantments.LUNGE, 3, level)
+    }
+
     fun fireballItemStack(): ItemStack {
         return Items.FIRE_CHARGE.defaultInstance
             .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.FIREBALL.value)
