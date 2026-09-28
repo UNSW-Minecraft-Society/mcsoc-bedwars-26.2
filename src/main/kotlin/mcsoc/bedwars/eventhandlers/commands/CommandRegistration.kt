@@ -31,7 +31,8 @@ const val SOME_ARGUMENT = "some"
 const val BOOL_ARGUMENT = "bool"
 const val UPGRADE_TYPE_ARG = "type"
 const val ENTITY_TYPE_ARG = "type2"
-const val SHOP_TYPE_ARG = "type3"
+const val SHOP_TYPE_ARG = "shop_type"
+const val SHOP_CONFIG_ARG = "shop_config"
 const val CUSTOM_ITEM_ARG = "custom_item"
 
 const val PLAYERS_ARG = "players"
@@ -241,6 +242,13 @@ fun registerCommands() {
                         ctx.source.level.gameState.setPlayerInvisibility(player.uuid, state)
                         1
                     })
+                )
+            )
+            .then(Commands.literal("set_shop_config")
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
+                .then(Commands.argument(SHOP_CONFIG_ARG, StringArgumentType.word())
+                    .suggests(ShopConfigSuggestionProvider())
+                    .executes(CommandActions::setShopConfig)
                 )
             )
         )

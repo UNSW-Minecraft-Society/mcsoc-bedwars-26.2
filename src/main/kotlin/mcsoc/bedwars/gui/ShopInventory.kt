@@ -71,7 +71,7 @@ object ShopInventory {
                         ShopPlayerCustomItem({player -> BedwarsItems.powerBowItemStack(player.level())}, Items.GOLD_INGOT, 24),
                         ShopPlayerCustomItem({player -> BedwarsItems.punchBowItemStack(player.level())}, Items.EMERALD, 6),
                         ShopPlayerCustomItem({player -> BedwarsItems.knockbackStickItemStack(player.level())}, Items.GOLD_INGOT, 5),
-                        ShopItem(Items.MACE, 1, Items.EMERALD, 4),
+                        ShopItem(Items.WATER_BUCKET, 1, Items.GOLD_INGOT, 2),
 
                         ShopItem(Items.ARROW, 8, Items.GOLD_INGOT, 2),
                         ShopItem(Items.GOLDEN_APPLE, 1, Items.GOLD_INGOT, 3),
@@ -86,23 +86,24 @@ object ShopInventory {
                         ShopItem(Items.OBSIDIAN, 4, Items.EMERALD, 4),
                         ShopItem(Items.OAK_PLANKS, 16, Items.GOLD_INGOT, 4),
 
+                        ShopTeamItem(Team.entries.associateWith { Items.STAINED_GLASS.pick(it.dyeColour) },
+                            4, Items.IRON_INGOT, 12),
                         ShopTeamItem(Team.entries.associateWith { Items.DYED_TERRACOTTA.pick(it.dyeColour) }, 16, Items.IRON_INGOT, 12),
                         ShopItem(Items.PACKED_ICE, 8, Items.IRON_INGOT, 8),
                         ShopItem(Items.LADDER, 16, Items.IRON_INGOT, 4),
-                        ShopItem(Items.WATER_BUCKET, 1, Items.GOLD_INGOT, 2),
                         EmptyShopProduct(),
 
-                        ShopCustomItem(BedwarsItems::popupTowerItemStack, Items.IRON_INGOT, 8),
-                        ShopCustomItem(BedwarsItems::bridgeEggItemStack, Items.GOLD_INGOT, 4),
-                        ShopItem(Items.WIND_CHARGE, 16, Items.GOLD_INGOT, 20),
-                        ShopItem(Items.ENDER_PEARL, 1, Items.EMERALD, 1),
+                        ShopCustomItem(BedwarsItems::popupTowerItemStack, Items.IRON_INGOT, 24),
+                        ShopCustomItem(BedwarsItems::bridgeEggItemStack, Items.EMERALD, 1),
+                        ShopItem(Items.WIND_CHARGE, 12, Items.EMERALD, 1),
+                        ShopItem(Items.ENDER_PEARL, 1, Items.EMERALD, 2),
                         ShopCustomItem(BedwarsItems::playerTrackerItemStack, Items.EMERALD, 3),
 
-                        ShopCustomItem(BedwarsItems::ballOfBugsItemStack, Items.IRON_INGOT, 4),
-                        ShopCustomItem(BedwarsItems::fireballItemStack, Items.IRON_INGOT, 18),
-                        ShopCustomItem(BedwarsItems::instantTNTItemStack, Items.GOLD_INGOT, 2),
-                        ShopCustomItem(BedwarsItems::dreamDefenderItemStack, Items.IRON_INGOT, 60),
-                        ShopCustomItem(BedwarsItems::bedBruteItemStack, Items.EMERALD, 1),
+                        ShopCustomItem(BedwarsItems::ballOfBugsItemStack, Items.IRON_INGOT, 24),
+                        ShopCustomItem(BedwarsItems::fireballItemStack, Items.IRON_INGOT, 36),
+                        ShopCustomItem(BedwarsItems::instantTNTItemStack, Items.GOLD_INGOT, 4),
+                        ShopCustomItem(BedwarsItems::dreamDefenderItemStack, Items.IRON_INGOT, 120),
+                        ShopCustomItem(BedwarsItems::bedBruteItemStack, Items.EMERALD, 2),
                     )}
                     ShopType.TEAM_SHOP -> { return arrayOf(
                         EmptyShopProduct(), EmptyShopProduct(), EmptyShopProduct(), EmptyShopProduct(), EmptyShopProduct(),

@@ -15,6 +15,7 @@ import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.datatrackers.generatorState
+import mcsoc.bedwars.datatrackers.shopConfig
 import mcsoc.bedwars.entities.spawnDreamDefender
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.items.CustomItemTypes
@@ -22,6 +23,7 @@ import mcsoc.bedwars.gui.ShopGui.displayShop
 import mcsoc.bedwars.gui.ShopType
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.generators.GeneratorType
+import mcsoc.bedwars.gui.ShopConfig
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.format
 import net.minecraft.commands.CommandSourceStack
@@ -387,6 +389,17 @@ internal object CommandActions {
 
         level.gameRules.set(GameRules.PVP, false, level.server)
 
+        return 1
+    }
+
+    fun setShopConfig(ctx: CommandContext<CommandSourceStack>): Int {
+        val configInput = StringArgumentType.getString(ctx, SHOP_CONFIG_ARG)
+        ctx.source.level.shopConfig = try {
+            ShopConfig.valueOf(configInput.uppercase())
+        } catch (e: IllegalArgumentException) {
+            ctx.source.player?.sendSystemMessage(Component.literal("$configInput is not a valid entity"))
+            return 0
+        }
         return 1
     }
 }

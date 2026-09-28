@@ -13,6 +13,7 @@ import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.configloader.maploader.structures_directory
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.generators.GeneratorType
+import mcsoc.bedwars.gui.ShopConfig
 import net.minecraft.commands.CommandSourceStack
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.listDirectoryEntries
@@ -95,6 +96,16 @@ internal class ShopTypeSuggestionProvider: SuggestionProvider<CommandSourceStack
 		builder: SuggestionsBuilder
 	): CompletableFuture<Suggestions> {
 		ShopType.entries.forEach { builder.suggest(it.name.lowercase()) }
+		return builder.buildFuture()
+	}
+}
+
+internal class ShopConfigSuggestionProvider: SuggestionProvider<CommandSourceStack> {
+	override fun getSuggestions(
+		context: CommandContext<CommandSourceStack?>,
+		builder: SuggestionsBuilder
+	): CompletableFuture<Suggestions?>? {
+		ShopConfig.entries.forEach { builder.suggest(it.name.lowercase()) }
 		return builder.buildFuture()
 	}
 }
