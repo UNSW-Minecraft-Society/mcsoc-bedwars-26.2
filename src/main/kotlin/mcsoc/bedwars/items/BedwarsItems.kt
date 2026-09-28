@@ -28,6 +28,7 @@ enum class CustomItemTypes(val value: String, private val item_factory: () -> It
     BALL_OF_BUGS("ball_of_bugs", {BedwarsItems.ballOfBugsItemStack()}),
     POPUP_TOWER("popup_tower", {BedwarsItems.popupTowerItemStack()}),
     PLAYER_TRACKER("player_tracker", {BedwarsItems.playerTrackerItemStack()}),
+    SKY_WAND("sky_wand", {BedwarsItems.skyWandItemStack()}),
     DREAM_DEFENDER("dream_defender", { BedwarsItems.dreamDefenderItemStack() }),
     BED_BRUTE("bed_brute", {BedwarsItems.bedBruteItemStack()});
     
@@ -79,7 +80,7 @@ object BedwarsItems {
     }
 
     fun randomWoodPlanks(seed: Int): ItemStack {
-        return when (seed) {
+        return when (Math.abs(seed) % 12) {
             1 -> Items.ACACIA_PLANKS.defaultInstance
             2 -> Items.BAMBOO_PLANKS.defaultInstance
             3 -> Items.BIRCH_PLANKS.defaultInstance
@@ -142,6 +143,14 @@ object BedwarsItems {
             .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
             .renamedTo("Player Tracker")
             .withItemLore("Right click to look in the direction of the nearest enemy.")
+    }
+
+    fun skyWandItemStack(): ItemStack {
+        return Items.BLAZE_ROD.defaultInstance
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.SKY_WAND.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.SKY_WAND.value)
+            .renamedTo("Sky Wand")
+            .withItemLore("Hit players to send them levitating.")
     }
 
     fun dreamDefenderItemStack(): ItemStack {

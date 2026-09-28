@@ -237,7 +237,7 @@ object ShopInventory {
                         ShopPlayerUpgrade(UpgradeItemType.SHEARS,
                             arrayOf(Items.IRON_INGOT), arrayOf(15), arrayOf("Shears")
                         ),
-                        EmptyShopProduct(),
+                        ShopPlayerCustomItem({player -> BedwarsItems.lungeIronSpearItemStack(player.level())}, Items.EMERALD, 8),
 
                         // These are ShopItems
                         ShopItem(Items.ARROW, 8, Items.GOLD_INGOT, 2),
@@ -247,11 +247,11 @@ object ShopInventory {
                         ShopPlayerCustomItem({player -> BedwarsItems.knockbackStickItemStack(player.level())}, Items.GOLD_INGOT, 5),
                         ShopPlayerCustomItem({player -> BedwarsItems.windBurstMaceItemStack(player.level())}, Items.EMERALD, 6),
 
-                        ShopPlayerCustomItem({player -> BedwarsItems.lungeIronSpearItemStack(player.level())}, Items.GOLD_INGOT, 24),
                         ShopPlayerCustomItem({player -> BedwarsItems.loyaltyTridentItemStack(player.level())}, Items.EMERALD, 2),
                         ShopCustomItem({BedwarsItems.potionItemStack(Potions.STRONG_SWIFTNESS, 0.5f)}, Items.EMERALD, 1),
                         ShopCustomItem({BedwarsItems.potionItemStack(Potions.STRONG_LEAPING, 0.5f)}, Items.EMERALD, 1),
                         ShopCustomItem({BedwarsItems.potionItemStack(Potions.INVISIBILITY, 0.25f)}, Items.EMERALD, 2),
+                        EmptyShopProduct(),
                         EmptyShopProduct(),
 
                         ShopTeamItem(Team.entries.associateWith { Items.WOOL.pick(it.dyeColour) },
@@ -275,7 +275,7 @@ object ShopInventory {
                         ShopCustomItem(BedwarsItems::instantTNTItemStack, Items.GOLD_INGOT, 2),
                         ShopCustomItem(BedwarsItems::bridgeEggItemStack, Items.GOLD_INGOT, 4),
                         ShopCustomItem(BedwarsItems::playerTrackerItemStack, Items.EMERALD, 3),
-                        EmptyShopProduct(),
+                        ShopCustomItem(BedwarsItems::skyWandItemStack, Items.EMERALD, 3),
 
                         ShopCustomItem(BedwarsItems::ballOfBugsItemStack, Items.IRON_INGOT, 4),
                         ShopItem(Items.HAPPY_GHAST_SPAWN_EGG, 1, Items.GOLD_INGOT, 16),

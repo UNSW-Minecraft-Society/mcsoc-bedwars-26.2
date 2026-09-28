@@ -8,6 +8,7 @@ import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.gamestate.GameManager
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents
 import mcsoc.bedwars.entities.CustomEntityInteractions
+import net.fabricmc.fabric.api.event.player.AttackEntityCallback
 import net.fabricmc.fabric.api.event.player.UseEntityCallback
 import net.fabricmc.fabric.api.event.player.UseItemCallback
 import net.minecraft.server.level.ServerLevel
@@ -33,6 +34,9 @@ fun registerItemCallbacks() {
     }
     ProjectileHitCallback.EVENT.register { projectile, result ->
         return@register CustomItemInteraction.triggerCustomProjectileHitEffect(projectile, result)
+    }
+    AttackEntityCallback.EVENT.register { player, level, hand, entity, hitResult ->
+        return@register CustomItemInteraction.triggerCustomItemEffect(player, level, hand, hitResult, entity)
     }
 }
 

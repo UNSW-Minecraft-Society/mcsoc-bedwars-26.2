@@ -25,6 +25,7 @@ import net.minecraft.world.InteractionResult
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.item.PrimedTnt
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.entity.projectile.Projectile
@@ -43,11 +44,12 @@ import kotlin.math.roundToInt
 const val FIREBALL_SPEED = 1.0
 const val FIREBALL_POWER = 3
 const val BRIDGE_EGG_OFFSET = -0.5
-const val PLAYER_TRACKER_RANGE = 20
-const val PLAYER_TRACKER_DURATION = 60 // in ticks
+const val SKY_WAND_LEVITATION_DURATION = 30
+const val SKY_WAND_LEVITATION_AMPLIFIER = 5
+const val SKY_WAND_SLOW_FALL_DURATION = 120
 
 object CustomItemInteraction {
-    fun triggerCustomItemEffect(player: Player, level: Level, hand: InteractionHand, hitResult: HitResult? = null): InteractionResult {
+    fun triggerCustomItemEffect(player: Player, level: Level, hand: InteractionHand, hitResult: HitResult? = null, entity: Entity? = null): InteractionResult {
         val item = player.getItemInHand(hand)
         if (level.isClientSide || level !is ServerLevel)
             return InteractionResult.PASS
@@ -61,6 +63,7 @@ object CustomItemInteraction {
             CustomItemTypes.INSTANT_TNT.value -> return useInstantTNTEffect(player, level, item, hitResult)
             CustomItemTypes.POPUP_TOWER.value -> return usePopupTowerEffect(player, level, item, hitResult, team)
             CustomItemTypes.PLAYER_TRACKER.value -> return usePlayerTrackerEffect(player, level, item, team)
+            CustomItemTypes.SKY_WAND.value -> return useSkyWandEffect(player, level, item, hitResult, entity)
             CustomItemTypes.DREAM_DEFENDER.value -> return useDreamDefenderEffect(player, level, item, hitResult, team)
             CustomItemTypes.BED_BRUTE.value -> return useBedBruteEffect(player, level, item, hitResult, team)
         }
@@ -184,6 +187,14 @@ object CustomItemInteraction {
         item.set(DataComponents.LODESTONE_TRACKER, LodestoneTracker(Optional.of(enemyPos), true))
         player.sendSystemMessage(Component.literal("Enemy ${distance.roundToInt()} blocks away."))
         player.teleportTo(level, player.x, player.y, player.z, emptySet(), displacement.pitchDeg(), displacement.yawDeg(), true)
+        return InteractionResult.SUCCESS
+    }
+
+    private fun useSkyWandEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, entity: Entity?): InteractionResult {
+        if (hitResult !is HitResult || level !is ServerLevel || entity !is LivingEntity)
+            return InteractionResult.PASS
+        entity.addEffect(MobEffectInstance(MobEffects.LEVITATION, SKY_WAND_LEVITATION_DURATION, SKY_WAND_LEVITATION_AMPLIFIER), player)
+        entity.addEffect(MobEffectInstance(MobEffects.LEVITATION, SKY_WAND_SLOW_FALL_DURATION, 0), player)
         return InteractionResult.SUCCESS
     }
 
