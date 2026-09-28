@@ -33,6 +33,7 @@ import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.EquipmentSlot
+import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.level.GameType
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.Rotation
@@ -348,10 +349,10 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
             if (player != null && !player.activeEffects.any { e -> e.`is`(MobEffects.INVISIBILITY) }) {
                 level.gameState.setPlayerInvisibility(playerId, false)
                 level.chunkSource.sendToTrackingPlayers(player, ClientboundSetEquipmentPacket(player.id, listOf(
-                    Pair(EquipmentSlot.HEAD, player.getItemBySlot(EquipmentSlot.HEAD)),
-                    Pair(EquipmentSlot.CHEST, player.getItemBySlot(EquipmentSlot.CHEST)),
-                    Pair(EquipmentSlot.LEGS, player.getItemBySlot(EquipmentSlot.LEGS)),
-                    Pair(EquipmentSlot.FEET, player.getItemBySlot(EquipmentSlot.FEET))
+                    Pair(EquipmentSlot.HEAD, player.inventory.getItem(EquipmentSlot.HEAD.getIndex(36))),
+                    Pair(EquipmentSlot.CHEST, player.inventory.getItem(EquipmentSlot.CHEST.getIndex(36))),
+                    Pair(EquipmentSlot.LEGS, player.inventory.getItem(EquipmentSlot.LEGS.getIndex(36))),
+                    Pair(EquipmentSlot.FEET, player.inventory.getItem(EquipmentSlot.FEET.getIndex(36)))
                 )))
             }
         }
