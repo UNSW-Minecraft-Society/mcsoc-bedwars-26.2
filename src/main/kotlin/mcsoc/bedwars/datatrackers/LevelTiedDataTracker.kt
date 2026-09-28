@@ -7,6 +7,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
 import mcsoc.bedwars.datatrackers.generatorstate.GeneratorDataTracker
+import mcsoc.bedwars.gui.ShopConfig
 import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.util.datafix.DataFixTypes
@@ -32,6 +33,7 @@ abstract class LevelTiedData {
 
 private class LevelTiedDataTracker() : SavedData() {
     var clockSpeed: Double = 1.0
+    var shopConfig: ShopConfig = ShopConfig.NORMAL
     private val tracked_data: MutableMap<LevelDataType<*>, LevelTiedData> = mutableMapOf()
     constructor(map: Map<LevelDataType<*>, LevelTiedData>) : this() {
         tracked_data.putAll(map)
@@ -101,4 +103,7 @@ val ServerLevel.clock: TickExposer get() = levelTiedData.getDataOfType(LevelData
 var ServerLevel.clockSpeed: Double
     get() = levelTiedData.clockSpeed
     set(v) {levelTiedData.clockSpeed = v}
+var ServerLevel.shopConfig: ShopConfig
+    get() = levelTiedData.shopConfig
+    set(v) {levelTiedData.shopConfig = v}
 // put other level-tied data getters here
