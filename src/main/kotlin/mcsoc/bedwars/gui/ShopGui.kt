@@ -45,7 +45,7 @@ object ShopGui {
                 }
             }
 
-            val gui = object : SimpleGui(MenuType.GENERIC_9x5, player, false) {
+            val gui = object : SimpleGui(ShopInventory.getShopMenuType(shopType, player.level().shopConfig), player, false) {
                 override fun onClick(
                     index: Int,
                     type: ClickType?,

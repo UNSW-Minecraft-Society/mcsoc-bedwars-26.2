@@ -78,6 +78,23 @@ object BedwarsItems {
         return enchantedItemStack(Items.IRON_SPEAR, Enchantments.LUNGE, 3, level)
     }
 
+    fun randomWoodPlanks(seed: Int): ItemStack {
+        return when (seed) {
+            1 -> Items.ACACIA_PLANKS.defaultInstance
+            2 -> Items.BAMBOO_PLANKS.defaultInstance
+            3 -> Items.BIRCH_PLANKS.defaultInstance
+            4 -> Items.CHERRY_PLANKS.defaultInstance
+            5 -> Items.CRIMSON_PLANKS.defaultInstance
+            6 -> Items.DARK_OAK_PLANKS.defaultInstance
+            7 -> Items.JUNGLE_PLANKS.defaultInstance
+            8 -> Items.MANGROVE_PLANKS.defaultInstance
+            9 -> Items.PALE_OAK_PLANKS.defaultInstance
+            10 -> Items.SPRUCE_PLANKS.defaultInstance
+            11 -> Items.WARPED_PLANKS.defaultInstance
+            else -> Items.OAK_PLANKS.defaultInstance
+        }
+    }
+
     fun fireballItemStack(): ItemStack {
         return Items.FIRE_CHARGE.defaultInstance
             .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.FIREBALL.value)
