@@ -52,7 +52,6 @@ object ShopGui {
                     action: ContainerInput?,
                     element: GuiElement?
                 ): Boolean {
-                    this.player.sendSystemMessage(Component.literal(type.toString()), false)
                     updateItems(this)
                     return super.onClick(index, type, action, element)
                 }
