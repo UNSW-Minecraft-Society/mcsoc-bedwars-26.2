@@ -56,7 +56,7 @@ object BedwarsItems {
     }
 
     fun knockbackStickItemStack(level: ServerLevel): ItemStack {
-        return enchantedItemStack(Items.BREEZE_ROD, Enchantments.KNOCKBACK, 1, level)
+        return enchantedItemStack(Items.BLAZE_ROD, Enchantments.KNOCKBACK, 1, level)
         .renamedTo("Knockback Stick")
     }
 
@@ -148,11 +148,11 @@ object BedwarsItems {
     }
 
     fun skyWandItemStack(): ItemStack {
-        return Items.BLAZE_ROD.defaultInstance
+        return Items.BREEZE_ROD.defaultInstance
             .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.SKY_WAND.value)
             .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.SKY_WAND.value)
             .renamedTo("Sky Wand")
-            .withItemLore("Hit players to send them levitating.")
+            .withItemLore("Hit living entities to send them levitating.")
     }
 
     fun dreamDefenderItemStack(): ItemStack {

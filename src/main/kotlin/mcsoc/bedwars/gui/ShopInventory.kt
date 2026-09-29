@@ -280,7 +280,7 @@ object ShopInventory {
                         ShopCustomItem(BedwarsItems::ballOfBugsItemStack, Items.IRON_INGOT, 4),
                         ShopItem(Items.HAPPY_GHAST_SPAWN_EGG, 1, Items.GOLD_INGOT, 16),
                         ShopTeamItem(Team.entries.associateWith { Items.HARNESS.pick(it.dyeColour) },
-                            16, Items.IRON_INGOT, 4),
+                            1, Items.IRON_INGOT, 4),
                         ShopCustomItem(BedwarsItems::dreamDefenderItemStack, Items.IRON_INGOT, 60),
                         ShopCustomItem(BedwarsItems::bedBruteItemStack, Items.EMERALD, 1),
                         EmptyShopProduct(),

@@ -44,9 +44,9 @@ import kotlin.math.roundToInt
 const val FIREBALL_SPEED = 1.0
 const val FIREBALL_POWER = 3
 const val BRIDGE_EGG_OFFSET = -0.5
-const val SKY_WAND_LEVITATION_DURATION = 30
-const val SKY_WAND_LEVITATION_AMPLIFIER = 5
-const val SKY_WAND_SLOW_FALL_DURATION = 120
+const val SKY_WAND_LEVITATION_DURATION = 20
+const val SKY_WAND_LEVITATION_AMPLIFIER = 8
+const val SKY_WAND_SLOW_FALL_DURATION = 900
 
 object CustomItemInteraction {
     fun triggerCustomItemEffect(player: Player, level: Level, hand: InteractionHand, hitResult: HitResult? = null, entity: Entity? = null): InteractionResult {
@@ -63,7 +63,7 @@ object CustomItemInteraction {
             CustomItemTypes.INSTANT_TNT.value -> return useInstantTNTEffect(player, level, item, hitResult)
             CustomItemTypes.POPUP_TOWER.value -> return usePopupTowerEffect(player, level, item, hitResult, team)
             CustomItemTypes.PLAYER_TRACKER.value -> return usePlayerTrackerEffect(player, level, item, team)
-            CustomItemTypes.SKY_WAND.value -> return useSkyWandEffect(player, level, item, hitResult, entity)
+            CustomItemTypes.SKY_WAND.value -> return useSkyWandEffect(player, level, item, entity)
             CustomItemTypes.DREAM_DEFENDER.value -> return useDreamDefenderEffect(player, level, item, hitResult, team)
             CustomItemTypes.BED_BRUTE.value -> return useBedBruteEffect(player, level, item, hitResult, team)
         }
@@ -190,12 +190,11 @@ object CustomItemInteraction {
         return InteractionResult.SUCCESS
     }
 
-    private fun useSkyWandEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, entity: Entity?): InteractionResult {
-        if (hitResult !is HitResult || level !is ServerLevel || entity !is LivingEntity)
+    private fun useSkyWandEffect(player: Player, level: Level, item: ItemStack, entity: Entity?): InteractionResult {
+        if (level !is ServerLevel || entity !is LivingEntity)
             return InteractionResult.PASS
-        BedwarsPlugin.LOGGER.info("Applying sky wand effect to $entity")
-        entity.addEffect(MobEffectInstance(MobEffects.LEVITATION, SKY_WAND_LEVITATION_DURATION, SKY_WAND_LEVITATION_AMPLIFIER), player)
-        entity.addEffect(MobEffectInstance(MobEffects.LEVITATION, SKY_WAND_SLOW_FALL_DURATION, 0), player)
+        entity.addEffect(MobEffectInstance(MobEffects.LEVITATION, SKY_WAND_LEVITATION_DURATION, SKY_WAND_LEVITATION_AMPLIFIER, false, false), player)
+        entity.addEffect(MobEffectInstance(MobEffects.LEVITATION, SKY_WAND_SLOW_FALL_DURATION, 0, false, false), player)
         return InteractionResult.SUCCESS
     }
 
