@@ -502,7 +502,8 @@ class GameManager {
                 if (gameState.getGamePhase() == GamePhase.ACTIVE) {
                     // periodic things to hit when game active
                     val nextPeriod = gameState.getGamePeriod().next
-                    if (nextPeriod?.startTime != null && time >= nextPeriod.startTime) {
+                    val nextStartTime = nextPeriod?.startTime
+                    if (nextStartTime != null && time >= nextStartTime) {
                         GameEffects.triggerNewPeriod(level, nextPeriod)
                         gameState.setGamePeriod(nextPeriod)
                         gameState.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach { p ->

@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorExposer
 import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorHolder
 import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorState
@@ -50,15 +51,18 @@ enum class GamePhase : StringRepresentable {
     override fun getSerializedName(): String = this.name
 }
 
-enum class GamePeriod(val next: GamePeriod?, val startTime: Duration?, val title: String, val notif: String) : StringRepresentable {
-    INACTIVE(null, null, "Inactive", ""),
-    TERMINAL(null, 15.minutes, "Game End", "Game has ended."),
-    DEATHMATCH(TERMINAL, 10.minutes, "Deathmatch", "Deathmatch has begun."),
-    EMERALD_III(DEATHMATCH, 7.minutes, "Emerald Generator III", "Emerald generators have been upgraded."),
-    DIAMOND_III(EMERALD_III, 6.minutes, "Diamond Generator III", "Diamond generators have been upgraded."),
-    EMERALD_II(DIAMOND_III, 4.minutes, "Emerald Generator II", "Emerald generators have been upgraded."),
-    DIAMOND_II(EMERALD_II, 3.minutes, "Diamond Generator II", "Diamond generators have been upgraded."),
-    INITIAL(DIAMOND_II, null, "Game Start", "Game has begun.");
+enum class GamePeriod(val next: GamePeriod?, val title: String, val notif: String) : StringRepresentable {
+    INACTIVE(null, "Inactive", ""),
+    TERMINAL(null, "Game End", "Game has ended."),
+    DEATHMATCH(TERMINAL, "Deathmatch", "Deathmatch has begun."),
+    EMERALD_III(DEATHMATCH, "Emerald Generator III", "Emerald generators have been upgraded."),
+    DIAMOND_III(EMERALD_III, "Diamond Generator III", "Diamond generators have been upgraded."),
+    EMERALD_II(DIAMOND_III, "Emerald Generator II", "Emerald generators have been upgraded."),
+    DIAMOND_II(EMERALD_II, "Diamond Generator II", "Diamond generators have been upgraded."),
+    INITIAL(DIAMOND_II, "Game Start", "Game has begun.");
+    
+    val startTime: Duration? 
+        get() = BedwarsConfigData.generator_times[this]
     
     companion object {
         val CODEC: Codec<GamePeriod> = StringRepresentable.fromEnum(GamePeriod::values)
