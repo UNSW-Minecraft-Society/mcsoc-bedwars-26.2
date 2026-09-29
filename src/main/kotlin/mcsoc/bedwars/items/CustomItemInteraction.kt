@@ -46,7 +46,7 @@ const val FIREBALL_POWER = 3
 const val BRIDGE_EGG_OFFSET = -0.5
 const val SKY_WAND_LEVITATION_DURATION = 20
 const val SKY_WAND_LEVITATION_AMPLIFIER = 8
-const val SKY_WAND_SLOW_FALL_DURATION = 900
+const val SKY_WAND_SLOW_FALL_DURATION = 60
 
 object CustomItemInteraction {
     fun triggerCustomItemEffect(player: Player, level: Level, hand: InteractionHand, hitResult: HitResult? = null, entity: Entity? = null): InteractionResult {
@@ -194,7 +194,7 @@ object CustomItemInteraction {
         if (level !is ServerLevel || entity !is LivingEntity)
             return InteractionResult.PASS
         entity.addEffect(MobEffectInstance(MobEffects.LEVITATION, SKY_WAND_LEVITATION_DURATION, SKY_WAND_LEVITATION_AMPLIFIER, false, false), player)
-        entity.addEffect(MobEffectInstance(MobEffects.LEVITATION, SKY_WAND_SLOW_FALL_DURATION, 0, false, false), player)
+        entity.addEffect(MobEffectInstance(MobEffects.SLOW_FALLING, SKY_WAND_SLOW_FALL_DURATION, 0, false, false), player)
         return InteractionResult.SUCCESS
     }
 
