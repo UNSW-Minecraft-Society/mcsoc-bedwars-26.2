@@ -193,6 +193,7 @@ object CustomItemInteraction {
     private fun useSkyWandEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, entity: Entity?): InteractionResult {
         if (hitResult !is HitResult || level !is ServerLevel || entity !is LivingEntity)
             return InteractionResult.PASS
+        BedwarsPlugin.LOGGER.info("Applying sky wand effect to $entity")
         entity.addEffect(MobEffectInstance(MobEffects.LEVITATION, SKY_WAND_LEVITATION_DURATION, SKY_WAND_LEVITATION_AMPLIFIER), player)
         entity.addEffect(MobEffectInstance(MobEffects.LEVITATION, SKY_WAND_SLOW_FALL_DURATION, 0), player)
         return InteractionResult.SUCCESS
