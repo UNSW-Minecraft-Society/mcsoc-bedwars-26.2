@@ -34,7 +34,8 @@ data class LoadedPluginConfig(
     @SerialName("Debug")
     val debug: LoadedDebugConfig = LoadedDebugConfig(),
     @SerialName("Game")
-    val game: LoadedGameConfig = LoadedGameConfig()
+    val game: LoadedGameConfig = LoadedGameConfig(),
+    val mapPasteOperationsPerSecond: UInt = 1000u
 ) : LoadedConfigExposer<LoadedPluginConfig> {
     object Reader : TomlConfigReader<LoadedPluginConfig>("config.toml", LoadedPluginConfig.serializer()) {
         override fun defaultConfigData(): LoadedPluginConfig {
@@ -59,6 +60,7 @@ interface BedwarsConfigExposer {
     val debug: Boolean
     val generator_times: Map<GamePeriod, Duration>
     val map_data: Map<String, MapData>
+    val paste_ops_per_second: UInt
     
     fun placeMap(map_name: String, level: ServerLevel, pos: BlockPos): Boolean {
         return map_data[map_name]?.let {
@@ -91,6 +93,8 @@ object BedwarsConfigData : BedwarsConfigExposer {
     
     override val map_data: Map<String, MapData>
         get() = map_config.maps
+    override val paste_ops_per_second: UInt
+        get() = plugin_config.mapPasteOperationsPerSecond
         
     fun initialise() {
         LoadedPluginConfig.Reader.initialise()
