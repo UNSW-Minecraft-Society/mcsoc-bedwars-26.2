@@ -9,6 +9,7 @@ import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.generators.GeneratorType
 import com.mojang.datafixers.util.Pair
 import mcsoc.bedwars.utils.Team
+import mcsoc.bedwars.utils.inWholeTicks
 import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket
@@ -25,7 +26,7 @@ import java.util.UUID
 // useful if method for switching teams is added
 const val MAX_TEAM_PLAYERS = 4
 const val MIN_DEATHMATCH_BORDER_SIZE = 5.0
-const val DEATHMATCH_BORDER_TIME = 5L*60*20
+val DEATHMATCH_BORDER_TIME by lazy {(GamePeriod.TERMINAL.startTime!! - GamePeriod.DEATHMATCH.startTime!!).inWholeTicks}
 
 object TeamEffects {
     // On start of game run this to add players (probably just active)
