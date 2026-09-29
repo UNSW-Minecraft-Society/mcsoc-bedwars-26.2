@@ -16,6 +16,7 @@ import net.minecraft.world.item.alchemy.Potion
 import net.minecraft.world.item.alchemy.PotionContents
 import net.minecraft.world.item.enchantment.Enchantment
 import net.minecraft.world.item.enchantment.Enchantments
+import kotlin.math.abs
 
 
 const val BEDWARS_ITEM_TAG = "bedwars_item"
@@ -27,7 +28,10 @@ enum class CustomItemTypes(val value: String, private val item_factory: () -> It
     INSTANT_TNT("instant_tnt", {BedwarsItems.instantTNTItemStack()}),
     BALL_OF_BUGS("ball_of_bugs", {BedwarsItems.ballOfBugsItemStack()}),
     POPUP_TOWER("popup_tower", {BedwarsItems.popupTowerItemStack()}),
-    PLAYER_TRACKER("player_tracker", {BedwarsItems.playerTrackerItemStack()});
+    PLAYER_TRACKER("player_tracker", {BedwarsItems.playerTrackerItemStack()}),
+    SKY_WAND("sky_wand", {BedwarsItems.skyWandItemStack()}),
+    DREAM_DEFENDER("dream_defender", { BedwarsItems.dreamDefenderItemStack() }),
+    BED_BRUTE("bed_brute", {BedwarsItems.bedBruteItemStack()});
     
     fun giveToPlayer(player: ServerPlayer?): Int {
         return if (player is ServerPlayer && player.addItem(item_factory())) 1
@@ -36,11 +40,14 @@ enum class CustomItemTypes(val value: String, private val item_factory: () -> It
 }
 
 object BedwarsItems {
-    fun potionItemStack(potion: Holder<Potion>): ItemStack {
+    fun potionItemStack(potion: Holder<Potion>, durationScale: Float): ItemStack {
         val stack = Items.POTION.defaultInstance
         stack.set(DataComponents.POTION_CONTENTS, PotionContents(potion))
+        stack.set(DataComponents.POTION_DURATION_SCALE, durationScale)
         return stack
     }
+
+    fun potionItemStack(potion: Holder<Potion>) = potionItemStack(potion, 1f)
 
     fun enchantedItemStack(item: Item, enchantment: ResourceKey<Enchantment>, enchLevel: Int, level: ServerLevel): ItemStack {
         val stack = item.defaultInstance
@@ -49,7 +56,7 @@ object BedwarsItems {
     }
 
     fun knockbackStickItemStack(level: ServerLevel): ItemStack {
-        return enchantedItemStack(Items.BREEZE_ROD, Enchantments.KNOCKBACK, 2, level)
+        return enchantedItemStack(Items.BLAZE_ROD, Enchantments.KNOCKBACK, 1, level)
         .renamedTo("Knockback Stick")
     }
 
@@ -59,6 +66,36 @@ object BedwarsItems {
 
     fun punchBowItemStack(level: ServerLevel): ItemStack {
         return enchantedItemStack(Items.BOW, Enchantments.PUNCH, 1, level)
+    }
+
+    fun windBurstMaceItemStack(level: ServerLevel): ItemStack {
+        return enchantedItemStack(Items.MACE, Enchantments.WIND_BURST, 1, level)
+    }
+
+    fun loyaltyTridentItemStack(level: ServerLevel): ItemStack {
+        return enchantedItemStack(Items.TRIDENT, Enchantments.LOYALTY, 3, level)
+    }
+
+    fun lungeIronSpearItemStack(level: ServerLevel): ItemStack {
+        return enchantedItemStack(Items.IRON_SPEAR, Enchantments.LUNGE, 3, level)
+    }
+
+    fun randomWoodPlanks(seed: Int): ItemStack {
+        val stack = when (abs(seed) % 12) {
+            1 -> Items.ACACIA_PLANKS.defaultInstance
+            2 -> Items.BAMBOO_PLANKS.defaultInstance
+            3 -> Items.BIRCH_PLANKS.defaultInstance
+            4 -> Items.CHERRY_PLANKS.defaultInstance
+            5 -> Items.CRIMSON_PLANKS.defaultInstance
+            6 -> Items.DARK_OAK_PLANKS.defaultInstance
+            7 -> Items.JUNGLE_PLANKS.defaultInstance
+            8 -> Items.MANGROVE_PLANKS.defaultInstance
+            9 -> Items.PALE_OAK_PLANKS.defaultInstance
+            10 -> Items.SPRUCE_PLANKS.defaultInstance
+            11 -> Items.WARPED_PLANKS.defaultInstance
+            else -> Items.OAK_PLANKS.defaultInstance
+        }
+        return stack.copyWithCount(16)
     }
 
     fun fireballItemStack(): ItemStack {
@@ -103,10 +140,34 @@ object BedwarsItems {
     }
 
     fun playerTrackerItemStack(): ItemStack {
-        return Items.COMPASS.defaultInstance
+        return Items.SPYGLASS.defaultInstance
             .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
             .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.PLAYER_TRACKER.value)
             .renamedTo("Player Tracker")
-            .withItemLore("Points to where the nearest player on an enemy team was, Right click to update the location.")
+            .withItemLore("Right click to look in the direction of the nearest enemy.")
+    }
+
+    fun skyWandItemStack(): ItemStack {
+        return Items.BREEZE_ROD.defaultInstance
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.SKY_WAND.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.SKY_WAND.value)
+            .renamedTo("Sky Wand")
+            .withItemLore("Hit living entities to send them levitating.")
+    }
+
+    fun dreamDefenderItemStack(): ItemStack {
+        return Items.IRON_GOLEM_SPAWN_EGG.defaultInstance
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.DREAM_DEFENDER.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.DREAM_DEFENDER.value)
+            .renamedTo("Dream Defender Spawn Egg")
+            .withItemLore("Spawn an iron golem on your team that lasts one minute.")
+    }
+
+    fun bedBruteItemStack(): ItemStack {
+        return Items.PIGLIN_BRUTE_SPAWN_EGG.defaultInstance
+            .withTag(BEDWARS_ITEM_TAG, CustomItemTypes.BED_BRUTE.value)
+            .withTag(CUSTOM_ITEM_TAG, CustomItemTypes.BED_BRUTE.value)
+            .renamedTo("Bed Brute Spawn Egg")
+            .withItemLore("Spawn a temporary piglin brute on your team.")
     }
 }

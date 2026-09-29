@@ -10,7 +10,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.encoding.encodeStructure
-import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader.Companion.place
@@ -19,13 +18,12 @@ import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.CylindricalBlockPos
-import mcsoc.bedwars.utils.CylindricalBlockPos.Companion.toCylindricalBlockPos
+import mcsoc.bedwars.utils.CylindricalBlockPosSerialiser
 import mcsoc.bedwars.utils.FLOAT_PI
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.BlockPos
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.phys.Vec3
-import kotlin.math.PI
 import kotlin.reflect.KClass
 
 
@@ -65,33 +63,35 @@ private enum class LoadedShopkeeper(private val type: CustomEntityType) {
     PERSONAL(CustomEntityType.PLAYER_SHOPKEEPER),
     TEAM(CustomEntityType.TEAM_SHOPKEEPER);
     
-    fun place(level: ServerLevel, pos: BlockPos) {
-        spawnShopkeeper(level, Vec3.atBottomCenterOf(pos), type)
+    fun place(level: ServerLevel, pos: BlockPos, yRot: Float) {
+        val yRot = yRot * 180 / FLOAT_PI
+        spawnShopkeeper(level, Vec3.atBottomCenterOf(pos), type){
+            it.teleportTo(level, it.x, it.y, it.z, emptySet(), yRot, it.xRot, true)
+            it.setYBodyRot(yRot)
+            it.yHeadRot = yRot
+        }
     }
 } 
 
 
 @Serializable
 private data class ProtectionZoneData(
-    val c1: @Serializable(with=BlockPosSerialiser::class) BlockPos = BlockPos(0, 0, 0), 
-    val c2: @Serializable(with=BlockPosSerialiser::class) BlockPos = BlockPos(0, 0, 0)
+    val corner1: @Serializable(with=CylindricalBlockPosSerialiser::class) CylindricalBlockPos = CylindricalBlockPos(),
+    val corner2: @Serializable(with=CylindricalBlockPosSerialiser::class) CylindricalBlockPos = CylindricalBlockPos()
 )
 
 private interface Island {
     val cpos: CylindricalBlockPos
     val structure: String
     val protection_zones: Iterable<ProtectionZoneData>
-    open val rotation: (Float) -> Double get() = {0.0}
+    val rotation: (Float) -> Double get() = {0.0}
     
     fun place(level: ServerLevel, origin: BlockPos): BlockPos {
         val pos = cpos.toBlockPos(origin)
-        BedwarsPlugin.LOGGER.info("island at")
-        BedwarsPlugin.LOGGER.info("  cpos: {}", cpos)
-        BedwarsPlugin.LOGGER.info("  pos : {}", pos)
         level.place(structure, pos, rotation(cpos.angle))
         
-        for (zone in protection_zones) {
-            level.blockProtection.registerProtectionZone(zone.c1.offset(pos), zone.c2.offset(pos))
+        for ((c1, c2) in protection_zones) {
+            level.blockProtection.registerProtectionZone(c1.relToMapOrigin(pos, cpos), c2.relToMapOrigin(pos, cpos))
         }
         
         return pos
@@ -103,9 +103,8 @@ private interface GeneratorIsland : Island {
 
     override fun place(level: ServerLevel, origin: BlockPos): BlockPos {
         val pos = super.place(level, origin)
-        for (generator_pos in generators) {
-            val generator = generator_pos.first
-            generator.place(level, generator_pos.second.relToMapOrigin(pos, cpos))
+        for ((generator, second) in generators) {
+            generator.place(level, second.relToMapOrigin(pos, cpos))
         }
         return pos
     } 
@@ -139,9 +138,8 @@ private data class BaseIslandData(
         val pos = super.place(level, origin)
         level.gameState.setTeamSpawn(team, Vec3.atBottomCenterOf(spawn_position.relToMapOrigin(pos, cpos)))
         level.gameState.setTeamBedPosition(team, bed_position.relToMapOrigin(pos, cpos))
-        for (shop_pos in shops) {
-            val shop = shop_pos.first
-            shop.place(level, shop_pos.second.relToMapOrigin(pos, cpos))
+        for ((shop, second) in shops) {
+            shop.place(level, second.relToMapOrigin(pos, cpos), FLOAT_PI - cpos.angle)
         }
         return pos
     }
@@ -157,9 +155,9 @@ data class MapData private constructor(
     private val misc_islands: List<@Serializable(with=IslandDataSerialiser::class) IslandData>,
 ) {
     constructor() : this(
-        GeneratorIslandData(generators = listOf(Pair(LoadedGeneratorType.Emerald, CylindricalBlockPos(0F, 0F, 0)))), 
-        listOf(BaseIslandData()), 
-        listOf(GeneratorIslandData()), 
+        GeneratorIslandData(generators = listOf(Pair(LoadedGeneratorType.Emerald, CylindricalBlockPos(0F, 0F, 0)))),
+        listOf(BaseIslandData()),
+        listOf(GeneratorIslandData()),
         listOf(IslandData())
     )
     
@@ -204,38 +202,6 @@ data class MapData private constructor(
  *      structure: String
  *  ]
  */
-
-object BlockPosSerialiser: KSerializer<BlockPos> {
-    override val descriptor = buildClassSerialDescriptor("BlockPos") {
-        element<Int>("x") // 0
-        element<Int>("y") // 1
-        element<Int>("z") // 2
-    }
-    override fun serialize(encoder: Encoder, value: BlockPos) {
-        encoder.encodeStructure(descriptor) {
-            encodeIntElement(descriptor, 0, value.x)
-            encodeIntElement(descriptor, 1, value.y)
-            encodeIntElement(descriptor, 2, value.z)
-        }
-    }
-    override fun deserialize(decoder: Decoder): BlockPos = decoder.decodeStructure(descriptor) {
-        var x = 0
-        var y = 0
-        var z = 0
-        
-        while (true) {
-            when (val index = decodeElementIndex(descriptor)) {
-                CompositeDecoder.DECODE_DONE -> break
-                0 -> x = decodeIntElement(descriptor, index)
-                1 -> y = decodeIntElement(descriptor, index)
-                2 -> z = decodeIntElement(descriptor, index)
-                else -> error("Unexpected index: $index")
-            }
-        }
-        
-        BlockPos(x, y, z)
-    }
-}
 
 private object GeneratorTypeSerialiser: KSerializer<LoadedGeneratorType> {
     override val descriptor = buildClassSerialDescriptor("GeneratorType") {

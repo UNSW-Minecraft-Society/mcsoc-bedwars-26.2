@@ -56,6 +56,10 @@ private class GeneratorDataStore() : GeneratorsHolder {
         genUpgrades[type] = (genUpgrades[type] ?: 0) + 1
     }
 
+    override fun resetGenUpgrades() {
+        genUpgrades.clear()
+    }
+
     fun tick() {
         getGenerators().forEach(Generator::tick)
     }
@@ -77,7 +81,7 @@ class GeneratorDataTracker : LevelTiedData, GeneratorsExposer {
         }
     }
 
-    override val type get() = LevelDataType.GeneratorState
+    override fun getType() = LevelDataType.GeneratorState
 
     private val generator_data: GeneratorDataStore
 
@@ -120,5 +124,9 @@ class GeneratorDataTracker : LevelTiedData, GeneratorsExposer {
     override fun clearGenerators() {
         setDirty()
         generator_data.clearGenerators()
+    }
+    override fun resetGenUpgrades() {
+        setDirty()
+        generator_data.resetGenUpgrades()
     }
 }

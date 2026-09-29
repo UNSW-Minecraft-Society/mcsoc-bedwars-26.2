@@ -48,7 +48,9 @@ abstract class StructureLoader {
         this.level_key = level_key
         if (StructureLoader.loaders_map[level_key] != null) throw IndexOutOfBoundsException("Cannot register multiple schematic loaders per world!")
         StructureLoader.loaders_map[level_key] = this
-        ServerTickEvents.END_SERVER_TICK.register(::placeQueuedStructures)
+        ServerTickEvents.END_SERVER_TICK.register{
+            placeQueuedStructures(it)
+        }
     }
     
     internal abstract fun loadStructure(structure_name: String, pos: BlockPos, rot: Double): Boolean

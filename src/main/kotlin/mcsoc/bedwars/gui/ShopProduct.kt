@@ -126,7 +126,6 @@ abstract class AbstractShopItem : ShopProduct {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player
             val inventory = player.inventory
-            BedwarsPlugin.LOGGER.info("item out: {}", getItemStack())
             if (clickType == ClickType.MOUSE_LEFT) {
                 purchaseUnit(player, {inventory.add(getItemStack().copy())})
             } else if (clickType == ClickType.MOUSE_LEFT_SHIFT) {
@@ -207,7 +206,6 @@ class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
             val player = gui.player
             setShopPlayer(player)
             val inventory = player.inventory
-            BedwarsPlugin.LOGGER.info("item out: {}", getItemStack())
             if (clickType == ClickType.MOUSE_LEFT) {
                 purchaseUnit(player, {inventory.add(getItemStack().copy())})
             } else if (clickType == ClickType.MOUSE_LEFT_SHIFT) {
@@ -250,6 +248,7 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
     override fun getClickCallback(): GuiElement.ClickCallback {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player
+            setShopPlayer(player)
             val gameState = player.level().gameState
             purchaseUnit(player, fun(): Boolean {
                 gameState.upgradeItem(player, playerUpgrade)

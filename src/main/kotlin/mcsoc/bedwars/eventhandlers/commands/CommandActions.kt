@@ -5,10 +5,8 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import mcsoc.bedwars.BedwarsPlugin
-import mcsoc.bedwars.items.BedwarsItems
 import mcsoc.bedwars.TeamEffects
 import mcsoc.bedwars.datatrackers.blockProtection
-import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
 import mcsoc.bedwars.datatrackers.blockprotection.ProtectionZone
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.configloader.MapData
@@ -17,24 +15,32 @@ import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.datatrackers.generatorState
+import mcsoc.bedwars.datatrackers.shopConfig
+import mcsoc.bedwars.entities.spawnDreamDefender
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.items.CustomItemTypes
 import mcsoc.bedwars.gui.ShopGui.displayShop
 import mcsoc.bedwars.gui.ShopType
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.generators.GeneratorType
+import mcsoc.bedwars.gui.ShopConfig
+import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.format
 import net.minecraft.commands.CommandSourceStack
+import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.commands.arguments.coordinates.Vec3Argument
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
-import net.minecraft.server.level.ServerPlayer
 import net.minecraft.network.chat.TextColor
-import net.minecraft.world.phys.AABB
-import net.minecraft.world.item.ItemStack
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.level.GameType
+import net.minecraft.world.level.gamerules.GameRules
 import net.minecraft.world.phys.Vec3
 
+
+private const val LOBBY_NAME = "lobby"
 
 private fun setProtectionZoneMsg(p1: BlockPos, p2: BlockPos): () -> Component = 
         {Component.literal("Created new protection zone between ${p1.format} and ${p2.format}")}
@@ -61,17 +67,18 @@ private fun blockProtectionSetMsg(state: Boolean): () -> Component {
     }
 }
 
+private fun placeStructureByName(level: ServerLevel, map_name: String, pos: BlockPos): Boolean = level.place(map_name, pos).join()
+
+
 internal object CommandActions {
     fun placeStructure(ctx: CommandContext<CommandSourceStack>): Int {
         val map_name = StringArgumentType.getString(ctx, MAP_NAME_ARGUMENT)
         val pos = BlockPosArgument.getLoadedBlockPos(ctx, POSITION_ARGUMENT)
         
         val source = ctx.source
-        
         val level = source.level
         
-        
-        return if (!level.place(map_name, pos).join()) {
+        return if (!placeStructureByName(level, map_name, pos)) {
             source.sendFailure(Component.literal("Failed to place $map_name"))
             0
         } else {
@@ -136,11 +143,12 @@ internal object CommandActions {
         return 1
     }
 
-    // Ideally only use for testing. Start command creates teams now
-    // Will need to make a new command that stores a number of teams in future - refer to bedhunt
-    // for template
-    fun assignTeams(ctx: CommandContext<CommandSourceStack>): Int {
-        TeamEffects.createTeamsWithPlayers(ctx.source.level)
+    fun assignPlayersToTeam(ctx: CommandContext<CommandSourceStack>): Int {
+        TeamEffects.assignPlayersToTeam(
+            ctx.source.level,
+            Team.valueOf(StringArgumentType.getString(ctx, TEAM_ARG).uppercase()),
+            EntityArgument.getPlayers(ctx, PLAYERS_ARG).map(Player::getUUID)
+        )
         return 1
     }
 
@@ -226,7 +234,25 @@ internal object CommandActions {
         when (type) {
             CustomEntityType.PLAYER_SHOPKEEPER -> spawnShopkeeper(player.level(), posInput, type)
             CustomEntityType.TEAM_SHOPKEEPER -> spawnShopkeeper(player.level(), posInput, type)
+            else -> {}
         }
+        return 1
+    }
+
+    fun summonDreamDefender(ctx: CommandContext<CommandSourceStack>): Int {
+        val player = ctx.source.player ?: run {
+            ctx.source.sendFailure(Component.literal("Command must be run by a player"))
+            return 0
+        }
+        val posInput = Vec3Argument.getVec3(ctx, POSITION_ARGUMENT)
+        val teamInput = StringArgumentType.getString(ctx, TEAM_ARG)
+        val team = try {
+            Team.valueOf(teamInput.uppercase())
+        } catch (e: IllegalArgumentException) {
+            player.sendSystemMessage(Component.literal("$teamInput is not a valid team"))
+            return 0
+        }
+        spawnDreamDefender(player.level(), posInput, team)
         return 1
     }
 
@@ -294,7 +320,7 @@ internal object CommandActions {
     }
 
     fun addTeamGenerator(ctx: CommandContext<CommandSourceStack>): Int {
-        val teamArg = StringArgumentType.getString(ctx, GEN_TEAM_ARG)
+        val teamArg = StringArgumentType.getString(ctx, TEAM_ARG)
         val bpos: BlockPos = BlockPosArgument.getBlockPos(ctx, POSITION_ARGUMENT
         ).above()
         val pos = Vec3.atBottomCenterOf(bpos)
@@ -327,7 +353,7 @@ internal object CommandActions {
     }
 
     fun upgradeTeamGen(ctx: CommandContext<CommandSourceStack>): Int {
-        val teamArg = StringArgumentType.getString(ctx, GEN_TEAM_ARG)
+        val teamArg = StringArgumentType.getString(ctx, TEAM_ARG)
         val team = ctx.source.level.gameState.getActiveTeams().find { it.getName() == teamArg }
         if (team == null) {
             ctx.source.sendFailure(Component.literal("$teamArg is not a valid team"))
@@ -335,6 +361,45 @@ internal object CommandActions {
         }
 
         ctx.source.level.gameState.upgradeGen(team)
+        return 1
+    }
+    
+    fun setupLobby(ctx: CommandContext<CommandSourceStack>): Int {
+        val source = ctx.source
+        val level = source.level
+        val pos = BlockPosArgument.getBlockPos(ctx, POSITION_ARGUMENT)
+        
+        if (!placeStructureByName(level, LOBBY_NAME, pos)) {
+            source.sendFailure(Component.literal("Failed to place the lobby!"))
+            return 0
+        } else {
+            source.sendSystemMessage(Component.literal("Placed the lobby at ${pos.format}"))
+        }
+        
+        val vec3_pos = Vec3.atBottomCenterOf(pos)
+        for (player in level.players()) {
+            player.teleportTo(
+                level, vec3_pos.x, vec3_pos.y + 1, vec3_pos.z,
+                emptySet(), 0F, 0F, false
+            )
+
+            player.inventory.clearContent()
+            player.setGameMode(GameType.ADVENTURE)
+        }
+
+        level.gameRules.set(GameRules.PVP, false, level.server)
+
+        return 1
+    }
+
+    fun setShopConfig(ctx: CommandContext<CommandSourceStack>): Int {
+        val configInput = StringArgumentType.getString(ctx, SHOP_CONFIG_ARG)
+        ctx.source.level.shopConfig = try {
+            ShopConfig.valueOf(configInput.uppercase())
+        } catch (e: IllegalArgumentException) {
+            ctx.source.player?.sendSystemMessage(Component.literal("$configInput is not a valid entity"))
+            return 0
+        }
         return 1
     }
 }

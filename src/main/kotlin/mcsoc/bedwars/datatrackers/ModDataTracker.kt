@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorExposer
 import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorHolder
 import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorState
@@ -17,41 +18,60 @@ import net.minecraft.server.level.ServerPlayer
 import mcsoc.bedwars.upgrades.TeamUpgrade
 import mcsoc.bedwars.upgrades.TeamUpgradeType
 import mcsoc.bedwars.upgrades.TrapUpgrade
-import mcsoc.bedwars.utils.inWholeTicks
 import kotlin.time.Duration
-import kotlin.time.TimeSource
 import mcsoc.bedwars.utils.Team
+import mcsoc.bedwars.utils.ticks
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup
 import net.minecraft.core.BlockPos
+import net.minecraft.util.StringRepresentable
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.player.Player
-import net.minecraft.world.level.saveddata.SavedData
 import java.util.UUID
 import net.minecraft.world.phys.Vec3
 import java.util.Optional
-import kotlin.math.ceil
 import kotlin.uuid.Uuid
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 import net.minecraft.world.scores.Scoreboard
+import kotlin.time.Duration.Companion.minutes
 
-enum class GamePhase {
+enum class GamePhase : StringRepresentable {
     STARTING,
     ACTIVE,
     ENDED,
-    INACTIVE
+    INACTIVE;
+    
+    companion object {
+        val CODEC: Codec<GamePhase> = StringRepresentable.fromEnum(GamePhase::values)
+    }
+
+    override fun getSerializedName(): String = this.name
 }
 
-enum class GamePeriod {
-    ACTIVE,
-    DEATHMATCH,
-    INACTIVE
+enum class GamePeriod(val next: GamePeriod?, val title: String, val notif: String) : StringRepresentable {
+    INACTIVE(null, "Inactive", ""),
+    TERMINAL(null, "Game End", "Game has ended."),
+    DEATHMATCH(TERMINAL, "Deathmatch", "Deathmatch has begun."),
+    EMERALD_III(DEATHMATCH, "Emerald Generator III", "Emerald generators have been upgraded."),
+    DIAMOND_III(EMERALD_III, "Diamond Generator III", "Diamond generators have been upgraded."),
+    EMERALD_II(DIAMOND_III, "Emerald Generator II", "Emerald generators have been upgraded."),
+    DIAMOND_II(EMERALD_II, "Diamond Generator II", "Diamond generators have been upgraded."),
+    INITIAL(DIAMOND_II, "Game Start", "Game has begun.");
+    
+    val startTime: Duration? 
+        get() = BedwarsConfigData.generator_times[this]
+    
+    companion object {
+        val CODEC: Codec<GamePeriod> = StringRepresentable.fromEnum(GamePeriod::values)
+    }
+
+    override fun getSerializedName(): String = this.name
 }
 
-private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord, PlayerTimeRecord, PlayerStatsRecord {
+private class PlayerDataRecord() : PlayerInvisHolder, PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord, PlayerTimeRecord, PlayerStatsRecord {
     companion object {
         val TOOL_UPGRADES_CODEC: Codec<HashMap<UpgradeItemType, UpgradableItem>> =
             Codec.unboundedMap(UpgradeItemType.CODEC, Codec.STRING).xmap(
@@ -68,14 +88,17 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
         ).apply(it, ::PlayerDataRecord)}
     }
 
+    override var isInvis: Boolean = false
     private var life_state: LifeState = LifeState.ALIVE
     private var team: Team = Team.NONE
     private var toolUpgrades = HashMap<UpgradeItemType, UpgradableItem>()
 
-    private var respawn_ticks: Int = 0
-    private var respawn_seconds: Int = 0
-    private var respawn_second_passed: Boolean = false
-
+    private var time_internal: Duration = Duration.ZERO
+    override val time get() = RESPAWN_TIME - time_internal
+    
+    override val timerTick: Int get() = 0
+    override var timerSecond: Int = 0
+    
     private var kills: Int = 0
     private var final_kills: Int = 0
     private var deaths: Int = 0
@@ -122,27 +145,16 @@ private class PlayerDataRecord() : PlayerStateRecord, PlayerTeamState, PlayerUpg
         toolUpgrades.remove(item)
     }
 
-    override fun getRespawnSeconds(): Int {
-        return respawn_seconds
+    override fun tick() {
+        if (time < Duration.ZERO) return
+        
+        val old_time = time
+        time_internal += 1.ticks
+        timerSecond = (old_time.inWholeSeconds - time.inWholeSeconds).toInt()
     }
 
-    override fun decrementPlayerRespawnTicks() {
-        if (respawn_ticks > 0) {
-            respawn_ticks -= 1
-            if (ceil((respawn_ticks / 20.0)) < respawn_seconds) {
-                respawn_seconds -= 1
-                respawn_second_passed = true
-            } else respawn_second_passed = false
-        }
-    }
-
-    override fun resetPlayerRespawnTime() {
-        respawn_ticks = RESPAWN_TIME * 20
-        respawn_seconds = RESPAWN_TIME
-    }
-
-    override fun getSecondPassed(): Boolean {
-        return respawn_second_passed
+    override fun reset() {
+        time_internal = Duration.ZERO
     }
 
     override fun getKills(): Int {
@@ -201,44 +213,50 @@ private class TeamDataRecord(
             BlockPos.CODEC.fieldOf("bed_position").forGetter(TeamDataRecord::bedPosition),
             Codec.INT.fieldOf("gen_upgrade").forGetter(TeamDataRecord::genUpgrade),
             Vec3.CODEC.fieldOf("spawn").forGetter(TeamDataRecord::spawn),
-            UUIDUtil.CODEC.optionalFieldOf("bed_breaker").forGetter{Optional.ofNullable(it.bedBreaker)},
+            UUIDUtil.CODEC.optionalFieldOf("bed_breaker").forGetter{ r -> Optional.ofNullable(r.bedBreaker)},
         ).apply(it, ::TeamDataRecord)}
 
         private const val PLAYER_RANGE = 15
+        private const val TRAP_RANGE = 15
         private const val TRAP_COOLDOWN = 10 * 20
     }
 
     private var trapCooldown = 0
 
-    fun tick(level: ServerLevel) {
-
+    override fun tick(level: ServerLevel) {
         if (getUpgrade(TeamUpgradeType.HEAL_POOL)) {
             players
                 .mapNotNull {level.getPlayerByUUID(it)}
                 .filter { spawn.distanceTo(it.position()) < PLAYER_RANGE }
-                .forEach { it.addEffect(MobEffectInstance(MobEffects.REGENERATION, 1, 0, false, false)) }
+                .forEach {
+                    it.addEffect(MobEffectInstance(MobEffects.REGENERATION, 2 * 20, 0, false, false))
+                }
         }
 
         val haste = getUpgrade(TeamUpgradeType.HASTE)
         if (haste > 0) {
             players
                 .mapNotNull {level.getPlayerByUUID(it)}
-                .forEach { it.addEffect(MobEffectInstance(MobEffects.HASTE, 1, haste - 1, false, false)) }
+                .forEach {
+                    it.addEffect(MobEffectInstance(MobEffects.HASTE, 2 * 20, haste - 1, false, false))
+                }
         }
 
         if (trapCooldown > 0) {
             trapCooldown--
             return
         }
-
-        val playersInBase = PlayerLookup.around(level, spawn, PLAYER_RANGE.toDouble())
+        
+        val playersInBase = PlayerLookup.around(level, bedPosition, TRAP_RANGE.toDouble())
         val enemies = playersInBase.filter { it.uuid !in players }
         val teammates = playersInBase.filter {it.uuid in players}
         if (traps.isNotEmpty() && enemies.isNotEmpty()) {
             val trap = popTrap()
             trap?.enemyEffect(level, enemies)
             trap?.teamEffect(level, teammates)
-            // notify teammates about trap being triggered with title and sfx
+            
+            trapCooldown = TRAP_COOLDOWN
+            // todo notify teammates about trap being triggered with title and sfx
         }
     }
 
@@ -297,36 +315,32 @@ private class TeamDataRecord(
 }
 
 
-private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, Ticker, PlayerUpgradesHolder, PlayerTimeHolder, PlayerStatsHolder, TeamGeneratorHolder, TeamUpgradesHolder,
+private class ModDataStore() : PlayerInvisSwitcher, PlayerStateHolder, TeamStateHolder, PlayerUpgradesHolder, PlayerTimeHolder, PlayerStatsHolder, TeamGeneratorHolder, TeamUpgradesHolder,
     LoadedMapHolder {
     companion object {
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
             Codec.unboundedMap(UUIDUtil.STRING_CODEC, PlayerDataRecord.CODEC)
                 .fieldOf("player_data_map")
                 .forGetter(ModDataStore::player_data_map),
-
             Codec.unboundedMap(Team.CODEC, TeamDataRecord.CODEC)
                 .fieldOf("teams_map")
                 .forGetter(ModDataStore::teams_map),
-
-            Codec.STRING.xmap(Duration::parseIsoString, Duration::toIsoString)
-                .fieldOf("game_timer")
-                .forGetter(ModDataStore::game_timer),
-                    
             BlockPos.CODEC
                 .fieldOf("map_centre")
                 .forGetter(ModDataStore::map_centre),
+            GamePeriod.CODEC
+                .fieldOf("game_period")
+                .forGetter(ModDataStore::game_period),
+            GamePhase.CODEC
+                .fieldOf("game_phase")
+                .forGetter(ModDataStore::game_phase)
         ).apply(it, ::ModDataStore)}
     }
+
     
     private val player_data_map = HashMap<UUID, PlayerDataRecord>()
     private val teams_map = HashMap<Team, TeamDataRecord>()
     private val active_players = mutableSetOf<UUID>()
-    private var prev_tick_time = TimeSource.Monotonic.markNow()
-    private var tick_delta = Duration.ZERO
-    private var game_timer = Duration.ZERO
-    private var timer_tick = false
-    private var timer_second = false
     private var game_phase = GamePhase.INACTIVE
     private var game_period = GamePeriod.INACTIVE
     override var map_centre: BlockPos = BlockPos(0, 0, 0)
@@ -334,48 +348,27 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     private constructor(
         playerMap: Map<UUID, PlayerDataRecord>,
         teamMap: Map<Team, TeamDataRecord>,
-        timer: Duration,
-        map_centre: BlockPos
+        map_centre: BlockPos,
+        game_period: GamePeriod,
+        game_phase: GamePhase
     ) : this() {
         this.player_data_map.putAll(playerMap)
         this.teams_map.putAll(teamMap)
-        this.game_timer = timer
         this.map_centre = map_centre
+        this.game_phase = game_phase
+        this.game_period = game_period
     }
 
 
     override fun tick() {
-        tick_delta = prev_tick_time.elapsedNow()
-        prev_tick_time = TimeSource.Monotonic.markNow()
-
-        timer_tick = game_timer.inWholeTicks != (game_timer + tick_delta).inWholeTicks
-        timer_second = game_timer.inWholeSeconds != (game_timer + tick_delta).inWholeSeconds
-
         // Tick down timers for all individual players
         if (game_phase == GamePhase.ACTIVE) {
-            active_players.forEach { uuid ->
-                val record = player_data_map.getOrDefault(uuid, null)
-                if (record != null && timer_tick) record.decrementPlayerRespawnTicks()
+            for (uuid in active_players) {
+                val record = player_data_map[uuid] ?: continue
+                record.tick()
             }
         }
-
-        game_timer += tick_delta
     }
-
-    fun tickTeams(level: ServerLevel) {
-        getActiveTeams().forEach { teams_map[it]?.tick(level) }
-    }
-
-    override fun getGameTime() = game_timer
-
-    override fun resetGameTime() {
-        game_timer = Duration.ZERO
-        prev_tick_time = TimeSource.Monotonic.markNow()
-    }
-
-    override fun getTimerTick() = timer_tick
-
-    override fun getTimerSecond() = timer_second
 
     fun getGamePhase(): GamePhase {
         return game_phase
@@ -392,6 +385,8 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     fun setGamePeriod(period: GamePeriod) {
         game_period = period
     }
+    
+    override fun getPlayerState(player: UUID): PlayerInvisHolder = player_data_map.getOrPut(player) { PlayerDataRecord() }
 
     private fun getPlayerData(id: UUID): PlayerDataRecord {
         return player_data_map.getOrPut(id) { PlayerDataRecord() }
@@ -405,11 +400,6 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
         player_data_map.clear()
         teams_map.clear()
         active_players.clear()
-        prev_tick_time = TimeSource.Monotonic.markNow()
-        tick_delta = Duration.ZERO
-        game_timer = Duration.ZERO
-        timer_tick = false
-        timer_second = false
         game_phase = GamePhase.INACTIVE
         game_period = GamePeriod.INACTIVE
         map_centre = BlockPos(0, 0, 0)
@@ -432,27 +422,28 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
     }
 
     override fun getTeam(team: Team): TeamDataRecord {
-        return teams_map[team] ?: run {
-            BedwarsPlugin.LOGGER.error("getTeam: ", InvalidTeamException(team))
-            TeamDataRecord()
-        }
+        return teams_map.getOrPut(team){TeamDataRecord()}
     }
 
-    override fun getActiveTeams(): List<Team> = teams_map.keys.toList()
+    override fun getActiveTeams(): Iterable<Team> = teams_map.keys.toSet()
 
     override fun initialiseTeams(teams: Set<Team>, scoreboard: Scoreboard) {
-        teams_map.clear()
-        
-        for (team in scoreboard.playerTeams) scoreboard.removePlayerTeam(team)
-        teams.forEach { 
-            teams_map[it] = TeamDataRecord()
-            scoreboard.addPlayerTeam(it.getName())
+        val new_teams_map: MutableMap<Team, TeamDataRecord> = mutableMapOf()
+        teams.forEach{
+            new_teams_map[it] = TeamDataRecord()
+            
+            val scoreboardTeam = scoreboard.addPlayerTeam(it.getName())
+            scoreboardTeam.color = Optional.of(it.teamColour)
+            scoreboardTeam.isAllowFriendlyFire = false
         }
-        
-        for (scoreboardTeam in scoreboard.playerTeams) scoreboardTeam.isAllowFriendlyFire = false
+        new_teams_map.putAll(teams_map.filter{it.key in teams})
+        teams_map.clear()
+        teams_map.putAll(new_teams_map)
     }
 
     override fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?) {
+        if (team == Team.NONE) return
+        
         getTeam(team).addPlayer(player)
         getPlayerData(player).setTeamName(team)
         val team = scoreboard.getPlayerTeam(team.getName()) ?: run {
@@ -471,14 +462,14 @@ private class ModDataStore() : SavedData(), PlayerStateHolder, TeamStateHolder, 
 }
 
 
-class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, TickExposer, PlayerUpgradesExposer, PlayerTimeExposer, PlayerStatsExposer, TeamGeneratorExposer, TeamUpgradesExposer,
+class ModDataTracker : PlayerInvisSwitchExposer, LevelTiedData, PlayerStateExposer, TeamStateExposer, PlayerUpgradesExposer, PlayerTimeExposer, PlayerStatsExposer, TeamGeneratorExposer, TeamUpgradesExposer,
     LoadedMapExposer {
     companion object {
         val CODEC: MapCodec<ModDataTracker> = RecordCodecBuilder.mapCodec{ it.group(
             ModDataStore.CODEC.fieldOf("mod_data").forGetter(ModDataTracker::mod_data)
         ).apply(it, ::ModDataTracker)}
     }
-    override val type get() = LevelDataType.GameState
+    override fun getType() = LevelDataType.GameState
 
     private val mod_data: ModDataStore
     private constructor(mod_data: ModDataStore) {
@@ -494,17 +485,10 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
         setDirty()
         mod_data.tick()
     }
-    fun tickTeams(level: ServerLevel) {
+    override fun tickTeams(level: ServerLevel) {
         setDirty()
         mod_data.tickTeams(level)
     }
-    override fun getGameTime(): Duration = mod_data.getGameTime()
-    override fun resetGameTime() {
-        setDirty()
-        mod_data.resetGameTime()
-    }
-    override fun getTimerTick(): Boolean = mod_data.getTimerTick()
-    override fun getTimerSecond(): Boolean = mod_data.getTimerSecond()
 
     fun getGamePhase(): GamePhase = mod_data.getGamePhase()
     fun setGamePhase(phase: GamePhase) {
@@ -534,7 +518,7 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
 
     override fun getPlayersInTeam(team: Team): List<UUID> = mod_data.getPlayersInTeam(team)
     override fun getTeamSpawn(team: Team): Vec3 = mod_data.getTeamSpawn(team)
-    override fun getActiveTeams(): List<Team> = mod_data.getActiveTeams()
+    override fun getActiveTeams(): Iterable<Team> = mod_data.getActiveTeams()
     override fun setBedAlive(team: Team, state: Boolean) {
         setDirty()
         mod_data.setBedAlive(team, state)
@@ -598,7 +582,6 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
     override fun <T> upgrade(team: Team, type: TeamUpgradeType<T>, level: ServerLevel) {
         setDirty()
         mod_data.upgrade(team, type, level)
-        if (level == null) return
         for (playerId in getPlayersInTeam(team)) {
             val player = level.getPlayerByUUID(playerId)
             if (player is ServerPlayer) updateItems(player)
@@ -621,7 +604,7 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
         setDirty()
         mod_data.resetPlayerRespawnTime(player)
     }
-    override fun playerTimerSecondPassed(player: ServerPlayer): Boolean = mod_data.playerTimerSecondPassed(player)
+    override fun playerTimerSecondPassed(player: ServerPlayer): Int = mod_data.playerTimerSecondPassed(player)
 
     override fun getPlayerKills(uuid: UUID): Int = mod_data.getPlayerKills(uuid)
     override fun getPlayerFinalKills(uuid: UUID): Int = mod_data.getPlayerFinalKills(uuid)
@@ -640,4 +623,7 @@ class ModDataTracker : LevelTiedData, PlayerStateExposer, TeamStateExposer, Tick
         setDirty()
         mod_data.addTrap(team, type)
     }
+    
+    override fun setPlayerInvisibility(player: UUID, invis: Boolean) = mod_data.setPlayerInvisibility(player, invis)
+    override fun getPlayerInvisibility(player: UUID): Boolean = mod_data.getPlayerInvisibility(player)
 }

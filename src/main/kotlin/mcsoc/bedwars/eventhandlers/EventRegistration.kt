@@ -1,17 +1,22 @@
 package mcsoc.bedwars.eventhandlers
 
+import mcsoc.bedwars.datatrackers.clock
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
+import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.gamestate.GameManager
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
+
 fun registerEventHandlers() {
-    ServerTickEvents.END_LEVEL_TICK.register{ level ->
+    ServerTickEvents.END_LEVEL_TICK.register{level ->
+        level.clock.tick()
+        level.eventQueue.tick()
         GameManager.tick(level)
     }
 
-    ServerLifecycleEvents.SERVER_STARTED.register { server ->
+    ServerLifecycleEvents.SERVER_STARTED.register{server ->
         server.allLevels.forEach {
             it.generatorState.placeGenerators(server)
         }
@@ -30,6 +35,8 @@ fun registerEventHandlers() {
     registerBlockUseEvents()
     registerAfterDeathEvent()
     registerAfterRespawnEvent()
-    registerEquipmentChangeEvents()
+    registerPlayerDamageEvent()
+    registerAfterEffectAppliedEvent()
+    // registerEquipmentChangeEvents()
     registerPlayerJoinEvent()
 }

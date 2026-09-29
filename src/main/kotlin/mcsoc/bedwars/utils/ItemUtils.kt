@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component
 import net.minecraft.core.registries.Registries
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.util.Unit
 import net.minecraft.world.item.component.ItemLore
 import net.minecraft.world.item.enchantment.Enchantment
 import net.minecraft.world.item.equipment.trim.ArmorTrim
@@ -17,7 +18,8 @@ import net.minecraft.world.item.equipment.trim.TrimPattern
 
 
 fun ItemStack.withTag(key: String, value: String): ItemStack {
-    val tag = CompoundTag()
+    val customData = this.get(DataComponents.CUSTOM_DATA)
+    val tag = customData?.copyTag() ?: CompoundTag()
     tag.putString(key, value)
     this.set(DataComponents.CUSTOM_DATA, CustomData.of(tag))
     return this
@@ -64,4 +66,13 @@ fun ItemStack.withTrim(material: ResourceKey<TrimMaterial>, pattern: ResourceKey
     val trim = ArmorTrim(registryAccess.getOrThrow(material), registryAccess.getOrThrow(pattern))
     this.set(DataComponents.TRIM, trim)
     return this
+}
+
+fun ItemStack.withUnbreakable(): ItemStack {
+    this.set(DataComponents.UNBREAKABLE, Unit.INSTANCE)
+    return this
+}
+
+fun ItemStack.withUndroppable(): ItemStack {
+    return this.withTag("undroppable", "true")
 }

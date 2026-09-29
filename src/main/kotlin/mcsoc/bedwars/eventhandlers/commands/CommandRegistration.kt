@@ -2,18 +2,22 @@ package mcsoc.bedwars.eventhandlers.commands
 
 
 import com.mojang.brigadier.arguments.BoolArgumentType
+import com.mojang.brigadier.arguments.DoubleArgumentType
+import com.mojang.brigadier.arguments.FloatArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import mcsoc.bedwars.BedwarsPlugin
+import mcsoc.bedwars.datatrackers.clockSpeed
+import mcsoc.bedwars.datatrackers.gameState
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
+import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.resources.Identifier
 import net.minecraft.server.permissions.PermissionLevel
 import net.minecraft.commands.arguments.coordinates.Vec3Argument
 import net.minecraft.server.permissions.Permissions
-
 
 const val ROOT_NODE = "bedwars"
 
@@ -27,15 +31,21 @@ const val SOME_ARGUMENT = "some"
 const val BOOL_ARGUMENT = "bool"
 const val UPGRADE_TYPE_ARG = "type"
 const val ENTITY_TYPE_ARG = "type2"
-const val SHOP_TYPE_ARG = "type3"
+const val SHOP_TYPE_ARG = "shop_type"
+const val SHOP_CONFIG_ARG = "shop_config"
 const val CUSTOM_ITEM_ARG = "custom_item"
 
+const val PLAYERS_ARG = "players"
+
 const val GEN_TYPE_ARG = "type"
-const val GEN_TEAM_ARG = "team"
+const val TEAM_ARG = "team"
 const val GEN_ID_ARG = "id"
 
-val BEDWARS_GM_PERMISSION_NODE = Identifier.fromNamespaceAndPath(BedwarsPlugin.MOD_ID, "runner")
+val BEDWARS_GM_PERMISSION_NODE = BedwarsPlugin.id("runner")
+val BEDWARS_ADMIN_PERMISSION_NODE = BedwarsPlugin.id("admin")
 val GAMEMASTER_PERMS_REQUIREMENT: (CommandSourceStack) -> Boolean = {it.permissionContext.checkPermission(BEDWARS_GM_PERMISSION_NODE, PermissionLevel.GAMEMASTERS)}
+val ADMIN_PERMS_REQUIREMENT: (CommandSourceStack) -> Boolean = {it.permissionContext.checkPermission(BEDWARS_ADMIN_PERMISSION_NODE, PermissionLevel.OWNERS)}
+
 
 /**
  * Function to register commands for the plugin
@@ -73,9 +83,13 @@ fun registerCommands() {
             .then(Commands.literal("get_team")
             .executes(CommandActions::getTeam)
             )
-            .then(Commands.literal("assign_teams")
+            .then(Commands.literal("assign_to_team")
             .requires(GAMEMASTER_PERMS_REQUIREMENT)
-            .executes(CommandActions::assignTeams)
+                .then(Commands.argument(TEAM_ARG, StringArgumentType.word())
+                    .then(Commands.argument(PLAYERS_ARG, EntityArgument.players())
+                    .executes(CommandActions::assignPlayersToTeam)
+                    )
+                )
             )
             .then(Commands.literal("upgrade")
             .requires(GAMEMASTER_PERMS_REQUIREMENT)
@@ -109,6 +123,7 @@ fun registerCommands() {
                 )
             )
             .then(Commands.literal("place_structure")
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
                 .then(Commands.argument(MAP_NAME_ARGUMENT, StringArgumentType.string())
                 .suggests(AvailableStructureSuggestionProvider())
                     .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
@@ -117,6 +132,7 @@ fun registerCommands() {
                 )
             )
             .then(Commands.literal("place_map")
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
                 .then(Commands.argument(MAP_NAME_ARGUMENT, StringArgumentType.string())
                 .suggests(LoadedMapSuggestionProvider())
                     .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
@@ -124,12 +140,18 @@ fun registerCommands() {
                     )
                 )
             )
+            .then(Commands.literal("setup")
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
+                .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
+                .executes(CommandActions::setupLobby)
+                )
+            )
             .then(Commands.literal("reload")
-            .requires{it.permissionContext.permissionLevel().isEqualOrHigherThan(PermissionLevel.GAMEMASTERS)}
+            .requires(GAMEMASTER_PERMS_REQUIREMENT)
             .executes(CommandActions::reload)
             )
             .then(Commands.literal("generator")
-                .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR) }
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
                 .then(Commands.literal("add")
                     .then(Commands.argument(GEN_TYPE_ARG, StringArgumentType.word())
                         .suggests(GeneratorSuggestionProvider())
@@ -140,7 +162,7 @@ fun registerCommands() {
                     )
                 ).then(Commands.literal("add_team_gen")
                     .then(Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
-                        .then(Commands.argument(GEN_TEAM_ARG, StringArgumentType.word())
+                        .then(Commands.argument(TEAM_ARG, StringArgumentType.word())
                             .suggests(TeamSuggestionProvider())
                             .executes(CommandActions::addTeamGenerator)
                         )
@@ -163,33 +185,70 @@ fun registerCommands() {
                     )
                 )
                 .then(Commands.literal("upgrade_team_gen")
-                    .then(Commands.argument(GEN_TEAM_ARG, StringArgumentType.word())
+                    .then(Commands.argument(TEAM_ARG, StringArgumentType.word())
                         .suggests(TeamSuggestionProvider())
                         .executes(CommandActions::upgradeTeamGen)
                     )
                 )
             )
             .then(Commands.literal("give_custom_item")
-                .requires {it.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)}
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
                 .then(Commands.argument(CUSTOM_ITEM_ARG, StringArgumentType.word())
                     .suggests(CustomItemsSuggestionsProvider())
                     .executes(CommandActions::giveCustomItem)
                 )
             )
             .then(Commands.literal("open_shop_gui").executes(CommandActions::openShop)
-                .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
                 .then(Commands.argument(SHOP_TYPE_ARG, StringArgumentType.word())
                     .suggests(ShopTypeSuggestionProvider())
                     .executes(CommandActions::openShop)
                 )
             )
             .then(Commands.literal("summon_shopkeeper")
-                .requires { source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR)}
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
                 .then(Commands.argument(POSITION_ARGUMENT, Vec3Argument.vec3())
                     .then(Commands.argument(ENTITY_TYPE_ARG, StringArgumentType.word())
                         .suggests(EntityTypeSuggestionProvider())
                         .executes(CommandActions::summonShopkeeper)
                     )
+                )
+            )
+            .then(Commands.literal("summon_dream_defender")
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
+                .then(Commands.argument(POSITION_ARGUMENT, Vec3Argument.vec3())
+                    .then(Commands.argument(TEAM_ARG, StringArgumentType.word())
+                        .suggests(TeamSuggestionProvider())
+                        .executes(CommandActions::summonDreamDefender)
+                    )
+                )
+            )
+            .then(Commands.literal("set_clock_speed")
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
+                .then(Commands.argument("clockspeed", DoubleArgumentType.doubleArg(0.0, 10.0))
+                .executes{ctx ->
+                    ctx.source.level.clockSpeed = DoubleArgumentType.getDouble(ctx, "clockspeed")
+                    1
+                })
+            )
+            .then(Commands.literal("set_invis")
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
+                .then(Commands.argument("player", EntityArgument.player())
+                    .then(Commands.argument("state", BoolArgumentType.bool())
+                    .executes{ctx ->
+                        val player = EntityArgument.getEntity(ctx, "player")
+                        val state = BoolArgumentType.getBool(ctx, "state")
+                        
+                        ctx.source.level.gameState.setPlayerInvisibility(player.uuid, state)
+                        1
+                    })
+                )
+            )
+            .then(Commands.literal("set_shop_config")
+                .requires(GAMEMASTER_PERMS_REQUIREMENT)
+                .then(Commands.argument(SHOP_CONFIG_ARG, StringArgumentType.word())
+                    .suggests(ShopConfigSuggestionProvider())
+                    .executes(CommandActions::setShopConfig)
                 )
             )
         )

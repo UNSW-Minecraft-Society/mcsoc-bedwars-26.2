@@ -9,36 +9,36 @@ enum class TrapUpgrade {
     BLINDNESS {
         override fun enemyEffect(level: ServerLevel, players: List<ServerPlayer>) {
             players.forEach { 
-                it.addEffect(MobEffectInstance(MobEffects.SLOWNESS, 8, 1, false, false))
-                it.addEffect(MobEffectInstance(MobEffects.BLINDNESS, 8, 0, false, false))
+                it.addEffect(MobEffectInstance(MobEffects.SLOWNESS, 8 * 20, 1, false, false))
+                it.addEffect(MobEffectInstance(MobEffects.BLINDNESS, 8 * 20, 0, false, false))
             }
         }
     },
     COUNTER {
         override fun teamEffect(level: ServerLevel, players: List<ServerPlayer>) {
             players.forEach { 
-                it.addEffect(MobEffectInstance(MobEffects.SPEED, 10, 0, false, false))
-                it.addEffect(MobEffectInstance(MobEffects.JUMP_BOOST, 10, 1, false, false))
+                it.addEffect(MobEffectInstance(MobEffects.SPEED, 10 * 20, 0, false, false))
+                it.addEffect(MobEffectInstance(MobEffects.JUMP_BOOST, 10 * 20, 1, false, false))
             }
         }
     },
     REVEAL {
         override fun enemyEffect(level: ServerLevel, players: List<ServerPlayer>) {
             players.forEach { 
-                it.addEffect(MobEffectInstance(MobEffects.GLOWING, 8, 0, false, false))
+                it.addEffect(MobEffectInstance(MobEffects.GLOWING, 8 * 20, 0, false, false))
             }
         }
-
-        override fun teamEffect(level: ServerLevel, players: List<ServerPlayer>) {
-            players.forEach { 
-                // alarm team members
-            }
-        }
+        // todo
+        // override fun teamEffect(level: ServerLevel, players: List<ServerPlayer>) {
+        //     players.forEach { 
+        //         // alarm team members
+        //     }
+        // }
     },
     MINING {
         override fun enemyEffect(level: ServerLevel, players: List<ServerPlayer>) {
             players.forEach { 
-                it.addEffect(MobEffectInstance(MobEffects.MINING_FATIGUE, 10, 0, false, false))
+                it.addEffect(MobEffectInstance(MobEffects.MINING_FATIGUE, 10 * 20, 0, false, false))
             }
         }
     };
