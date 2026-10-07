@@ -71,125 +71,6 @@ enum class GamePeriod(val next: GamePeriod?, val title: String, val notif: Strin
     override fun getSerializedName(): String = this.name
 }
 
-private class PlayerDataRecord() : PlayerInvisHolder, PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord, PlayerTimeRecord, PlayerStatsRecord {
-    companion object {
-        val TOOL_UPGRADES_CODEC: Codec<HashMap<UpgradeItemType, UpgradableItem>> =
-            Codec.unboundedMap(UpgradeItemType.CODEC, Codec.STRING).xmap(
-                    { HashMap(it.mapValues { (type, tier) -> type.fromName(tier) }) },
-                    { it.mapValues { (_, item) -> (item as Enum<*>).name } }
-                )
-
-        val CODEC: Codec<PlayerDataRecord> = RecordCodecBuilder.create{it.group(
-            LifeState.CODEC.fieldOf("life_state").forGetter(PlayerDataRecord::life_state),
-            Team.CODEC.fieldOf("team").forGetter(PlayerDataRecord::team),
-            TOOL_UPGRADES_CODEC
-                .fieldOf("player_upgrades")
-                .forGetter(PlayerDataRecord::toolUpgrades)
-        ).apply(it, ::PlayerDataRecord)}
-    }
-
-    override var isInvis: Boolean = false
-    private var life_state: LifeState = LifeState.ALIVE
-    private var team: Team = Team.NONE
-    private var toolUpgrades = HashMap<UpgradeItemType, UpgradableItem>()
-
-    private var time_internal: Duration = Duration.ZERO
-    override val time get() = RESPAWN_TIME - time_internal
-    
-    override val timerTick: Int get() = 0
-    override var timerSecond: Int = 0
-    
-    private var kills: Int = 0
-    private var final_kills: Int = 0
-    private var deaths: Int = 0
-    private var beds_destroyed: Int = 0
-
-    private constructor(
-        life_state: LifeState,
-        team: Team,
-        toolUpgrades: Map<UpgradeItemType, UpgradableItem>
-    ) : this() {
-        this.life_state = life_state
-        this.team = team
-        this.toolUpgrades.putAll(toolUpgrades)
-    }
-
-    override fun getLifeState(): LifeState {
-        return this.life_state
-    }
-
-    override fun setLifeState(new_state: LifeState) {
-        this.life_state = new_state
-    }
-
-    override fun getDeathPosition(): Vec3 {
-        if (this.life_state is LifeState.DEAD) return (this.life_state as LifeState.DEAD).death_position
-        return Vec3.ZERO
-    }
-
-    override fun getTeamName(): Team = team
-
-    override fun setTeamName(team: Team) {
-        this.team = team
-    }
-
-    override fun getItem(item: UpgradeItemType): UpgradableItem {
-        return toolUpgrades.getOrPut(item) { item.default }
-    }
-
-    override fun setItem(item: UpgradableItem) {
-        toolUpgrades[item.type] = item
-    }
-
-    override fun removeItem(item: UpgradeItemType) {
-        toolUpgrades.remove(item)
-    }
-
-    override fun tick() {
-        if (time < Duration.ZERO) return
-        
-        val old_time = time
-        time_internal += 1.ticks
-        timerSecond = (old_time.inWholeSeconds - time.inWholeSeconds).toInt()
-    }
-
-    override fun reset() {
-        time_internal = Duration.ZERO
-    }
-
-    override fun getKills(): Int {
-        return kills
-    }
-
-    override fun getFinalKills(): Int {
-        return final_kills
-    }
-
-    override fun getDeaths(): Int {
-        return deaths
-    }
-
-    override fun getBedsDestroyed(): Int {
-        return beds_destroyed
-    }
-
-    override fun setKills(value: Int) {
-        kills = value
-    }
-
-    override fun setFinalKills(value: Int) {
-        final_kills = value
-    }
-
-    override fun setDeaths(value: Int) {
-        deaths = value
-    }
-
-    override fun setBedsDestroyed(value: Int) {
-        beds_destroyed = value
-    }
-}
-
 private class TeamDataRecord(
     private val players: MutableList<UUID> = mutableListOf(),
     private var bedAlive: Boolean = true,
@@ -315,13 +196,10 @@ private class TeamDataRecord(
 }
 
 
-private class ModDataStore() : PlayerInvisSwitcher, PlayerStateHolder, TeamStateHolder, PlayerUpgradesHolder, PlayerTimeHolder, PlayerStatsHolder, TeamGeneratorHolder, TeamUpgradesHolder,
+private class ModDataStore() :  TeamStateHolder,  TeamGeneratorHolder, TeamUpgradesHolder,
     LoadedMapHolder {
     companion object {
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
-            Codec.unboundedMap(UUIDUtil.STRING_CODEC, PlayerDataRecord.CODEC)
-                .fieldOf("player_data_map")
-                .forGetter(ModDataStore::player_data_map),
             Codec.unboundedMap(Team.CODEC, TeamDataRecord.CODEC)
                 .fieldOf("teams_map")
                 .forGetter(ModDataStore::teams_map),
@@ -338,7 +216,6 @@ private class ModDataStore() : PlayerInvisSwitcher, PlayerStateHolder, TeamState
     }
 
     
-    private val player_data_map = HashMap<UUID, PlayerDataRecord>()
     private val teams_map = HashMap<Team, TeamDataRecord>()
     private val active_players = mutableSetOf<UUID>()
     private var game_phase = GamePhase.INACTIVE
@@ -346,28 +223,15 @@ private class ModDataStore() : PlayerInvisSwitcher, PlayerStateHolder, TeamState
     override var map_centre: BlockPos = BlockPos(0, 0, 0)
     
     private constructor(
-        playerMap: Map<UUID, PlayerDataRecord>,
         teamMap: Map<Team, TeamDataRecord>,
         map_centre: BlockPos,
         game_period: GamePeriod,
         game_phase: GamePhase
     ) : this() {
-        this.player_data_map.putAll(playerMap)
         this.teams_map.putAll(teamMap)
         this.map_centre = map_centre
         this.game_phase = game_phase
         this.game_period = game_period
-    }
-
-
-    override fun tick() {
-        // Tick down timers for all individual players
-        if (game_phase == GamePhase.ACTIVE) {
-            for (uuid in active_players) {
-                val record = player_data_map[uuid] ?: continue
-                record.tick()
-            }
-        }
     }
 
     fun getGamePhase(): GamePhase {
@@ -386,18 +250,7 @@ private class ModDataStore() : PlayerInvisSwitcher, PlayerStateHolder, TeamState
         game_period = period
     }
     
-    override fun getPlayerState(player: UUID): PlayerInvisHolder = player_data_map.getOrPut(player) { PlayerDataRecord() }
-
-    private fun getPlayerData(id: UUID): PlayerDataRecord {
-        return player_data_map.getOrPut(id) { PlayerDataRecord() }
-    }
-
-    private fun getPlayerData(player: Player): PlayerDataRecord {
-        return getPlayerData(player.uuid)
-    }
-
     fun resetModData() {
-        player_data_map.clear()
         teams_map.clear()
         active_players.clear()
         game_phase = GamePhase.INACTIVE
@@ -405,21 +258,6 @@ private class ModDataStore() : PlayerInvisSwitcher, PlayerStateHolder, TeamState
         map_centre = BlockPos(0, 0, 0)
     }
 
-    override fun getPlayerState(player: Player): PlayerDataRecord {
-        return getPlayerData(player)
-    }
-
-    override fun getItemUpgradeState(player: Player): PlayerUpgradesRecord {
-        return getPlayerData(player)
-    }
-
-    override fun getPlayerTime(player: Player): PlayerDataRecord {
-        return getPlayerData(player)
-    }
-
-    override fun getPlayerStats(uuid: UUID): PlayerStatsRecord {
-        return getPlayerData(uuid)
-    }
 
     override fun getTeam(team: Team): TeamDataRecord {
         return teams_map.getOrPut(team){TeamDataRecord()}
@@ -462,7 +300,7 @@ private class ModDataStore() : PlayerInvisSwitcher, PlayerStateHolder, TeamState
 }
 
 
-class ModDataTracker : PlayerInvisSwitchExposer, LevelTiedData, PlayerStateExposer, TeamStateExposer, PlayerUpgradesExposer, PlayerTimeExposer, PlayerStatsExposer, TeamGeneratorExposer, TeamUpgradesExposer,
+class ModDataTracker : LevelTiedData, TeamStateExposer, TeamGeneratorExposer, TeamUpgradesExposer,
     LoadedMapExposer {
     companion object {
         val CODEC: MapCodec<ModDataTracker> = RecordCodecBuilder.mapCodec{ it.group(
@@ -481,10 +319,6 @@ class ModDataTracker : PlayerInvisSwitchExposer, LevelTiedData, PlayerStateExpos
         get() = mod_data.map_centre
         set(v) { mod_data.map_centre = v }
 
-    override fun tick() {
-        setDirty()
-        mod_data.tick()
-    }
     override fun tickTeams(level: ServerLevel) {
         setDirty()
         mod_data.tickTeams(level)
@@ -500,18 +334,6 @@ class ModDataTracker : PlayerInvisSwitchExposer, LevelTiedData, PlayerStateExpos
         setDirty()
         mod_data.setGamePeriod(period)
     }
-
-    fun resetModData() = mod_data.resetModData()
-
-    override fun isPlayerAlive(player: Player) = mod_data.isPlayerAlive(player)
-    override fun isPlayerRespawning(player: Player) = mod_data.isPlayerRespawning(player)
-    override fun getPlayerDeathPosition(player: Player): Vec3 = mod_data.getPlayerDeathPosition(player)
-    override fun isPlayerEliminated(player: Player): Boolean = mod_data.isPlayerEliminated(player)
-
-    override fun setPlayerAlive(player: Player) = mod_data.setPlayerAlive(player)
-    override fun setPlayerRespawning(player: Player) = mod_data.setPlayerRespawning(player)
-    override fun setPlayerDead(player: Player, position: Vec3) = mod_data.setPlayerDead(player, position)
-    override fun setPlayerEliminated(player: Player) = mod_data.setPlayerEliminated(player)
 
     override fun getBedDestroyed(team: Team): Boolean = mod_data.getBedDestroyed(team)
     override fun getBedBreaker(team: Team): UUID? = mod_data.getBedBreaker(team)
@@ -552,26 +374,6 @@ class ModDataTracker : PlayerInvisSwitchExposer, LevelTiedData, PlayerStateExpos
         mod_data.clearActivePlayers()
     }
 
-    override fun upgradeItem(player: ServerPlayer, item: UpgradeItemType) {
-        setDirty()
-        mod_data.upgradeItem(player, item)
-    }
-    override fun downgradeItems(player: ServerPlayer) {
-        setDirty()
-        mod_data.downgradeItems(player)
-    }
-
-    override fun updateItems(player: ServerPlayer) {
-        // Don't think this needs to setDirty(), updating the enchant should already set it dirty, either way none of the data actually changes
-        mod_data.updateItems(player)
-    }
-    override fun clearItems(player: ServerPlayer) {
-        setDirty()
-        mod_data.clearItems(player)
-    }
-    override fun getNextItemStack(player: ServerPlayer, item: UpgradeItemType) = mod_data.getNextItemStack(player, item)
-    override fun getTier(player: ServerPlayer, item: UpgradeItemType) = mod_data.getTier(player, item)
-
     override fun getGenUpgrade(team: Team) = mod_data.getGenUpgrade(team)
     override fun upgradeGen(team: Team) {
         setDirty()
@@ -599,22 +401,6 @@ class ModDataTracker : PlayerInvisSwitchExposer, LevelTiedData, PlayerStateExpos
         mod_data.setTeamBedPosition(team, pos)
     }
 
-    override fun getPlayerRespawnSeconds(player: ServerPlayer): Int = mod_data.getPlayerRespawnSeconds(player)
-    override fun resetPlayerRespawnTime(player: ServerPlayer) {
-        setDirty()
-        mod_data.resetPlayerRespawnTime(player)
-    }
-    override fun playerTimerSecondPassed(player: ServerPlayer): Int = mod_data.playerTimerSecondPassed(player)
-
-    override fun getPlayerKills(uuid: UUID): Int = mod_data.getPlayerKills(uuid)
-    override fun getPlayerFinalKills(uuid: UUID): Int = mod_data.getPlayerFinalKills(uuid)
-    override fun getPlayerDeaths(uuid: UUID): Int = mod_data.getPlayerDeaths(uuid)
-    override fun getPlayerBedsDestroyed(uuid: UUID): Int = mod_data.getPlayerBedsDestroyed(uuid)
-
-    override fun setPlayerKills(uuid: UUID, value: Int) = mod_data.setPlayerKills(uuid, value)
-    override fun setPlayerFinalKills(uuid: UUID, value: Int) = mod_data.setPlayerFinalKills(uuid, value)
-    override fun setPlayerDeaths(uuid: UUID, value: Int) = mod_data.setPlayerDeaths(uuid, value)
-    override fun setPlayerBedsDestroyed(uuid: UUID, value: Int) = mod_data.setPlayerBedsDestroyed(uuid, value)
     override fun popTrap(team: Team): TrapUpgrade? {
         setDirty()
         return mod_data.popTrap(team)
@@ -624,6 +410,4 @@ class ModDataTracker : PlayerInvisSwitchExposer, LevelTiedData, PlayerStateExpos
         mod_data.addTrap(team, type)
     }
     
-    override fun setPlayerInvisibility(player: UUID, invis: Boolean) = mod_data.setPlayerInvisibility(player, invis)
-    override fun getPlayerInvisibility(player: UUID): Boolean = mod_data.getPlayerInvisibility(player)
 }

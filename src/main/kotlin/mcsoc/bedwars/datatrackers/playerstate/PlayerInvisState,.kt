@@ -1,4 +1,4 @@
-package mcsoc.bedwars.datatrackers
+package mcsoc.bedwars.datatrackers.playerstate
 
 import java.util.UUID
 
