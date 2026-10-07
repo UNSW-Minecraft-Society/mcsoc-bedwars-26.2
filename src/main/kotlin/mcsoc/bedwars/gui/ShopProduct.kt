@@ -4,6 +4,7 @@ import eu.pb4.sgui.api.ClickType
 import eu.pb4.sgui.api.elements.GuiElement
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.upgrades.TeamUpgradeType
 import mcsoc.bedwars.upgrades.TrapUpgrade
 import mcsoc.bedwars.upgrades.UpgradeItemType
@@ -437,4 +438,48 @@ class ShopTrapUpgrade : ShopProduct, PlayerSpecificShopProduct {
         return gameState.getTraps(team).contains(trapUpgrade)
     }
 
+}
+
+
+class ShopGeneratorUpgrade : ShopProduct, PlayerSpecificShopProduct {
+    private val displayItem: Item
+    private val currency: Item
+    private val price: Int
+    private lateinit var player: ServerPlayer
+    private val name: Component
+    
+    constructor(displayItem: Item, currency: Item, price: Int, name: Component) : super() {
+        this.displayItem = displayItem
+        this.currency = currency
+        this.price = price
+        this.name = name
+    }
+
+    constructor(displayItem: Item, currency: Item, price: Int, name: String) : this(displayItem, currency, price, Component.literal(name))
+    
+    override fun getItemStack(): ItemStack {
+        return ItemStack(displayItem)
+    }
+
+    override fun getItemCost(): ItemStack {
+        return ItemStack(currency, price)
+    }
+
+    override fun getClickCallback(): GuiElement.ClickCallback {
+        return GuiElement.ClickCallback { index, clickType, action, gui ->
+            val player = gui.player
+            val gameState = player.level().gameState
+            val team = gameState.getPlayersTeam(player.uuid)
+            purchaseUnit(player, fun(): Boolean {
+                gameState.upgradeGen(team)
+                return true
+            })
+        }
+    }
+
+    override fun getProductName(): Component = name
+
+    override fun setShopPlayer(player: ServerPlayer) {
+        this.player = player
+    }
 }

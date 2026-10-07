@@ -189,7 +189,8 @@ object ShopInventory {
                             .addDescriptionLine("Applies sharpness to your team's swords to deal more damage"),
                         BooleanShopTeamUpgrade(TeamUpgradeType.HEAL_POOL, Items.GOLDEN_APPLE, Items.DIAMOND, 3, "Heal Pool")
                             .addDescriptionLine("Applies faster healing for your team at your island"),
-                        EmptyShopProduct(),
+
+                        ShopGeneratorUpgrade(Items.IRON_INGOT, Items.DIAMOND, 4, "Forge (Generator)"),
 
                         EmptyShopProduct(), EmptyShopProduct(), EmptyShopProduct(),
 
