@@ -11,16 +11,12 @@ import mcsoc.bedwars.datatrackers.generatorstate.TeamGeneratorState
 import mcsoc.bedwars.datatrackers.generatorstate.InvalidTeamException
 import mcsoc.bedwars.datatrackers.mapdata.LoadedMapExposer
 import mcsoc.bedwars.datatrackers.mapdata.LoadedMapHolder
-import mcsoc.bedwars.gamestate.RESPAWN_TIME
-import mcsoc.bedwars.upgrades.UpgradableItem
-import mcsoc.bedwars.upgrades.UpgradeItemType
 import net.minecraft.server.level.ServerPlayer
 import mcsoc.bedwars.upgrades.TeamUpgrade
 import mcsoc.bedwars.upgrades.TeamUpgradeType
 import mcsoc.bedwars.upgrades.TrapUpgrade
 import kotlin.time.Duration
 import mcsoc.bedwars.utils.Team
-import mcsoc.bedwars.utils.ticks
 import net.minecraft.core.UUIDUtil
 import net.minecraft.server.level.ServerLevel
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup
@@ -28,7 +24,6 @@ import net.minecraft.core.BlockPos
 import net.minecraft.util.StringRepresentable
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects
-import net.minecraft.world.entity.player.Player
 import java.util.UUID
 import net.minecraft.world.phys.Vec3
 import java.util.Optional
@@ -36,7 +31,7 @@ import kotlin.uuid.Uuid
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 import net.minecraft.world.scores.Scoreboard
-import kotlin.time.Duration.Companion.minutes
+
 
 enum class GamePhase : StringRepresentable {
     STARTING,
@@ -196,8 +191,7 @@ private class TeamDataRecord(
 }
 
 
-private class ModDataStore() :  TeamStateHolder,  TeamGeneratorHolder, TeamUpgradesHolder,
-    LoadedMapHolder {
+private class ModDataStore(): TeamStateHolder, TeamGeneratorHolder, TeamUpgradesHolder, LoadedMapHolder {
     companion object {
         val CODEC: Codec<ModDataStore> = RecordCodecBuilder.create{it.group(
             Codec.unboundedMap(Team.CODEC, TeamDataRecord.CODEC)
@@ -283,7 +277,6 @@ private class ModDataStore() :  TeamStateHolder,  TeamGeneratorHolder, TeamUpgra
         if (team == Team.NONE) return
         
         getTeam(team).addPlayer(player)
-        getPlayerData(player).setTeamName(team)
         val team = scoreboard.getPlayerTeam(team.getName()) ?: run {
             BedwarsPlugin.LOGGER.error("addPlayer: ", InvalidTeamException(team))
             scoreboard.addPlayerTeam(team.getName())
@@ -291,17 +284,15 @@ private class ModDataStore() :  TeamStateHolder,  TeamGeneratorHolder, TeamUpgra
         if (name != null) scoreboard.addPlayerToTeam(name, team)
     }
 
-    override fun getPlayersTeam(player: UUID): Team = getPlayerData(player).getTeamName()
 
     override fun addActivePlayer(uuid: UUID) = active_players.add(uuid)
-    override fun removeActivePlayer(uuid: UUID) = active_players.remove(uuid) // there could be other things to do when removing player
+    override fun removeActivePlayer(uuid: UUID) = active_players.remove(uuid)
     override fun getActivePlayers() = active_players
     override fun clearActivePlayers() = active_players.clear()
 }
 
 
-class ModDataTracker : LevelTiedData, TeamStateExposer, TeamGeneratorExposer, TeamUpgradesExposer,
-    LoadedMapExposer {
+class ModDataTracker: LevelTiedData, TeamStateExposer, TeamGeneratorExposer, TeamUpgradesExposer, LoadedMapExposer {
     companion object {
         val CODEC: MapCodec<ModDataTracker> = RecordCodecBuilder.mapCodec{ it.group(
             ModDataStore.CODEC.fieldOf("mod_data").forGetter(ModDataTracker::mod_data)
@@ -314,6 +305,7 @@ class ModDataTracker : LevelTiedData, TeamStateExposer, TeamGeneratorExposer, Te
         this.mod_data = mod_data
     }
     internal constructor() : this(ModDataStore())
+    fun resetModData() = mod_data.resetModData()
     
     override var map_centre 
         get() = mod_data.map_centre
@@ -359,7 +351,6 @@ class ModDataTracker : LevelTiedData, TeamStateExposer, TeamGeneratorExposer, Te
         mod_data.addPlayer(player, team, scoreboard, name)
     }
     
-    override fun getPlayersTeam(player: UUID): Team = mod_data.getPlayersTeam(player)
     override fun getActivePlayers() = mod_data.getActivePlayers()
     override fun addActivePlayer(uuid: UUID): Boolean {
         setDirty()
@@ -384,10 +375,9 @@ class ModDataTracker : LevelTiedData, TeamStateExposer, TeamGeneratorExposer, Te
     override fun <T> upgrade(team: Team, type: TeamUpgradeType<T>, level: ServerLevel) {
         setDirty()
         mod_data.upgrade(team, type, level)
-        for (playerId in getPlayersInTeam(team)) {
-            val player = level.getPlayerByUUID(playerId)
-            if (player is ServerPlayer) updateItems(player)
-        }
+        getPlayersInTeam(team)
+            .mapNotNull {level.getPlayerByUUID(it)}
+            .forEach { level.playerState.updateItems(it as ServerPlayer) }
     }
     override fun getTraps(team: Team) = mod_data.getTraps(team)
     

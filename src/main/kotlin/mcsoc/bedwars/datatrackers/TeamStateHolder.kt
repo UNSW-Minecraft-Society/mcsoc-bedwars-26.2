@@ -43,7 +43,7 @@ internal interface TeamStateExposer {
     fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?)
     fun initialiseTeams(teams: Set<Team>, scoreboard: Scoreboard)
 
-    fun getPlayersTeam(player: UUID): Team
+    // fun getPlayersTeam(player: UUID): Team
     
     fun getActivePlayers(): Set<UUID>
     fun addActivePlayer(uuid: UUID): Boolean

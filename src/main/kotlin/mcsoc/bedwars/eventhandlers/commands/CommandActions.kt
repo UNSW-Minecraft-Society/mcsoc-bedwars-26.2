@@ -15,6 +15,7 @@ import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.datatrackers.generatorState
+import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.datatrackers.shopConfig
 import mcsoc.bedwars.entities.spawnDreamDefender
 import mcsoc.bedwars.gamestate.GameManager
@@ -158,7 +159,7 @@ internal object CommandActions {
             return 0
         }
 
-        val team = ctx.source.level.gameState.getPlayersTeam(player.uuid)
+        val team = ctx.source.level.playerState.getPlayersTeam(player.uuid)
         player.sendSystemMessage(Component.literal("Your team is ${team.name}").withColor(TextColor.GREEN))
 
         return 1
@@ -190,7 +191,7 @@ internal object CommandActions {
             return 0
         }
 
-        ctx.source.level.gameState.upgradeItem(player, type)
+        ctx.source.level.playerState.upgradeItem(player, type)
         return 1
     }
 
@@ -214,7 +215,7 @@ internal object CommandActions {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
             return 0
         }
-        ctx.source.level.gameState.clearItems(player)
+        ctx.source.level.playerState.clearItems(player)
         return 1
     }
 

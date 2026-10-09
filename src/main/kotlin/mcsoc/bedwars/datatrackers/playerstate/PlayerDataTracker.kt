@@ -19,8 +19,7 @@ import net.minecraft.world.phys.Vec3
 import java.util.UUID
 import kotlin.time.Duration
 
-private class PlayerDataRecord() : PlayerInvisHolder, PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord,
-    PlayerTimeRecord, PlayerStatsRecord {
+private class PlayerDataRecord() : PlayerInvisHolder, PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord, PlayerTimeRecord, PlayerStatsRecord {
     companion object {
         val TOOL_UPGRADES_CODEC: Codec<HashMap<UpgradeItemType, UpgradableItem>> =
             Codec.unboundedMap(UpgradeItemType.CODEC, Codec.STRING).xmap(
@@ -139,8 +138,7 @@ private class PlayerDataRecord() : PlayerInvisHolder, PlayerStateRecord, PlayerT
     }
 }
 
-class PlayerDataStore(): PlayerInvisSwitcher, PlayerStateHolder, PlayerUpgradesHolder, PlayerTimeHolder,
-    PlayerStatsHolder {
+private class PlayerDataStore(): PlayerInvisSwitcher, PlayerStateHolder, PlayerUpgradesHolder, PlayerTimeHolder, PlayerStatsHolder {
     companion object {
         val CODEC: Codec<PlayerDataStore> = RecordCodecBuilder.create{it.group(
             Codec.unboundedMap(UUIDUtil.STRING_CODEC, PlayerDataRecord.CODEC)
@@ -159,19 +157,9 @@ class PlayerDataStore(): PlayerInvisSwitcher, PlayerStateHolder, PlayerUpgradesH
     
     
     override fun tick() {
-        // todo get game phase somehow
-        // Tick down timers for all individual players
-        if (game_phase == GamePhase.ACTIVE) {
-            for (uuid in active_players) {
-                val record = player_data_map[uuid] ?: continue
-                record.tick()
-            }
-        }
+        player_data_map.values.forEach(PlayerDataRecord::tick)
     }
     
-    
-    override fun getPlayerState(player: UUID): PlayerInvisHolder = player_data_map.getOrPut(player) { PlayerDataRecord() }
-
     private fun getPlayerData(id: UUID): PlayerDataRecord {
         return player_data_map.getOrPut(id) { PlayerDataRecord() }
     }
@@ -179,33 +167,23 @@ class PlayerDataStore(): PlayerInvisSwitcher, PlayerStateHolder, PlayerUpgradesH
     private fun getPlayerData(player: Player): PlayerDataRecord {
         return getPlayerData(player.uuid)
     }
+    
+    override fun getPlayerState(player: UUID): PlayerInvisHolder = getPlayerData(player)
+    override fun getPlayerState(player: Player): PlayerStateRecord = getPlayerData(player)
+    override fun getItemUpgradeState(player: Player): PlayerUpgradesRecord = getPlayerData(player)
+    override fun getPlayerStats(uuid: UUID): PlayerStatsRecord  = getPlayerData(uuid)
+    override fun getPlayerTime(player: Player): PlayerTimeRecord = getPlayerData(player)
 
     fun resetPlayerData() {
         player_data_map.clear()
     }
     
-    
-    override fun getPlayerState(player: Player): PlayerDataRecord {
-        return getPlayerData(player)
-    }
-
-    override fun getItemUpgradeState(player: Player): PlayerUpgradesRecord {
-        return getPlayerData(player)
-    }
-
-    override fun getPlayerTime(player: Player): PlayerDataRecord {
-        return getPlayerData(player)
-    }
-
-    override fun getPlayerStats(uuid: UUID): PlayerStatsRecord {
-        return getPlayerData(uuid)
-    }
-    
+    fun setTeam(player: UUID, team: Team) = getPlayerData(player).setTeamName(team)
+    fun getPlayersTeam(player: UUID): Team = getPlayerData(player).getTeamName()
     
 }
 
-class PlayerDataTracker: LevelTiedData, PlayerStateExposer, PlayerUpgradesExposer, PlayerTimeExposer, PlayerStatsExposer,
-    PlayerInvisSwitchExposer {
+class PlayerDataTracker: LevelTiedData, PlayerStateExposer, PlayerUpgradesExposer, PlayerTimeExposer, PlayerStatsExposer, PlayerInvisSwitchExposer {
     companion object {
         val CODEC: MapCodec<PlayerDataTracker> = RecordCodecBuilder.mapCodec{ it.group(
             PlayerDataStore.CODEC.fieldOf("mod_data").forGetter(PlayerDataTracker::player_data)
@@ -225,7 +203,7 @@ class PlayerDataTracker: LevelTiedData, PlayerStateExposer, PlayerUpgradesExpose
     }
     
     
-    fun resetModData() = player_data.resetPlayerData()
+    fun resetPlayerData() = player_data.resetPlayerData()
 
     override fun isPlayerAlive(player: Player) = player_data.isPlayerAlive(player)
     override fun isPlayerRespawning(player: Player) = player_data.isPlayerRespawning(player)
@@ -237,7 +215,6 @@ class PlayerDataTracker: LevelTiedData, PlayerStateExposer, PlayerUpgradesExpose
     override fun setPlayerDead(player: Player, position: Vec3) = player_data.setPlayerDead(player, position)
     override fun setPlayerEliminated(player: Player) = player_data.setPlayerEliminated(player)
 
-    
     override fun upgradeItem(player: ServerPlayer, item: UpgradeItemType) {
         setDirty()
         player_data.upgradeItem(player, item)
@@ -246,11 +223,7 @@ class PlayerDataTracker: LevelTiedData, PlayerStateExposer, PlayerUpgradesExpose
         setDirty()
         player_data.downgradeItems(player)
     }
-
-    override fun updateItems(player: ServerPlayer) {
-        // Don't think this needs to setDirty(), updating the enchant should already set it dirty, either way none of the data actually changes
-        player_data.updateItems(player)
-    }
+    override fun updateItems(player: ServerPlayer) = player_data.updateItems(player)
     override fun clearItems(player: ServerPlayer) {
         setDirty()
         player_data.clearItems(player)
@@ -278,5 +251,7 @@ class PlayerDataTracker: LevelTiedData, PlayerStateExposer, PlayerUpgradesExpose
     
     override fun setPlayerInvisibility(player: UUID, invis: Boolean) = player_data.setPlayerInvisibility(player, invis)
     override fun getPlayerInvisibility(player: UUID): Boolean = player_data.getPlayerInvisibility(player)
+    
+    fun setTeam(player: UUID, team: Team) = player_data.setTeam(player, team)
+    fun getPlayersTeam(player: UUID): Team = player_data.getPlayersTeam(player)
 }
-

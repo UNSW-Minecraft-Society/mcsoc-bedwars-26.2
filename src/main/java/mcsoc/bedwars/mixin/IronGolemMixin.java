@@ -28,7 +28,7 @@ public class IronGolemMixin {
     private boolean isDefenderAggro(IronGolem golem, LivingEntity player, ServerLevel level) {
         if (LevelData.getCustomEntityData(level).getEntityType(golem) == null) return false;
         Team golemTeam = LevelData.getCustomEntityData(level).getEntityTeam(golem);
-        Team playerTeam = LevelData.getGameState(level).getPlayersTeam(player.getUUID());
+        Team playerTeam = LevelData.getPlayerState(level).getPlayersTeam(player.getUUID());
         if (golemTeam == null) return false;
         else return golemTeam != playerTeam;
     }

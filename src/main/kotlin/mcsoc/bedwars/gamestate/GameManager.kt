@@ -12,6 +12,7 @@ import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
+import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.gui.ScoreboardGui
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.toBlockPos
@@ -189,6 +190,7 @@ class GameManager {
 
             // Clears Active players, all teams data and player data
             gameState.resetModData()
+            level.playerState.resetPlayerData()
             level.generatorState.clearGenerators()
             level.generatorState.resetGenUpgrades()
             
@@ -212,6 +214,7 @@ class GameManager {
             level.blockProtection.protectionEnabled = true
 
             val gameState = level.gameState
+            val playerState = level.playerState
             gameState.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach{ player ->
                 player.connection.send(
                     ClientboundSetTitleTextPacket(
@@ -225,9 +228,9 @@ class GameManager {
                         1.0F, 1.0F, level.getRandom().nextLong()
                     )
                 )
-                gameState.setPlayerAlive(player)
+                playerState.setPlayerAlive(player)
                 player.setGameMode(GameType.SURVIVAL)
-                val spawn = gameState.getTeamSpawn(gameState.getPlayersTeam(player.uuid))
+                val spawn = gameState.getTeamSpawn(playerState.getPlayersTeam(player.uuid))
                 player.teleportTo(
                     level, spawn.x, spawn.y, spawn.z,
                     setOf(), 0F, 0F, true
@@ -236,7 +239,7 @@ class GameManager {
                 player.inventory.clearContent()
                 player.enderChestInventory.clearContent()
                 player.health = player.maxHealth
-                gameState.updateItems(player)
+                playerState.updateItems(player)
             }
             // tp players to spawn points
             // start generators
@@ -266,14 +269,15 @@ class GameManager {
         fun handlePlayerDeath(player: ServerPlayer, death_source: DamageSource) {
             val level = player.level()
             val gameState = level.gameState
+            val playerState = level.playerState
             if (gameState.getGamePhase() != GamePhase.ACTIVE) return
 
-            val playerTeam = gameState.getPlayersTeam(player.uuid)
+            val playerTeam = playerState.getPlayersTeam(player.uuid)
             val bedDestroyed = gameState.getBedDestroyed(playerTeam)
 
             // store player's death position to summon lightning later. Due to the nature of this event handler,
             // all players are forced to enter "DEAD" state upon death.
-            gameState.setPlayerDead(player, player.position())
+            playerState.setPlayerDead(player, player.position())
             
             val killer: UUID = (player.killCredit as? ServerPlayer)?.uuid ?: gameState.getBedBreaker(playerTeam) ?: run {
                 val maybeKiller = death_source.entity?.uuid
@@ -285,18 +289,18 @@ class GameManager {
 
                 // Downgrade or like reset player item upgrades on death (as done below wow copy and paste how smart)
                 player.inventory.clearContent()
-                gameState.downgradeItems(player)
-                gameState.incrementPlayerDeaths(player.uuid)
+                playerState.downgradeItems(player)
+                playerState.incrementPlayerDeaths(player.uuid)
 
                 return
             }
             // return BedwarsPlugin.LOGGER.error("handlePlayerDeath player: ${player.name.string}, source: ${death_source.msgId}: ", IllegalStateException("Cannot destroy bed without breaker?"))
 
             // Need to playtest see if final kill off void death transfers loot
-            gameState.incrementPlayerKills(killer)
+            playerState.incrementPlayerKills(killer)
 
             if (bedDestroyed) {
-                gameState.incrementPlayerFinalKills(killer)
+                playerState.incrementPlayerFinalKills(killer)
                 level.getActivePlayers().forEach{it.sendSystemMessage(player.getFinalKillMessage(killer))}
             } else {
                 level.getActivePlayers().forEach{it.sendSystemMessage(player.getKillMessage(killer))}
@@ -304,7 +308,7 @@ class GameManager {
 
             val killer_player = player.level().getPlayerByUUID(killer);
             BedwarsPlugin.LOGGER.info("Gonna transfer items to ${killer_player}, is null: ${killer_player != null}")
-            if (killer_player != null && gameState.isPlayerAlive(killer_player)) {
+            if (killer_player != null && playerState.isPlayerAlive(killer_player)) {
                 for (stack in player.inventory) {
                     if (!stack.isEmpty && stack.item in arrayOf(Items.IRON_INGOT, Items.GOLD_INGOT, Items.DIAMOND, Items.EMERALD)) {
                         killer_player.inventory.add(stack)
@@ -315,17 +319,18 @@ class GameManager {
 
             // Downgrade or like reset player item upgrades on death
             player.inventory.clearContent()
-            gameState.downgradeItems(player)
-            gameState.incrementPlayerDeaths(player.uuid)
+            playerState.downgradeItems(player)
+            playerState.incrementPlayerDeaths(player.uuid)
         }
 
         fun handlePlayerRespawn(player: ServerPlayer) {
             val gameState = player.level().gameState
+            val playerState = player.level().playerState
             if (gameState.getGamePhase() != GamePhase.ACTIVE) return
 
             player.setGameMode(GameType.SPECTATOR)
 
-            if (!gameState.getBedDestroyed(gameState.getPlayersTeam(player.uuid))) {
+            if (!gameState.getBedDestroyed(playerState.getPlayersTeam(player.uuid))) {
                 player.level().eventQueue.queuePlayerRespawn(RESPAWN_TIME, player.uuid)
                 // tp above map
                 val respawnPosition: Vec3 = Vec3.atBottomCenterOf(gameState.map_centre.offset(0, 30, 0))
@@ -333,18 +338,18 @@ class GameManager {
                         setOf(), 0F, 0F, true
                 )
 
-                gameState.setPlayerRespawning(player)
-                gameState.resetPlayerRespawnTime(player)
+                playerState.setPlayerRespawning(player)
+                playerState.resetPlayerRespawnTime(player)
             } else {
                 eliminatePlayer(player)
             }
         }
 
         private fun eliminatePlayer(player: ServerPlayer) {
-            val gameState = player.level().gameState
-            val playerDeathPosition = gameState.getPlayerDeathPosition(player)
+            val playerState = player.level().playerState
+            val playerDeathPosition = playerState.getPlayerDeathPosition(player)
 
-            gameState.setPlayerEliminated(player)
+            playerState.setPlayerEliminated(player)
             player.connection.send(
                 ClientboundClearTitlesPacket(true)
             )
@@ -364,7 +369,7 @@ class GameManager {
             // notify eliminated player of their stats - change to align more closely to hypixel later
             // player.sendSystemMessage(Component.literal("Kills: " + level_mod_data.getPlayerKills(player) + " Final Kills: " + level_mod_data.getPlayerFinalKills(player) + " Deaths: " + level_mod_data.getPlayerDeaths(player)))
 
-            val winningTeam = checkPlayersLeftOnTeam(level,gameState.getPlayersTeam(player.uuid)) ?: return
+            val winningTeam = checkPlayersLeftOnTeam(level, playerState.getPlayersTeam(player.uuid)) ?: return
             winGame(level, winningTeam)
         }
 
@@ -374,11 +379,11 @@ class GameManager {
             var gameIsWon = true
             var winningTeam = Team.NONE
             gameState.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach{ player ->
-                val playerTeam = gameState.getPlayersTeam(player.uuid)
+                val playerTeam = level.playerState.getPlayersTeam(player.uuid)
 
                 if (playerTeam == Team.NONE) return@forEach
 
-                if (!(gameState.isPlayerEliminated(player))) {
+                if (!(level.playerState.isPlayerEliminated(player))) {
                     if (winningTeam == Team.NONE) {
                         winningTeam = playerTeam
                     } else if (playerTeam != winningTeam) {
@@ -394,6 +399,7 @@ class GameManager {
 
         private fun compileGameStats(level: ServerLevel): MutableList<Component> {
             val gameState = level.gameState
+            val playerState = level.playerState
             val statsList: MutableList<Component> = mutableListOf()
             statsList += Component.literal("${ChatFormatting.UNDERLINE}Game Statistics:${ChatFormatting.RESET}")
 
@@ -401,10 +407,10 @@ class GameManager {
                 for (uuid in gameState.getPlayersInTeam(team)) {
                     val name = (level.getPlayerByUUID(uuid)?.name ?: Component.literal(uuid.toString())) as MutableComponent
                     statsList.add(name.append(Component.literal("\n" +
-                            " - Kills: ${gameState.getPlayerKills(uuid)}\n" +
-                            " - Final Kills: ${gameState.getPlayerFinalKills(uuid)}\n" +
-                            " - Deaths: ${gameState.getPlayerDeaths(uuid)}\n" +
-                            " - Beds Destroyed: ${gameState.getPlayerBedsDestroyed(uuid)}\n"
+                            " - Kills: ${playerState.getPlayerKills(uuid)}\n" +
+                            " - Final Kills: ${playerState.getPlayerFinalKills(uuid)}\n" +
+                            " - Deaths: ${playerState.getPlayerDeaths(uuid)}\n" +
+                            " - Beds Destroyed: ${playerState.getPlayerBedsDestroyed(uuid)}\n"
                     )))
                 }
             }
@@ -431,7 +437,7 @@ class GameManager {
                 player.connection.send(
                     ClientboundSetTitlesAnimationPacket(0, 100, 0)
                 )
-                if (gameState.getPlayersTeam(player.uuid) == winningTeam) {
+                if (level.playerState.getPlayersTeam(player.uuid) == winningTeam) {
                     player.connection.send(
                         ClientboundSetTitleTextPacket(
                             Component.literal(ChatFormatting.YELLOW.toString() + "VICTORY!")
@@ -454,6 +460,7 @@ class GameManager {
 
         fun afterBedBreak(level: ServerLevel, breaker: ServerPlayer, team: Team) {
             val gameState = level.gameState
+            val playerState = level.playerState
 
             // Remnant bedhunt code to prevent afterBedBreak being called repeatedly after a bed is broken
             // Should not be needed if afterBedBreak is correctly called... after a bed break is registered
@@ -461,11 +468,11 @@ class GameManager {
             // if (!SavedModData.isTeamBaseIntact(team)) return
 
             gameState.setBedBreaker(team, breaker.uuid)
-            gameState.incrementPlayerBedsDestroyed(breaker.uuid)
+            playerState.incrementPlayerBedsDestroyed(breaker.uuid)
             gameState.setBedAlive(team, false)
 
             gameState.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach { p ->
-                if (gameState.getPlayersTeam(p.uuid) == team) {
+                if (playerState.getPlayersTeam(p.uuid) == team) {
                     p.connection.send(
                         ClientboundSetTitleTextPacket(
                             Component.literal(ChatFormatting.RED.toString() + "BED DESTROYED")
@@ -491,7 +498,8 @@ class GameManager {
             if (gameState.getGamePhase() == GamePhase.ACTIVE) {
                 for (i in 0 until level.clock.timerTick) {
                     level.generatorState.tick()
-                    gameState.tick()
+                    // gameState.tick()
+                    level.playerState.tick()
                     gameState.tickTeams(level)
                 }
                 ScoreboardGui.displayScoreboard(level)

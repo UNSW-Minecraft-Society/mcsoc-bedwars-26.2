@@ -2,6 +2,7 @@ package mcsoc.bedwars.upgrades
 
 import com.mojang.serialization.Codec
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.utils.withTag
 import mcsoc.bedwars.utils.withEnchant
 import mcsoc.bedwars.utils.hasTag
@@ -182,7 +183,8 @@ enum class Sword(override val material: Item) : Single, Resettable {
     
     private fun ItemStack.withSharp(player: ServerPlayer): ItemStack {
         val gameState = player.level().gameState
-        val team = gameState.getPlayersTeam(player.uuid)
+        val playerState = player.level().playerState
+        val team = playerState.getPlayersTeam(player.uuid)
         if (gameState.getUpgrade(team, TeamUpgradeType.SHARPNESS)) {
             this.withEnchant(Enchantments.SHARPNESS, 1, player.level())
         }
@@ -230,14 +232,16 @@ enum class Armour(private val boots: Item, private val leggings: Item) : Upgrada
     
     private fun ItemStack.withProt(player: ServerPlayer): ItemStack {
         val gameState = player.level().gameState
-        val team = gameState.getPlayersTeam(player.uuid)
+        val playerState = player.level().playerState
+        val team = playerState.getPlayersTeam(player.uuid)
         val level = gameState.getUpgrade(team, TeamUpgradeType.PROTECTION)
         return this.withEnchant(Enchantments.PROTECTION, level, player.level())
     }
     
     private fun ItemStack.withFeatherFalling(player: ServerPlayer): ItemStack {
         val gameState = player.level().gameState
-        val team = gameState.getPlayersTeam(player.uuid)
+        val playerState = player.level().playerState
+        val team = playerState.getPlayersTeam(player.uuid)
         val level = gameState.getUpgrade(team, TeamUpgradeType.FEATHER_FALLING)
         return this.withEnchant(Enchantments.FEATHER_FALLING, level, player.level())
     }
@@ -247,7 +251,7 @@ enum class Armour(private val boots: Item, private val leggings: Item) : Upgrada
     }
 
     private fun ItemStack.withPlayerBasedEffects(player: ServerPlayer): ItemStack {
-        val team = player.level().gameState.getPlayersTeam(player.uuid)
+        val team = player.level().playerState.getPlayersTeam(player.uuid)
         return this
             .withProt(player)
             .also { if (this.`is`(ItemTags.FOOT_ARMOR)) this.withFeatherFalling(player) }

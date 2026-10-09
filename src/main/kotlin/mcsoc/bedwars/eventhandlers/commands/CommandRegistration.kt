@@ -9,6 +9,7 @@ import com.mojang.brigadier.arguments.StringArgumentType
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.clockSpeed
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.playerState
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
@@ -239,7 +240,7 @@ fun registerCommands() {
                         val player = EntityArgument.getEntity(ctx, "player")
                         val state = BoolArgumentType.getBool(ctx, "state")
                         
-                        ctx.source.level.gameState.setPlayerInvisibility(player.uuid, state)
+                        ctx.source.level.playerState.setPlayerInvisibility(player.uuid, state)
                         1
                     })
                 )

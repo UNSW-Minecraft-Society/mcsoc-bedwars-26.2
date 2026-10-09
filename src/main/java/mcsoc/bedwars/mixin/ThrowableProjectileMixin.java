@@ -1,7 +1,6 @@
 package mcsoc.bedwars.mixin;
 
 import mcsoc.bedwars.eventhandlers.ThrowableProjectileTickCallback;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -10,8 +9,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ThrowableProjectileMixin extends ProjectileMixin {
     @Override
     protected void onTick(CallbackInfo ci) {
-        InteractionResult result = ThrowableProjectileTickCallback.Companion.getEVENT().invoker()
-                .tick((ThrowableProjectile) (Object) this);
+        ThrowableProjectileTickCallback.Companion.getEVENT().invoker().tick((ThrowableProjectile) (Object) this);
     }
 }
 

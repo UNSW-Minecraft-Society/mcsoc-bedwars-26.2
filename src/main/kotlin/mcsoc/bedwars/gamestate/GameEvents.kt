@@ -8,6 +8,7 @@ import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.utils.CODEC
 import mcsoc.bedwars.utils.getProgressBar
 import mcsoc.bedwars.utils.placeBlockIfValid
@@ -181,7 +182,8 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
         override fun concludeTrigger(level: ServerLevel) {
             val player = level.server.playerList.getPlayer(player) ?: return
             val level_mod_data = level.gameState
-            val spawn = level_mod_data.getTeamSpawn(level_mod_data.getPlayersTeam(player.uuid))
+            val player_data = level.playerState
+            val spawn = level_mod_data.getTeamSpawn(player_data.getPlayersTeam(player.uuid))
             player.teleportTo(
                 level, spawn.x, spawn.y, spawn.z,
                 setOf(), 0F, 0F, true
@@ -189,7 +191,7 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
             player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atBottomCenterOf(level_mod_data.map_centre))
 
             player.setGameMode(GameType.SURVIVAL)
-            level_mod_data.setPlayerAlive(player)
+            player_data.setPlayerAlive(player)
             player.connection.send(
                 ClientboundClearTitlesPacket(true)
             )
@@ -347,7 +349,7 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
         override fun recurseTrigger(level: ServerLevel) {
             val player = level.getPlayerByUUID(playerId)
             if (player != null && !player.activeEffects.any { e -> e.`is`(MobEffects.INVISIBILITY) }) {
-                level.gameState.setPlayerInvisibility(playerId, false)
+                level.playerState.setPlayerInvisibility(playerId, false)
                 level.chunkSource.sendToTrackingPlayers(player, ClientboundSetEquipmentPacket(player.id, listOf(
                     Pair(EquipmentSlot.HEAD, player.inventory.getItem(EquipmentSlot.HEAD.getIndex(36))),
                     Pair(EquipmentSlot.CHEST, player.inventory.getItem(EquipmentSlot.CHEST.getIndex(36))),

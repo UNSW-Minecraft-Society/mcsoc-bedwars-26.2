@@ -1,9 +1,9 @@
 package mcsoc.bedwars.entities
 
 import mcsoc.bedwars.datatrackers.CustomEntityType
-import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.eventQueue
+import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.gamestate.GameEvent
 import mcsoc.bedwars.gui.ShopGui
 import mcsoc.bedwars.gui.ShopType
@@ -21,7 +21,7 @@ object CustomEntityInteractions {
     fun triggerShopkeeperOpen(player: Player, level: Level, hand: InteractionHand, entity: Entity): InteractionResult {
         if (level !is ServerLevel || level.isClientSide)
             return InteractionResult.PASS
-        if (player !is ServerPlayer || !level.gameState.isPlayerAlive(player))
+        if (player !is ServerPlayer || !level.playerState.isPlayerAlive(player))
             return InteractionResult.PASS
         val type = level.customEntityData.getEntityType(entity) ?: return InteractionResult.PASS
         when (type) {

@@ -8,6 +8,7 @@ import mcsoc.bedwars.gamestate.BORDER_SIZE
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.generators.GeneratorType
 import com.mojang.datafixers.util.Pair
+import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.inWholeTicks
 import net.minecraft.ChatFormatting
@@ -32,12 +33,14 @@ object TeamEffects {
     // On start of game run this to add players (probably just active)
     fun createTeamsWithPlayers(level: ServerLevel) {
         val mod_level_data = level.gameState
+        val playerState = level.playerState
         val players = mod_level_data.getActivePlayers()
         val teams = mod_level_data.getActiveTeams().toList()
         val num_teams = teams.size
-        players.filter{mod_level_data.getPlayersTeam(it) == Team.NONE}.shuffled().forEachIndexed { index, player ->
+        players.filter{playerState.getPlayersTeam(it) == Team.NONE}.shuffled().forEachIndexed { index, player ->
             val team = teams[index % num_teams]
             mod_level_data.addPlayer(player, team, level.scoreboard, level.getPlayerByUUID(player)?.scoreboardName)
+            playerState.setTeam(player, team)
         }
     }
     
@@ -46,6 +49,7 @@ object TeamEffects {
         for (player in players) {
             mod_level_data.addActivePlayer(player)
             mod_level_data.addPlayer(player, team, level.scoreboard, level.getPlayerByUUID(player)?.scoreboardName)
+            level.playerState.setTeam(player, team)
         }
     }
 }

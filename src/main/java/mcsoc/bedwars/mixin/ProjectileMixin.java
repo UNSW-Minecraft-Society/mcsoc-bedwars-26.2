@@ -1,10 +1,7 @@
 package mcsoc.bedwars.mixin;
 
 import mcsoc.bedwars.eventhandlers.ProjectileHitCallback;
-import mcsoc.bedwars.eventhandlers.ThrowableProjectileTickCallback;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.phys.HitResult;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,7 +15,6 @@ public class ProjectileMixin {
 
     @Inject(at = @At("HEAD"), method = "onHit")
     protected void onOnHit(HitResult hitResult, CallbackInfo ci) {
-        InteractionResult result = ProjectileHitCallback.Companion.getEVENT().invoker()
-                .onHit((Projectile) (Object) this, hitResult);
+        ProjectileHitCallback.Companion.getEVENT().invoker().onHit((Projectile) (Object) this, hitResult);
     }
 }

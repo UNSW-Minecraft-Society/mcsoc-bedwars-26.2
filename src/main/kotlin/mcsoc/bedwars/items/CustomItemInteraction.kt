@@ -3,6 +3,7 @@ package mcsoc.bedwars.items
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.entities.spawnBedBrute
 import mcsoc.bedwars.entities.spawnBedBug
 import mcsoc.bedwars.entities.spawnDreamDefender
@@ -53,11 +54,10 @@ object CustomItemInteraction {
         val item = player.getItemInHand(hand)
         if (level.isClientSide || level !is ServerLevel)
             return InteractionResult.PASS
-        val gameState = level.gameState
-        if (!gameState.isPlayerAlive(player))
+        if (!level.playerState.isPlayerAlive(player))
             return InteractionResult.PASS
         val type = item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
-        val team = gameState.getPlayersTeam(player.uuid)
+        val team = level.playerState.getPlayersTeam(player.uuid)
         when (type) {
             CustomItemTypes.FIREBALL.value -> return useFireballEffect(player, level, item)
             CustomItemTypes.INSTANT_TNT.value -> return useInstantTNTEffect(player, level, item, hitResult)
@@ -75,14 +75,14 @@ object CustomItemInteraction {
         val owner = projectile.owner
         if (level.isClientSide || level !is ServerLevel)
             return InteractionResult.PASS
-        val gameState = level.gameState
+        val playerState = level.playerState
         if (owner !is Player)
             return InteractionResult.PASS
         if (projectile !is ThrowableItemProjectile) // required for casting to ThrowableItemProjectile to grab item data (which all custom projectiles are)
             return InteractionResult.PASS
 
         val type = projectile.item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
-        val team = gameState.getPlayersTeam(owner.uuid)
+        val team = playerState.getPlayersTeam(owner.uuid)
         when (type) {
             CustomItemTypes.BRIDGE_EGG.value -> return tickBridgeEggEffect(level, projectile, team)
         }
@@ -94,14 +94,14 @@ object CustomItemInteraction {
         val owner = projectile.owner
         if (level.isClientSide || level !is ServerLevel)
             return InteractionResult.PASS
-        val gameState = level.gameState
+        val playerState = level.playerState
         if (owner !is Player)
             return InteractionResult.PASS
         if (projectile !is ThrowableItemProjectile) // required for casting to ThrowableItemProjectile to grab item data (which all custom projectiles are)
             return InteractionResult.PASS
 
         val type = projectile.item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
-        val team = gameState.getPlayersTeam(owner.uuid)
+        val team = playerState.getPlayersTeam(owner.uuid)
         when (type) {
             CustomItemTypes.BALL_OF_BUGS.value -> return doBallOfBugsEffect(level, projectile, team, hitResult)
         }
@@ -166,7 +166,7 @@ object CustomItemInteraction {
         if (level !is ServerLevel)
             return InteractionResult.PASS
         fun isEnemy(otherPlayer: Player): Boolean {
-            val otherTeam = level.gameState.getPlayersTeam(otherPlayer.uuid)
+            val otherTeam = level.playerState.getPlayersTeam(otherPlayer.uuid)
             return (otherTeam != Team.NONE && otherTeam != team)
         }
         fun getDistance(otherPlayer: Entity): Double {

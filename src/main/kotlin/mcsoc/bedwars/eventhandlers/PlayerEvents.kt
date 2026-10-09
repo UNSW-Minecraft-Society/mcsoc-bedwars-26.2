@@ -3,6 +3,7 @@ package mcsoc.bedwars.eventhandlers
 import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.utils.ticks
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
@@ -34,7 +35,7 @@ fun registerAfterEffectAppliedEvent() {
     ServerMobEffectEvents.AFTER_ADD.register{effect, maybe_player, ctx ->
         if (maybe_player !is ServerPlayer) return@register
         if (effect.`is`(MobEffects.INVISIBILITY)) {
-            maybe_player.level().gameState.setPlayerInvisibility(maybe_player.uuid, true)
+            maybe_player.level().playerState.setPlayerInvisibility(maybe_player.uuid, true)
             maybe_player.level().eventQueue.queueInvisExpiry((effect.duration + 1).ticks, maybe_player.uuid)
         }
     }
@@ -44,7 +45,7 @@ fun registerAfterEffectAppliedEvent() {
 fun registerPlayerDamageEvent() {
     ServerLivingEntityEvents.AFTER_DAMAGE.register{maybe_player, source, baseDamageTaken, damageTaken, blocked ->
         if (maybe_player !is ServerPlayer || blocked) return@register
-        maybe_player.level().gameState.setPlayerInvisibility(maybe_player.uuid, false)
+        maybe_player.level().playerState.setPlayerInvisibility(maybe_player.uuid, false)
     }
 }
 

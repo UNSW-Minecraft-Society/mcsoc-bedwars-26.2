@@ -2,6 +2,7 @@ package mcsoc.bedwars.gui
 
 import mcsoc.bedwars.datatrackers.clock
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.formatMMSS
 import net.minecraft.ChatFormatting
@@ -54,7 +55,7 @@ object ScoreboardGui {
         if (level.gameState.getBedDestroyed(team)) {
             val teamPlayers = level.gameState.getPlayersInTeam(team)
             val numAlive = teamPlayers.count {
-                level.getPlayerByUUID(it)?.let { player -> !level.gameState.isPlayerEliminated(player) } ?: false
+                level.getPlayerByUUID(it)?.let { player -> !level.playerState.isPlayerEliminated(player) } ?: false
             }
             teamStatus = if (numAlive > 0) "${ChatFormatting.YELLOW}$numAlive left" else "${ChatFormatting.RED}✖ eliminated"
         } else teamStatus = "${ChatFormatting.GREEN}✔ bed intact"

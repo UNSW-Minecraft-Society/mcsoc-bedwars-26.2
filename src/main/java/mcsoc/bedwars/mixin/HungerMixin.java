@@ -5,7 +5,6 @@ import mcsoc.bedwars.datatrackers.LevelData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.food.FoodData;
-import net.minecraft.world.level.gamerules.GameRule;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
