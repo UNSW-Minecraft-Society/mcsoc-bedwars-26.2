@@ -4,7 +4,6 @@ import mcsoc.bedwars.items.CustomItemInteraction
 import net.fabricmc.fabric.api.event.player.UseBlockCallback
 import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.ModDataTracker
-import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.gamestate.GameManager
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents
 import mcsoc.bedwars.entities.CustomEntityInteractions

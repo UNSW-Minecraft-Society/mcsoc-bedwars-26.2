@@ -39,15 +39,15 @@ sealed class GeneratorType(private val id_factory: (GeneratorType) -> String) {
     
     data class BASE(val team: Team): GeneratorType(::getSerialId) {
         companion object {
-            internal const val prefix = "base_"
+            internal const val PREFIX = "base_"
             internal fun parseSerial(serial: String): GeneratorType.BASE {
-                val team = Team.valueOf(serial.removePrefix(GeneratorType.BASE.prefix).uppercase())
+                val team = Team.valueOf(serial.removePrefix(GeneratorType.BASE.PREFIX).uppercase())
                 return BASE(team)
             }
             
             private fun getSerialId(type: GeneratorType): String {
                 if (type !is GeneratorType.BASE) return ""
-                return prefix + type.team.name
+                return PREFIX + type.team.name
             }
         }
         
@@ -104,7 +104,7 @@ sealed class GeneratorType(private val id_factory: (GeneratorType) -> String) {
         val CODEC: Codec<GeneratorType> = Codec.STRING.xmap(
             { value ->
                 return@xmap parseTypeString(value) ?: when {
-                    value.startsWith(GeneratorType.BASE.prefix) -> GeneratorType.BASE.parseSerial(value)
+                    value.startsWith(GeneratorType.BASE.PREFIX) -> GeneratorType.BASE.parseSerial(value)
                     else -> error("Unknown generator type: $value")
                 }
             },

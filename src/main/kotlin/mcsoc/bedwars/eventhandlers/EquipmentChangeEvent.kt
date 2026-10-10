@@ -15,7 +15,7 @@ private fun armourUnequiped(equipmentSlot: EquipmentSlot, previous: ItemStack, n
 fun registerEquipmentChangeEvents() {
     ServerEntityEvents.EQUIPMENT_CHANGE.register { player, equipmentSlot, previous, next ->
         // This could be cleaner as a mixin but I'm not bothered rn
-        if (player is ServerPlayer && player.level().gameState.getGamePeriod() != GamePeriod.INACTIVE) {
+        if (player is ServerPlayer && player.gameState.getGamePeriod() != GamePeriod.INACTIVE) {
             if (armourUnequiped(equipmentSlot, previous, next)) player.setItemSlot(equipmentSlot, previous)
         }
     }

@@ -9,6 +9,7 @@ import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.playerState
+import mcsoc.bedwars.datatrackers.playerstate.teamValue
 import mcsoc.bedwars.utils.CODEC
 import mcsoc.bedwars.utils.getProgressBar
 import mcsoc.bedwars.utils.placeBlockIfValid
@@ -182,8 +183,7 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
         override fun concludeTrigger(level: ServerLevel) {
             val player = level.server.playerList.getPlayer(player) ?: return
             val level_mod_data = level.gameState
-            val player_data = level.playerState
-            val spawn = level_mod_data.getTeamSpawn(player_data.getPlayersTeam(player.uuid))
+            val spawn = level_mod_data.getTeamSpawn(player.teamValue())
             player.teleportTo(
                 level, spawn.x, spawn.y, spawn.z,
                 setOf(), 0F, 0F, true
@@ -191,7 +191,7 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
             player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atBottomCenterOf(level_mod_data.map_centre))
 
             player.setGameMode(GameType.SURVIVAL)
-            player_data.setPlayerAlive(player)
+            level.playerState.setPlayerAlive(player)
             player.connection.send(
                 ClientboundClearTitlesPacket(true)
             )

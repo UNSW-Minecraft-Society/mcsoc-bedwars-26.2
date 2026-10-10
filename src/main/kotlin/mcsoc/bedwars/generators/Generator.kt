@@ -2,7 +2,6 @@ package mcsoc.bedwars.generators
 
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.registries.Registries
 import net.minecraft.network.chat.Component

@@ -11,6 +11,7 @@ import mcsoc.bedwars.datatrackers.playerstate.PlayerDataTracker
 import mcsoc.bedwars.gui.ShopConfig
 import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.util.datafix.DataFixTypes
 import net.minecraft.world.level.saveddata.SavedData
 import net.minecraft.world.level.saveddata.SavedDataType
@@ -96,7 +97,11 @@ sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>
 
 
 val ServerLevel.gameState: ModDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GameState)
+val ServerPlayer.gameState: ModDataTracker
+    get() = level().gameState
 val ServerLevel.playerState: PlayerDataTracker get() = levelTiedData.getDataOfType(LevelDataType.PlayerState)
+val ServerPlayer.playerState: PlayerDataTracker
+    get() = level().playerState
 val ServerLevel.blockProtection: BlockProtectionTracker get() = levelTiedData.getDataOfType(LevelDataType.BlockProtection)
 val ServerLevel.generatorState: GeneratorDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GeneratorState)
 val ServerLevel.customEntityData get() = levelTiedData.getDataOfType(LevelDataType.CustomEntityData)

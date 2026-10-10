@@ -4,8 +4,8 @@ import eu.pb4.sgui.api.ClickType
 import eu.pb4.sgui.api.elements.GuiElement
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.gameState
-import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.datatrackers.playerState
+import mcsoc.bedwars.datatrackers.playerstate.teamValue
 import mcsoc.bedwars.upgrades.TeamUpgradeType
 import mcsoc.bedwars.upgrades.TrapUpgrade
 import mcsoc.bedwars.upgrades.UpgradeItemType
@@ -165,7 +165,7 @@ open class ShopItem : AbstractShopItem {
 }
 
 class ShopCustomItem : AbstractShopItem {
-    protected var stackCreate: () -> ItemStack
+    private var stackCreate: () -> ItemStack
 
     constructor(stackCreate: () -> ItemStack, currency: Item, price: Int) : super(currency, price) {
         this.stackCreate = stackCreate
@@ -176,7 +176,7 @@ class ShopCustomItem : AbstractShopItem {
 
 
 class ShopPlayerCustomItem : AbstractShopItem, PlayerSpecificShopProduct {
-    protected var stackCreate: (ServerPlayer) -> ItemStack
+    private var stackCreate: (ServerPlayer) -> ItemStack
     private lateinit var player: ServerPlayer
 
     constructor(stackCreate: (ServerPlayer) -> ItemStack, currency: Item, price: Int) : super(currency, price) {
@@ -220,7 +220,7 @@ class ShopTeamItem : ShopItem, PlayerSpecificShopProduct {
     }
 
     override fun setShopPlayer(player: ServerPlayer) {
-        team = player.level().playerState.getPlayersTeam(player.uuid)
+        team = player.teamValue()
     }
 }
 
@@ -242,32 +242,28 @@ class ShopPlayerUpgrade : ShopProduct, PlayerSpecificShopProduct {
     }
 
     override fun getItemStack(): ItemStack {
-        val playerState = player.level().playerState
-        return playerState.getNextItemStack(player, playerUpgrade) ?: EMPTY_STACK
+        return player.playerState.getNextItemStack(player, playerUpgrade) ?: EMPTY_STACK
     }
 
     override fun getClickCallback(): GuiElement.ClickCallback {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player
             setShopPlayer(player)
-            val playerState = player.level().playerState
             purchaseUnit(player, fun(): Boolean {
-                playerState.upgradeItem(player, playerUpgrade)
+                player.playerState.upgradeItem(player, playerUpgrade)
                 return true
             })
         }
     }
 
     override fun getItemCost(): ItemStack? {
-        val playerState = player.level().playerState
-        val tier = playerState.getTier(player, playerUpgrade)
+        val tier = player.playerState.getTier(player, playerUpgrade)
         return if (tier >= currencies.size) null
         else  ItemStack(currencies[tier], prices[tier])
     }
 
     override fun getProductName(): Component {
-        val playerState = player.level().playerState
-        val tier = playerState.getTier(player, playerUpgrade)
+        val tier = player.playerState.getTier(player, playerUpgrade)
         return if (tier >= currencies.size) Component.empty()
         else Component.literal(names[tier])
     }
@@ -292,11 +288,8 @@ abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player
             if (!isUpgradable()) return@ClickCallback
-            val gameState = player.level().gameState
-            val playerState = player.level().playerState
-            val team = playerState.getPlayersTeam(player.uuid)
             purchaseUnit(player, fun(): Boolean {
-                gameState.upgrade(team, teamUpgrade, player.level())
+                player.gameState.upgrade(player.teamValue(), teamUpgrade, player.level())
                 return true
             })
         }
@@ -307,8 +300,7 @@ abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
     }
 
     protected fun getUpgradeState(): T {
-        val team = player.level().playerState.getPlayersTeam(player.uuid)
-        return player.level().gameState.getUpgrade(team, teamUpgrade)
+        return player.gameState.getUpgrade(player.teamValue(), teamUpgrade)
     }
 
     protected abstract fun isUpgradable(): Boolean
@@ -409,10 +401,8 @@ class ShopTrapUpgrade : ShopProduct, PlayerSpecificShopProduct {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player
             if (isTrapActive()) return@ClickCallback
-            val gameState = player.level().gameState
-            val team = player.level().playerState.getPlayersTeam(player.uuid)
             purchaseUnit(player, fun(): Boolean {
-                gameState.addTrap(team, trapUpgrade)
+                player.gameState.addTrap(player.teamValue(), trapUpgrade)
                 return true
             })
         }
@@ -433,9 +423,7 @@ class ShopTrapUpgrade : ShopProduct, PlayerSpecificShopProduct {
     }
 
     private fun isTrapActive(): Boolean {
-        val gameState = player.level().gameState
-        val team = player.level().playerState.getPlayersTeam(player.uuid)
-        return gameState.getTraps(team).contains(trapUpgrade)
+        return player.gameState.getTraps(player.teamValue()).contains(trapUpgrade)
     }
 
 }
@@ -468,10 +456,8 @@ class ShopGeneratorUpgrade : ShopProduct, PlayerSpecificShopProduct {
     override fun getClickCallback(): GuiElement.ClickCallback {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player
-            val gameState = player.level().gameState
-            val team = player.level().playerState.getPlayersTeam(player.uuid)
             purchaseUnit(player, fun(): Boolean {
-                gameState.upgradeGen(team)
+                player.gameState.upgradeGen(player.teamValue())
                 return true
             })
         }

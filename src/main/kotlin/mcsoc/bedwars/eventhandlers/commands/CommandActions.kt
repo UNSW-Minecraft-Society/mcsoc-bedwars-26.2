@@ -16,6 +16,7 @@ import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.datatrackers.playerState
+import mcsoc.bedwars.datatrackers.playerstate.teamValue
 import mcsoc.bedwars.datatrackers.shopConfig
 import mcsoc.bedwars.entities.spawnDreamDefender
 import mcsoc.bedwars.gamestate.GameManager
@@ -159,8 +160,7 @@ internal object CommandActions {
             return 0
         }
 
-        val team = ctx.source.level.playerState.getPlayersTeam(player.uuid)
-        player.sendSystemMessage(Component.literal("Your team is ${team.name}").withColor(TextColor.GREEN))
+        player.sendSystemMessage(Component.literal("Your team is ${player.teamValue().name}").withColor(TextColor.GREEN))
 
         return 1
     }

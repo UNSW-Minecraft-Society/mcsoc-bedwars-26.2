@@ -7,12 +7,14 @@ import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.LevelDataType
 import mcsoc.bedwars.datatrackers.LevelTiedData
 import mcsoc.bedwars.datatrackers.PlayerTeamState
+import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.gamestate.RESPAWN_TIME
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.ticks
 import net.minecraft.core.UUIDUtil
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
@@ -180,8 +182,11 @@ private class PlayerDataStore(): PlayerInvisSwitcher, PlayerStateHolder, PlayerU
     
     fun setTeam(player: UUID, team: Team) = getPlayerData(player).setTeamName(team)
     fun getPlayersTeam(player: UUID): Team = getPlayerData(player).getTeamName()
-    
 }
+
+fun ServerLevel.team(player: UUID) = this.playerState.getPlayersTeam(player)
+fun ServerLevel.team(player: Player) = this.playerState.getPlayersTeam(player.uuid)
+fun ServerPlayer.teamValue() = this.level().team(this.uuid)
 
 class PlayerDataTracker: LevelTiedData, PlayerStateExposer, PlayerUpgradesExposer, PlayerTimeExposer, PlayerStatsExposer, PlayerInvisSwitchExposer {
     companion object {
@@ -206,7 +211,7 @@ class PlayerDataTracker: LevelTiedData, PlayerStateExposer, PlayerUpgradesExpose
     fun resetPlayerData() = player_data.resetPlayerData()
 
     override fun isPlayerAlive(player: Player) = player_data.isPlayerAlive(player)
-    override fun isPlayerRespawning(player: Player) = player_data.isPlayerRespawning(player)
+    override fun isPlayerRespawning(player: Player) = player_data.isPlayerRespawning(player) // not used ?
     override fun getPlayerDeathPosition(player: Player): Vec3 = player_data.getPlayerDeathPosition(player)
     override fun isPlayerEliminated(player: Player): Boolean = player_data.isPlayerEliminated(player)
 
@@ -231,18 +236,19 @@ class PlayerDataTracker: LevelTiedData, PlayerStateExposer, PlayerUpgradesExpose
     override fun getNextItemStack(player: ServerPlayer, item: UpgradeItemType) = player_data.getNextItemStack(player, item)
     override fun getTier(player: ServerPlayer, item: UpgradeItemType) = player_data.getTier(player, item)
 
-    override fun getPlayerRespawnSeconds(player: ServerPlayer): Int = player_data.getPlayerRespawnSeconds(player)
+    override fun getPlayerRespawnSeconds(player: ServerPlayer): Int = player_data.getPlayerRespawnSeconds(player) // not used
     override fun resetPlayerRespawnTime(player: ServerPlayer) {
         setDirty()
         player_data.resetPlayerRespawnTime(player)
     }
-    override fun playerTimerSecondPassed(player: ServerPlayer): Int = player_data.playerTimerSecondPassed(player)
+    override fun playerTimerSecondPassed(player: ServerPlayer): Int = player_data.playerTimerSecondPassed(player) // not used
 
     override fun getPlayerKills(uuid: UUID): Int = player_data.getPlayerKills(uuid)
     override fun getPlayerFinalKills(uuid: UUID): Int = player_data.getPlayerFinalKills(uuid)
     override fun getPlayerDeaths(uuid: UUID): Int = player_data.getPlayerDeaths(uuid)
     override fun getPlayerBedsDestroyed(uuid: UUID): Int = player_data.getPlayerBedsDestroyed(uuid)
 
+    // none are used
     override fun setPlayerKills(uuid: UUID, value: Int) = player_data.setPlayerKills(uuid, value)
     override fun setPlayerFinalKills(uuid: UUID, value: Int) = player_data.setPlayerFinalKills(uuid, value)
     override fun setPlayerDeaths(uuid: UUID, value: Int) = player_data.setPlayerDeaths(uuid, value)

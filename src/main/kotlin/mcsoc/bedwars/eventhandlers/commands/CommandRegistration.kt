@@ -8,7 +8,6 @@ import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.clockSpeed
-import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.playerState
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.commands.CommandSourceStack

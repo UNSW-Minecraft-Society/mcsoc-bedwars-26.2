@@ -6,7 +6,6 @@ import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.GamePeriod
 import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader
-import mcsoc.bedwars.datatrackers.gameState
 import net.minecraft.core.BlockPos
 import net.minecraft.server.level.ServerLevel
 import kotlin.time.Duration

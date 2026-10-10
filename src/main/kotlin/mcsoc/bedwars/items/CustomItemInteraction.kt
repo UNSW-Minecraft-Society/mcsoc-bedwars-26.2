@@ -2,8 +2,8 @@ package mcsoc.bedwars.items
 
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.eventQueue
-import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.playerState
+import mcsoc.bedwars.datatrackers.playerstate.team
 import mcsoc.bedwars.entities.spawnBedBrute
 import mcsoc.bedwars.entities.spawnBedBug
 import mcsoc.bedwars.entities.spawnDreamDefender
@@ -57,15 +57,15 @@ object CustomItemInteraction {
         if (!level.playerState.isPlayerAlive(player))
             return InteractionResult.PASS
         val type = item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
-        val team = level.playerState.getPlayersTeam(player.uuid)
+        val team = level.team(player)
         when (type) {
             CustomItemTypes.FIREBALL.value -> return useFireballEffect(player, level, item)
             CustomItemTypes.INSTANT_TNT.value -> return useInstantTNTEffect(player, level, item, hitResult)
-            CustomItemTypes.POPUP_TOWER.value -> return usePopupTowerEffect(player, level, item, hitResult, team)
-            CustomItemTypes.PLAYER_TRACKER.value -> return usePlayerTrackerEffect(player, level, item, team)
+            CustomItemTypes.POPUP_TOWER.value -> return usePopupTowerEffect(player, level, item, hitResult)
+            CustomItemTypes.PLAYER_TRACKER.value -> return usePlayerTrackerEffect(player, level, item)
             CustomItemTypes.SKY_WAND.value -> return useSkyWandEffect(player, level, item, entity)
-            CustomItemTypes.DREAM_DEFENDER.value -> return useDreamDefenderEffect(player, level, item, hitResult, team)
-            CustomItemTypes.BED_BRUTE.value -> return useBedBruteEffect(player, level, item, hitResult, team)
+            CustomItemTypes.DREAM_DEFENDER.value -> return useDreamDefenderEffect(player, level, item, hitResult)
+            CustomItemTypes.BED_BRUTE.value -> return useBedBruteEffect(player, level, item, hitResult)
         }
         return InteractionResult.PASS
     }
@@ -75,16 +75,14 @@ object CustomItemInteraction {
         val owner = projectile.owner
         if (level.isClientSide || level !is ServerLevel)
             return InteractionResult.PASS
-        val playerState = level.playerState
         if (owner !is Player)
             return InteractionResult.PASS
         if (projectile !is ThrowableItemProjectile) // required for casting to ThrowableItemProjectile to grab item data (which all custom projectiles are)
             return InteractionResult.PASS
 
         val type = projectile.item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
-        val team = playerState.getPlayersTeam(owner.uuid)
         when (type) {
-            CustomItemTypes.BRIDGE_EGG.value -> return tickBridgeEggEffect(level, projectile, team)
+            CustomItemTypes.BRIDGE_EGG.value -> return tickBridgeEggEffect(level, projectile, level.team(owner))
         }
         return InteractionResult.PASS
     }
@@ -94,16 +92,14 @@ object CustomItemInteraction {
         val owner = projectile.owner
         if (level.isClientSide || level !is ServerLevel)
             return InteractionResult.PASS
-        val playerState = level.playerState
         if (owner !is Player)
             return InteractionResult.PASS
         if (projectile !is ThrowableItemProjectile) // required for casting to ThrowableItemProjectile to grab item data (which all custom projectiles are)
             return InteractionResult.PASS
 
         val type = projectile.item.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getString(CUSTOM_ITEM_TAG)?.getOrNull()
-        val team = playerState.getPlayersTeam(owner.uuid)
         when (type) {
-            CustomItemTypes.BALL_OF_BUGS.value -> return doBallOfBugsEffect(level, projectile, team, hitResult)
+            CustomItemTypes.BALL_OF_BUGS.value -> return doBallOfBugsEffect(level, projectile, level.team(owner), hitResult)
         }
         return InteractionResult.PASS
     }
@@ -147,11 +143,11 @@ object CustomItemInteraction {
         return InteractionResult.SUCCESS
     }
 
-    private fun usePopupTowerEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, team: Team): InteractionResult {
+    private fun usePopupTowerEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?): InteractionResult {
         if (hitResult !is HitResult || level !is ServerLevel)
             return InteractionResult.PASS
         val centerPos = hitResult.location.toBlockPos()
-        val buildingBlockState = Blocks.WOOL.pick(team.dyeColour).defaultBlockState()
+        val buildingBlockState = Blocks.WOOL.pick(level.team(player).dyeColour).defaultBlockState()
         val direction = player.lookAngle.toCardinalDirection()
         level.eventQueue.queuePopupTowerConstruction(centerPos, buildingBlockState, direction)
         if (!player.isCreative) item.count -= 1
@@ -160,14 +156,14 @@ object CustomItemInteraction {
         return InteractionResult.SUCCESS
     }
 
-    private fun usePlayerTrackerEffect(player: Player, level: Level, item: ItemStack, team: Team): InteractionResult {
+    private fun usePlayerTrackerEffect(player: Player, level: Level, item: ItemStack): InteractionResult {
         if (level.isClientSide)
             return InteractionResult.PASS
         if (level !is ServerLevel)
             return InteractionResult.PASS
         fun isEnemy(otherPlayer: Player): Boolean {
-            val otherTeam = level.playerState.getPlayersTeam(otherPlayer.uuid)
-            return (otherTeam != Team.NONE && otherTeam != team)
+            val otherTeam = level.team(otherPlayer.uuid)
+            return (otherTeam != Team.NONE && otherTeam != level.team(player))
         }
         fun getDistance(otherPlayer: Entity): Double {
             return player.position().subtract(otherPlayer.position()).length()
@@ -198,20 +194,20 @@ object CustomItemInteraction {
         return InteractionResult.SUCCESS
     }
 
-    private fun useDreamDefenderEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, team: Team): InteractionResult {
+    private fun useDreamDefenderEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?): InteractionResult {
         if (hitResult !is HitResult || level !is ServerLevel)
             return InteractionResult.PASS
         val position = hitResult.location
-        spawnDreamDefender(level, position, team)
+        spawnDreamDefender(level, position, level.team(player))
         if (!player.isCreative) item.count -= 1
         return InteractionResult.SUCCESS
     }
 
-    private fun useBedBruteEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?, team: Team): InteractionResult {
+    private fun useBedBruteEffect(player: Player, level: Level, item: ItemStack, hitResult: HitResult?): InteractionResult {
         if (hitResult !is HitResult || level !is ServerLevel)
             return InteractionResult.PASS
         val position = hitResult.location
-        spawnBedBrute(level, position, team)
+        spawnBedBrute(level, position, level.team(player))
         if (!player.isCreative) item.count -= 1
         return InteractionResult.SUCCESS
     }

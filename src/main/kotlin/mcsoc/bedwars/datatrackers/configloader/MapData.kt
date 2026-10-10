@@ -214,7 +214,7 @@ private object GeneratorTypeSerialiser: KSerializer<LoadedGeneratorType> {
         }
     }
     override fun deserialize(decoder: Decoder): LoadedGeneratorType = decoder.decodeStructure(descriptor) {
-        var type: String = ""
+        var type = ""
         
         while (true) {
             when (val index = decodeElementIndex(descriptor)) {
@@ -247,7 +247,7 @@ private object GeneratorPositionSerialiser: KSerializer<Pair<LoadedGeneratorType
     
     override fun deserialize(decoder: Decoder): Pair<LoadedGeneratorType, CylindricalBlockPos> = decoder.decodeStructure(descriptor) {
         var type: LoadedGeneratorType = LoadedGeneratorType.Emerald
-        var pos: CylindricalBlockPos = CylindricalBlockPos(0F, 0F, 0)
+        var pos = CylindricalBlockPos(0F, 0F, 0)
         
         while (true) {
             when (val index = decodeElementIndex(descriptor)) {
@@ -352,7 +352,7 @@ private object ShopkeeperPositionSerialiser: KSerializer<Pair<LoadedShopkeeper, 
     
     override fun deserialize(decoder: Decoder): Pair<LoadedShopkeeper, CylindricalBlockPos> = decoder.decodeStructure(descriptor) {
         var type: LoadedShopkeeper = LoadedShopkeeper.PERSONAL
-        var pos: CylindricalBlockPos = CylindricalBlockPos(0F, 0F, 0)
+        var pos = CylindricalBlockPos(0F, 0F, 0)
         
         while (true) {
             when (val index = decodeElementIndex(descriptor)) {

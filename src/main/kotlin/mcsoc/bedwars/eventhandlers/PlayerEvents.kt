@@ -17,7 +17,7 @@ import net.minecraft.world.effect.MobEffects
 fun registerAfterDeathEvent() {
     ServerLivingEntityEvents.AFTER_DEATH.register{maybe_player, death_source ->
         if (maybe_player !is ServerPlayer) return@register
-        if (maybe_player.level().gameState.getGamePhase() == GamePhase.ACTIVE) {
+        if (maybe_player.gameState.getGamePhase() == GamePhase.ACTIVE) {
             GameManager.handlePlayerDeath(maybe_player, death_source)
         }
     }
@@ -35,7 +35,7 @@ fun registerAfterEffectAppliedEvent() {
     ServerMobEffectEvents.AFTER_ADD.register{effect, maybe_player, ctx ->
         if (maybe_player !is ServerPlayer) return@register
         if (effect.`is`(MobEffects.INVISIBILITY)) {
-            maybe_player.level().playerState.setPlayerInvisibility(maybe_player.uuid, true)
+            maybe_player.playerState.setPlayerInvisibility(maybe_player.uuid, true)
             maybe_player.level().eventQueue.queueInvisExpiry((effect.duration + 1).ticks, maybe_player.uuid)
         }
     }
@@ -45,7 +45,7 @@ fun registerAfterEffectAppliedEvent() {
 fun registerPlayerDamageEvent() {
     ServerLivingEntityEvents.AFTER_DAMAGE.register{maybe_player, source, baseDamageTaken, damageTaken, blocked ->
         if (maybe_player !is ServerPlayer || blocked) return@register
-        maybe_player.level().playerState.setPlayerInvisibility(maybe_player.uuid, false)
+        maybe_player.playerState.setPlayerInvisibility(maybe_player.uuid, false)
     }
 }
 
