@@ -15,6 +15,7 @@ import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader.Companion.place
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
+import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.CylindricalBlockPos
@@ -136,8 +137,8 @@ private data class BaseIslandData(
     override val rotation: (Float) -> Double get() = Float::toDouble
     override fun place(level: ServerLevel, origin: BlockPos): BlockPos {
         val pos = super.place(level, origin)
-        level.gameState.setTeamSpawn(team, Vec3.atBottomCenterOf(spawn_position.relToMapOrigin(pos, cpos)))
-        level.gameState.setTeamBedPosition(team, bed_position.relToMapOrigin(pos, cpos))
+        level.teamState.setTeamSpawn(team, Vec3.atBottomCenterOf(spawn_position.relToMapOrigin(pos, cpos)))
+        level.teamState.setTeamBedPosition(team, bed_position.relToMapOrigin(pos, cpos))
         for ((shop, second) in shops) {
             shop.place(level, second.relToMapOrigin(pos, cpos), FLOAT_PI - cpos.angle)
         }
@@ -163,7 +164,7 @@ data class MapData private constructor(
     
     fun place(level: ServerLevel, origin: BlockPos) {
         // also register generators
-        level.gameState.initialiseTeams(base_islands.map(BaseIslandData::team).toSet(), level.scoreboard)
+        level.teamState.initialiseTeams(base_islands.map(BaseIslandData::team).toSet(), level.scoreboard)
         base_islands.forEach{it.place(level, origin)}
         diamond_islands.forEach{it.place(level, origin)}
         misc_islands.forEach{it.place(level, origin)}

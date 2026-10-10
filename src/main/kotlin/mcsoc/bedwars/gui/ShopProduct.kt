@@ -3,9 +3,9 @@ package mcsoc.bedwars.gui
 import eu.pb4.sgui.api.ClickType
 import eu.pb4.sgui.api.elements.GuiElement
 import mcsoc.bedwars.BedwarsPlugin
-import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.datatrackers.playerstate.teamValue
+import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.upgrades.TeamUpgradeType
 import mcsoc.bedwars.upgrades.TrapUpgrade
 import mcsoc.bedwars.upgrades.UpgradeItemType
@@ -289,7 +289,7 @@ abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
             val player = gui.player
             if (!isUpgradable()) return@ClickCallback
             purchaseUnit(player, fun(): Boolean {
-                player.gameState.upgrade(player.teamValue(), teamUpgrade, player.level())
+                player.teamState.upgrade(player.teamValue(), teamUpgrade, player.level())
                 return true
             })
         }
@@ -300,7 +300,7 @@ abstract class ShopTeamUpgrade<T> : ShopProduct, PlayerSpecificShopProduct {
     }
 
     protected fun getUpgradeState(): T {
-        return player.gameState.getUpgrade(player.teamValue(), teamUpgrade)
+        return player.teamState.getUpgrade(player.teamValue(), teamUpgrade)
     }
 
     protected abstract fun isUpgradable(): Boolean
@@ -402,7 +402,7 @@ class ShopTrapUpgrade : ShopProduct, PlayerSpecificShopProduct {
             val player = gui.player
             if (isTrapActive()) return@ClickCallback
             purchaseUnit(player, fun(): Boolean {
-                player.gameState.addTrap(player.teamValue(), trapUpgrade)
+                player.teamState.addTrap(player.teamValue(), trapUpgrade)
                 return true
             })
         }
@@ -423,7 +423,7 @@ class ShopTrapUpgrade : ShopProduct, PlayerSpecificShopProduct {
     }
 
     private fun isTrapActive(): Boolean {
-        return player.gameState.getTraps(player.teamValue()).contains(trapUpgrade)
+        return player.teamState.getTraps(player.teamValue()).contains(trapUpgrade)
     }
 
 }
@@ -457,7 +457,7 @@ class ShopGeneratorUpgrade : ShopProduct, PlayerSpecificShopProduct {
         return GuiElement.ClickCallback { index, clickType, action, gui ->
             val player = gui.player
             purchaseUnit(player, fun(): Boolean {
-                player.gameState.upgradeGen(player.teamValue())
+                player.teamState.upgradeGen(player.teamValue())
                 return true
             })
         }

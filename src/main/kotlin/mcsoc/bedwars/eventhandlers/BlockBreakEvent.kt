@@ -3,6 +3,7 @@ package mcsoc.bedwars.eventhandlers
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.playerstate.team
+import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.gamestate.GameManager
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents
 import net.minecraft.core.BlockPos
@@ -15,8 +16,7 @@ import net.minecraft.world.level.block.state.BlockState
 
 
 private fun isBedBreakAllowed(level: ServerLevel, player: Player, pos: BlockPos, state: BlockState): Boolean {
-    val game_data = level.gameState
-    val bed_pos = game_data.getTeamBedPosition(level.team(player))
+    val bed_pos = level.teamState.getTeamBedPosition(level.team(player))
     return !(pos == bed_pos || pos.relative(BedBlock.getConnectedDirection(state)) == bed_pos)
 }
 
@@ -30,11 +30,10 @@ fun registerBlockBreakEvents() {
 
     PlayerBlockBreakEvents.AFTER.register{level, player, pos, state, entity ->
         if (level !is ServerLevel || player !is ServerPlayer) return@register
-        val game_data = level.gameState
         
         if (state.`is`(BlockTags.BEDS)) {
-            for (team in game_data.getActiveTeams()) {
-                val bed_pos = game_data.getTeamBedPosition(team)
+            for (team in level.teamState.getActiveTeams()) {
+                val bed_pos = level.teamState.getTeamBedPosition(team)
                 if (pos == bed_pos || pos.relative(BedBlock.getConnectedDirection(state)) == bed_pos) {
                     GameManager.afterBedBreak(level, player, team)
                     break

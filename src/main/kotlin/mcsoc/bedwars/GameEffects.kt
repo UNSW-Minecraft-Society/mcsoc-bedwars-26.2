@@ -8,13 +8,15 @@ import mcsoc.bedwars.gamestate.BORDER_SIZE
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.generators.GeneratorType
 import com.mojang.datafixers.util.Pair
+import mcsoc.bedwars.datatrackers.getActivePlayers
 import mcsoc.bedwars.datatrackers.playerState
+import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.inWholeTicks
+import mcsoc.bedwars.utils.sendTitle
 import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket
-import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.EquipmentSlot
@@ -32,23 +34,22 @@ val DEATHMATCH_BORDER_TIME by lazy {(GamePeriod.TERMINAL.startTime!! - GamePerio
 object TeamEffects {
     // On start of game run this to add players (probably just active)
     fun createTeamsWithPlayers(level: ServerLevel) {
-        val mod_level_data = level.gameState
         val playerState = level.playerState
-        val players = mod_level_data.getActivePlayers()
-        val teams = mod_level_data.getActiveTeams().toList()
+        val teamState = level.teamState
+        val players = level.gameState.getActivePlayers()
+        val teams = teamState.getActiveTeams().toList()
         val num_teams = teams.size
         players.filter{playerState.getPlayersTeam(it) == Team.NONE}.shuffled().forEachIndexed { index, player ->
             val team = teams[index % num_teams]
-            mod_level_data.addPlayer(player, team, level.scoreboard, level.getPlayerByUUID(player)?.scoreboardName)
+            teamState.addPlayer(player, team, level.scoreboard, level.getPlayerByUUID(player)?.scoreboardName)
             playerState.setTeam(player, team)
         }
     }
     
     fun assignPlayersToTeam(level: ServerLevel, team: Team, players: Iterable<UUID>) {
-        val mod_level_data = level.gameState
         for (player in players) {
-            mod_level_data.addActivePlayer(player)
-            mod_level_data.addPlayer(player, team, level.scoreboard, level.getPlayerByUUID(player)?.scoreboardName)
+            level.gameState.addActivePlayer(player)
+            level.teamState.addPlayer(player, team, level.scoreboard, level.getPlayerByUUID(player)?.scoreboardName)
             level.playerState.setTeam(player, team)
         }
     }
@@ -81,41 +82,33 @@ object GameEffects {
     }
 
     fun triggerDeathmatch(level: ServerLevel) {
-        val gameState = level.gameState
-        gameState.getActiveTeams().forEach { team ->
-            val bedPos = gameState.getTeamBedPosition(team)
+        val teamState = level.teamState
+        teamState.getActiveTeams().forEach { team ->
+            val bedPos = teamState.getTeamBedPosition(team)
             // destroy remaining beds
-            if (!gameState.getBedDestroyed(team)) {
-                gameState.setBedAlive(team, false)
+            if (!teamState.getBedDestroyed(team)) {
+                teamState.setBedAlive(team, false)
                 level.destroyBlock(bedPos, false)
             }
             // spawn dragon
             spawnWakingWither(level, Vec3.atCenterOf(bedPos.offset(0, 32, 0)))
             // notify players
-            for (playerId in gameState.getPlayersInTeam(team)) {
+            for (playerId in teamState.getPlayersInTeam(team)) {
                 val player = level.getPlayerByUUID(playerId)
                 player?.sendSystemMessage(Component.literal("All beds broken, wither spawned, world border shrinking."))
                 if (player is ServerPlayer) {
-                    player.connection.send(
-                        ClientboundSetTitleTextPacket(
-                            Component.literal("${ChatFormatting.RED}DEATHMATCH")
-                        )
-                    )
+                    player.sendTitle(Component.literal("${ChatFormatting.RED}DEATHMATCH"))
                 }
             }
         }
-        spawnWakingWither(level, Vec3.atCenterOf(gameState.map_centre.offset(0, 128, 0)))
+        spawnWakingWither(level, Vec3.atCenterOf(level.gameState.map_centre.offset(0, 128, 0)))
         // shrink border
         val worldBorder = level.worldBorder
         worldBorder.lerpSizeBetween(BORDER_SIZE, MIN_DEATHMATCH_BORDER_SIZE, DEATHMATCH_BORDER_TIME, level.gameTime)
     }
 
     fun triggerGameEnd(level: ServerLevel) {
-        val gameState = level.gameState
-        for (playerId in gameState.getActivePlayers()) {
-            val player = level.getPlayerByUUID(playerId) ?: continue
-            player.kill(level)
-        }
+        level.getActivePlayers().forEach { it.kill(level) }
         GameManager.endGame(level)
     }
 }

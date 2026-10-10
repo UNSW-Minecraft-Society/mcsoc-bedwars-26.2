@@ -1,8 +1,8 @@
 package mcsoc.bedwars.generators
 
 import com.mojang.serialization.Codec
-import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
+import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.utils.Team
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.item.Item
@@ -63,7 +63,7 @@ sealed class GeneratorType(private val id_factory: (GeneratorType) -> String) {
             false
         )
         
-        override fun getUpgrade(level: ServerLevel) = level.gameState.getGenUpgrade(team)
+        override fun getUpgrade(level: ServerLevel) = level.teamState.getGenUpgrade(team)
     }
     
     data object DIAMOND: GeneratorType({"diamond"}) {

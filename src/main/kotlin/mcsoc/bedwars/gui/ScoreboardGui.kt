@@ -3,6 +3,7 @@ package mcsoc.bedwars.gui
 import mcsoc.bedwars.datatrackers.clock
 import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.playerState
+import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.formatMMSS
 import net.minecraft.ChatFormatting
@@ -44,7 +45,7 @@ object ScoreboardGui {
         lines += getGamePeriodLine(level)
         lines += getNextPeriodLine(level)
         lines += " "
-        for (team in level.gameState.getActiveTeams()) lines += getTeamLine(level, team)
+        for (team in level.teamState.getActiveTeams()) lines += getTeamLine(level, team)
         lines += "  "
         lines += getGameTimeLine(level)
         return lines
@@ -52,8 +53,8 @@ object ScoreboardGui {
 
     private fun getTeamLine(level: ServerLevel, team: Team): String {
         var teamStatus : String
-        if (level.gameState.getBedDestroyed(team)) {
-            val teamPlayers = level.gameState.getPlayersInTeam(team)
+        if (level.teamState.getBedDestroyed(team)) {
+            val teamPlayers = level.teamState.getPlayersInTeam(team)
             val numAlive = teamPlayers.count {
                 level.getPlayerByUUID(it)?.let { player -> !level.playerState.isPlayerEliminated(player) } ?: false
             }

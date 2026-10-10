@@ -3,10 +3,9 @@ package mcsoc.bedwars.datatrackers.playerstate
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import mcsoc.bedwars.datatrackers.GamePhase
 import mcsoc.bedwars.datatrackers.LevelDataType
 import mcsoc.bedwars.datatrackers.LevelTiedData
-import mcsoc.bedwars.datatrackers.PlayerTeamState
+import mcsoc.bedwars.datatrackers.teamstate.PlayerTeamState
 import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.gamestate.RESPAWN_TIME
 import mcsoc.bedwars.upgrades.UpgradableItem
@@ -21,9 +20,10 @@ import net.minecraft.world.phys.Vec3
 import java.util.UUID
 import kotlin.time.Duration
 
+
 private class PlayerDataRecord() : PlayerInvisHolder, PlayerStateRecord, PlayerTeamState, PlayerUpgradesRecord, PlayerTimeRecord, PlayerStatsRecord {
     companion object {
-        val TOOL_UPGRADES_CODEC: Codec<HashMap<UpgradeItemType, UpgradableItem>> =
+        private val TOOL_UPGRADES_CODEC: Codec<HashMap<UpgradeItemType, UpgradableItem>> =
             Codec.unboundedMap(UpgradeItemType.CODEC, Codec.STRING).xmap(
                     { HashMap(it.mapValues { (type, tier) -> type.fromName(tier) }) },
                     { it.mapValues { (_, item) -> (item as Enum<*>).name } }
@@ -32,9 +32,7 @@ private class PlayerDataRecord() : PlayerInvisHolder, PlayerStateRecord, PlayerT
         val CODEC: Codec<PlayerDataRecord> = RecordCodecBuilder.create{it.group(
             LifeState.CODEC.fieldOf("life_state").forGetter(PlayerDataRecord::life_state),
             Team.CODEC.fieldOf("team").forGetter(PlayerDataRecord::team),
-            TOOL_UPGRADES_CODEC
-                .fieldOf("player_upgrades")
-                .forGetter(PlayerDataRecord::toolUpgrades)
+            TOOL_UPGRADES_CODEC.fieldOf("player_upgrades").forGetter(PlayerDataRecord::toolUpgrades)
         ).apply(it, ::PlayerDataRecord)}
     }
 
@@ -64,27 +62,25 @@ private class PlayerDataRecord() : PlayerInvisHolder, PlayerStateRecord, PlayerT
         this.toolUpgrades.putAll(toolUpgrades)
     }
 
-    override fun getLifeState(): LifeState {
-        return this.life_state
-    }
-
-    override fun setLifeState(new_state: LifeState) {
-        this.life_state = new_state
-    }
+    override fun getLifeState() = this.life_state
+    override fun getTeamName(): Team = team
+    override fun getKills() = kills
+    override fun getFinalKills() = final_kills
+    override fun getDeaths() = deaths
+    override fun getBedsDestroyed() = beds_destroyed
+    override fun getItem(item: UpgradeItemType) = toolUpgrades.getOrPut(item) { item.default }
 
     override fun getDeathPosition(): Vec3 {
         if (this.life_state is LifeState.DEAD) return (this.life_state as LifeState.DEAD).death_position
         return Vec3.ZERO
     }
 
-    override fun getTeamName(): Team = team
+    override fun setLifeState(new_state: LifeState) {
+        this.life_state = new_state
+    }
 
     override fun setTeamName(team: Team) {
         this.team = team
-    }
-
-    override fun getItem(item: UpgradeItemType): UpgradableItem {
-        return toolUpgrades.getOrPut(item) { item.default }
     }
 
     override fun setItem(item: UpgradableItem) {
@@ -93,34 +89,6 @@ private class PlayerDataRecord() : PlayerInvisHolder, PlayerStateRecord, PlayerT
 
     override fun removeItem(item: UpgradeItemType) {
         toolUpgrades.remove(item)
-    }
-
-    override fun tick() {
-        if (time < Duration.ZERO) return
-        
-        val old_time = time
-        time_internal += 1.ticks
-        timerSecond = (old_time.inWholeSeconds - time.inWholeSeconds).toInt()
-    }
-
-    override fun reset() {
-        time_internal = Duration.ZERO
-    }
-
-    override fun getKills(): Int {
-        return kills
-    }
-
-    override fun getFinalKills(): Int {
-        return final_kills
-    }
-
-    override fun getDeaths(): Int {
-        return deaths
-    }
-
-    override fun getBedsDestroyed(): Int {
-        return beds_destroyed
     }
 
     override fun setKills(value: Int) {
@@ -138,6 +106,18 @@ private class PlayerDataRecord() : PlayerInvisHolder, PlayerStateRecord, PlayerT
     override fun setBedsDestroyed(value: Int) {
         beds_destroyed = value
     }
+
+    override fun tick() {
+        if (time < Duration.ZERO) return
+        
+        val old_time = time
+        time_internal += 1.ticks
+        timerSecond = (old_time.inWholeSeconds - time.inWholeSeconds).toInt()
+    }
+
+    override fun reset() {
+        time_internal = Duration.ZERO
+    }
 }
 
 private class PlayerDataStore(): PlayerInvisSwitcher, PlayerStateHolder, PlayerUpgradesHolder, PlayerTimeHolder, PlayerStatsHolder {
@@ -151,24 +131,16 @@ private class PlayerDataStore(): PlayerInvisSwitcher, PlayerStateHolder, PlayerU
     
     private val player_data_map = HashMap<UUID, PlayerDataRecord>()
     
-    private constructor(
-        playerMap: Map<UUID, PlayerDataRecord>,
-    ) : this() {
+    private constructor(playerMap: Map<UUID, PlayerDataRecord>) : this() {
         this.player_data_map.putAll(playerMap)
     }
-    
     
     override fun tick() {
         player_data_map.values.forEach(PlayerDataRecord::tick)
     }
     
-    private fun getPlayerData(id: UUID): PlayerDataRecord {
-        return player_data_map.getOrPut(id) { PlayerDataRecord() }
-    }
-
-    private fun getPlayerData(player: Player): PlayerDataRecord {
-        return getPlayerData(player.uuid)
-    }
+    private fun getPlayerData(id: UUID): PlayerDataRecord = player_data_map.getOrPut(id) { PlayerDataRecord() }
+    private fun getPlayerData(player: Player): PlayerDataRecord = getPlayerData(player.uuid)
     
     override fun getPlayerState(player: UUID): PlayerInvisHolder = getPlayerData(player)
     override fun getPlayerState(player: Player): PlayerStateRecord = getPlayerData(player)
@@ -188,10 +160,11 @@ fun ServerLevel.team(player: UUID) = this.playerState.getPlayersTeam(player)
 fun ServerLevel.team(player: Player) = this.playerState.getPlayersTeam(player.uuid)
 fun ServerPlayer.teamValue() = this.level().team(this.uuid)
 
+
 class PlayerDataTracker: LevelTiedData, PlayerStateExposer, PlayerUpgradesExposer, PlayerTimeExposer, PlayerStatsExposer, PlayerInvisSwitchExposer {
     companion object {
         val CODEC: MapCodec<PlayerDataTracker> = RecordCodecBuilder.mapCodec{ it.group(
-            PlayerDataStore.CODEC.fieldOf("mod_data").forGetter(PlayerDataTracker::player_data)
+            PlayerDataStore.CODEC.fieldOf("player_data").forGetter(PlayerDataTracker::player_data)
         ).apply(it, ::PlayerDataTracker)}
     }
     override fun getType() = LevelDataType.PlayerState
@@ -201,15 +174,13 @@ class PlayerDataTracker: LevelTiedData, PlayerStateExposer, PlayerUpgradesExpose
         this.player_data = mod_data
     }
     internal constructor() : this(PlayerDataStore())
+    fun resetPlayerData() = player_data.resetPlayerData()
     
     override fun tick() {
         setDirty()
         player_data.tick()
     }
     
-    
-    fun resetPlayerData() = player_data.resetPlayerData()
-
     override fun isPlayerAlive(player: Player) = player_data.isPlayerAlive(player)
     override fun isPlayerRespawning(player: Player) = player_data.isPlayerRespawning(player) // not used ?
     override fun getPlayerDeathPosition(player: Player): Vec3 = player_data.getPlayerDeathPosition(player)
@@ -253,7 +224,6 @@ class PlayerDataTracker: LevelTiedData, PlayerStateExposer, PlayerUpgradesExpose
     override fun setPlayerFinalKills(uuid: UUID, value: Int) = player_data.setPlayerFinalKills(uuid, value)
     override fun setPlayerDeaths(uuid: UUID, value: Int) = player_data.setPlayerDeaths(uuid, value)
     override fun setPlayerBedsDestroyed(uuid: UUID, value: Int) = player_data.setPlayerBedsDestroyed(uuid, value)
-    
     
     override fun setPlayerInvisibility(player: UUID, invis: Boolean) = player_data.setPlayerInvisibility(player, invis)
     override fun getPlayerInvisibility(player: UUID): Boolean = player_data.getPlayerInvisibility(player)

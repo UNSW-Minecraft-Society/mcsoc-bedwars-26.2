@@ -1,4 +1,4 @@
-package mcsoc.bedwars.datatrackers
+package mcsoc.bedwars.datatrackers.teamstate
 
 import mcsoc.bedwars.upgrades.TeamUpgradeType
 import mcsoc.bedwars.upgrades.TrapUpgrade

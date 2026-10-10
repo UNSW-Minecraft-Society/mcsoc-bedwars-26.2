@@ -8,6 +8,7 @@ import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
 import mcsoc.bedwars.datatrackers.generatorstate.GeneratorDataTracker
 import mcsoc.bedwars.datatrackers.playerstate.PlayerDataTracker
+import mcsoc.bedwars.datatrackers.teamstate.TeamDataTracker
 import mcsoc.bedwars.gui.ShopConfig
 import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerLevel
@@ -88,6 +89,7 @@ sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>
     // put another enum value for each tracked data type
     object GameState : LevelDataType<ModDataTracker>("game_state", ModDataTracker.CODEC, ModDataTracker())
     object PlayerState : LevelDataType<PlayerDataTracker>("player_state", PlayerDataTracker.CODEC, PlayerDataTracker())
+    object TeamState : LevelDataType<TeamDataTracker>("player_state", TeamDataTracker.CODEC, TeamDataTracker())
     object BlockProtection: LevelDataType<BlockProtectionTracker>("block_protection", BlockProtectionTracker.CODEC, BlockProtectionTracker())
     object GeneratorState : LevelDataType<GeneratorDataTracker>("generator_state", GeneratorDataTracker.CODEC, GeneratorDataTracker())
     object CustomEntityData : LevelDataType<CustomEntityDataTracker>("custom_entity_data", CustomEntityDataTracker.CODEC, CustomEntityDataTracker())
@@ -102,6 +104,9 @@ val ServerPlayer.gameState: ModDataTracker
 val ServerLevel.playerState: PlayerDataTracker get() = levelTiedData.getDataOfType(LevelDataType.PlayerState)
 val ServerPlayer.playerState: PlayerDataTracker
     get() = level().playerState
+val ServerLevel.teamState: TeamDataTracker get() = levelTiedData.getDataOfType(LevelDataType.TeamState)
+val ServerPlayer.teamState: TeamDataTracker
+    get() = level().teamState
 val ServerLevel.blockProtection: BlockProtectionTracker get() = levelTiedData.getDataOfType(LevelDataType.BlockProtection)
 val ServerLevel.generatorState: GeneratorDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GeneratorState)
 val ServerLevel.customEntityData get() = levelTiedData.getDataOfType(LevelDataType.CustomEntityData)

@@ -1,8 +1,8 @@
 package mcsoc.bedwars.upgrades
 
 import com.mojang.serialization.Codec
-import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.playerstate.teamValue
+import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.utils.withTag
 import mcsoc.bedwars.utils.withEnchant
 import mcsoc.bedwars.utils.hasTag
@@ -182,7 +182,7 @@ enum class Sword(override val material: Item) : Single, Resettable {
     }
     
     private fun ItemStack.withSharp(player: ServerPlayer): ItemStack {
-        if (player.gameState.getUpgrade(player.teamValue(), TeamUpgradeType.SHARPNESS)) {
+        if (player.teamState.getUpgrade(player.teamValue(), TeamUpgradeType.SHARPNESS)) {
             this.withEnchant(Enchantments.SHARPNESS, 1, player.level())
         }
         return this
@@ -228,12 +228,12 @@ enum class Armour(private val boots: Item, private val leggings: Item) : Upgrada
     }
     
     private fun ItemStack.withProt(player: ServerPlayer): ItemStack {
-        val level = player.gameState.getUpgrade(player.teamValue(), TeamUpgradeType.PROTECTION)
+        val level = player.teamState.getUpgrade(player.teamValue(), TeamUpgradeType.PROTECTION)
         return this.withEnchant(Enchantments.PROTECTION, level, player.level())
     }
     
     private fun ItemStack.withFeatherFalling(player: ServerPlayer): ItemStack {
-        val level = player.gameState.getUpgrade(player.teamValue(), TeamUpgradeType.FEATHER_FALLING)
+        val level = player.teamState.getUpgrade(player.teamValue(), TeamUpgradeType.FEATHER_FALLING)
         return this.withEnchant(Enchantments.FEATHER_FALLING, level, player.level())
     }
     

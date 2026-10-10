@@ -18,6 +18,7 @@ import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.datatrackers.playerstate.teamValue
 import mcsoc.bedwars.datatrackers.shopConfig
+import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.entities.spawnDreamDefender
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.items.CustomItemTypes
@@ -355,13 +356,13 @@ internal object CommandActions {
 
     fun upgradeTeamGen(ctx: CommandContext<CommandSourceStack>): Int {
         val teamArg = StringArgumentType.getString(ctx, TEAM_ARG)
-        val team = ctx.source.level.gameState.getActiveTeams().find { it.getName() == teamArg }
+        val team = ctx.source.level.teamState.getActiveTeams().find { it.getName() == teamArg }
         if (team == null) {
             ctx.source.sendFailure(Component.literal("$teamArg is not a valid team"))
             return 0
         }
 
-        ctx.source.level.gameState.upgradeGen(team)
+        ctx.source.level.teamState.upgradeGen(team)
         return 1
     }
     
@@ -417,7 +418,7 @@ private fun addGenerator(src: CommandSourceStack, pos: Vec3, type: String): Int 
 }
 
 private fun addGeneratorTeam(src: CommandSourceStack, pos: Vec3, teamStr: String): Int {
-    val team = src.level.gameState.getActiveTeams().find { it.getName() == teamStr } ?: run {
+    val team = src.level.teamState.getActiveTeams().find { it.getName() == teamStr } ?: run {
         src.sendFailure(Component.literal("$teamStr is not a valid team"))
         return 0
     }

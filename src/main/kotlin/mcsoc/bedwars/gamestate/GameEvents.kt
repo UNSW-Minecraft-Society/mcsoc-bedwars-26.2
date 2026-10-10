@@ -8,12 +8,15 @@ import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.getActivePlayers
 import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.datatrackers.playerstate.teamValue
+import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.utils.CODEC
 import mcsoc.bedwars.utils.getProgressBar
 import mcsoc.bedwars.utils.placeBlockIfValid
 import mcsoc.bedwars.utils.rotate
+import mcsoc.bedwars.utils.sendTitle
 import mcsoc.bedwars.utils.ticks
 import net.minecraft.ChatFormatting
 import net.minecraft.commands.arguments.EntityAnchorArgument
@@ -25,9 +28,6 @@ import net.minecraft.core.Vec3i
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket
-import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket
-import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
-import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket
 import net.minecraft.network.protocol.game.ClientboundSoundPacket
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
@@ -165,44 +165,24 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
         override fun recurseTrigger(level: ServerLevel) {
             val player = level.server.playerList.getPlayer(player) ?: return
             val respawn_time_message = RESPAWN_TIME_MESSAGE(count.toInt())
-            player.connection.send(
-                ClientboundSetTitlesAnimationPacket(0, 30, 0)
-            )
-            player.connection.send(
-                ClientboundSetSubtitleTextPacket(
-                    Component.literal(respawn_time_message)
-                )
-            )
-            player.connection.send(
-                ClientboundSetTitleTextPacket(
-                    Component.literal((ChatFormatting.RED.toString() + "YOU DIED!"))
-                )
+            player.sendTitle(
+                Component.literal((ChatFormatting.RED.toString() + "YOU DIED!")),
+                Component.literal(respawn_time_message)
             )
             player.sendSystemMessage(Component.literal(respawn_time_message))
         }
         override fun concludeTrigger(level: ServerLevel) {
             val player = level.server.playerList.getPlayer(player) ?: return
-            val level_mod_data = level.gameState
-            val spawn = level_mod_data.getTeamSpawn(player.teamValue())
+            val spawn = level.teamState.getTeamSpawn(player.teamValue())
             player.teleportTo(
                 level, spawn.x, spawn.y, spawn.z,
                 setOf(), 0F, 0F, true
             )
-            player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atBottomCenterOf(level_mod_data.map_centre))
+            player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atBottomCenterOf(level.gameState.map_centre))
 
             player.setGameMode(GameType.SURVIVAL)
             level.playerState.setPlayerAlive(player)
-            player.connection.send(
-                ClientboundClearTitlesPacket(true)
-            )
-            player.connection.send(
-                ClientboundSetTitlesAnimationPacket(10, 40, 10)
-            )
-            player.connection.send(
-                ClientboundSetTitleTextPacket(
-                    Component.literal((ChatFormatting.GREEN.toString() + "RESPAWNED!"))
-                )
-            )
+            player.sendTitle(Component.literal((ChatFormatting.GREEN.toString() + "RESPAWNED!")))
             player.sendSystemMessage(Component.literal(ChatFormatting.YELLOW.toString() + "You have respawned!"))
         }
         override fun createEvent(triggerTime: Duration, count: Long) = RespawnCounterEvent(triggerTime, player, count)
@@ -225,12 +205,8 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
         }
         
         override fun recurseTrigger(level: ServerLevel) {
-            level.gameState.getActivePlayers().mapNotNull(level.server.playerList::getPlayer).forEach{player ->
-                player.connection.send(
-                    ClientboundSetTitleTextPacket(
-                        Component.literal(count.toString())
-                    )
-                )
+            level.getActivePlayers().forEach{player ->
+                player.sendTitle(Component.literal(count.toString()))
                 player.connection.send(
                     ClientboundSoundPacket(
                         Holder.direct(SoundEvents.NOTE_BLOCK_PLING.value()),

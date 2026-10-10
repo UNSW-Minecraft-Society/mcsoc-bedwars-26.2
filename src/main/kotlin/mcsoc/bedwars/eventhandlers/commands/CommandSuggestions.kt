@@ -12,6 +12,7 @@ import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.configloader.maploader.structures_directory
 import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.gui.ShopConfig
 import net.minecraft.commands.CommandSourceStack
@@ -64,7 +65,7 @@ internal class GeneratorSuggestionProvider: SuggestionProvider<CommandSourceStac
 
 internal class TeamSuggestionProvider: SuggestionProvider<CommandSourceStack> {
     override fun getSuggestions(context: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder): CompletableFuture<Suggestions> {
-        context.source.level.gameState.getActiveTeams().forEach { builder.suggest(it.getName()) }
+        context.source.level.teamState.getActiveTeams().forEach { builder.suggest(it.getName()) }
 		return builder.buildFuture()
     }
 }

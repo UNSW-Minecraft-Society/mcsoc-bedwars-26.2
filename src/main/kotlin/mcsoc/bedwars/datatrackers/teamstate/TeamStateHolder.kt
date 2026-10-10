@@ -1,4 +1,4 @@
-package mcsoc.bedwars.datatrackers
+package mcsoc.bedwars.datatrackers.teamstate
 
 import mcsoc.bedwars.utils.Team
 import net.minecraft.core.BlockPos
@@ -41,27 +41,12 @@ internal interface TeamStateExposer {
     fun setTeamBedPosition(team: Team, pos: BlockPos)
     fun setBedBreaker(team: Team, player: UUID)
     fun addPlayer(player: UUID, team: Team, scoreboard: Scoreboard, name: String?)
-    fun initialiseTeams(teams: Set<Team>, scoreboard: Scoreboard)
-
-    // fun getPlayersTeam(player: UUID): Team
-    
-    fun getActivePlayers(): Set<UUID>
-    fun addActivePlayer(uuid: UUID): Boolean
-    fun removeActivePlayer(uuid: UUID): Boolean
-    fun clearActivePlayers()
-    
-    fun tickTeams(level: ServerLevel)
+    fun initialiseTeams(teams: Set<Team>, scoreboard: Scoreboard)   
 }
 
 internal interface TeamStateHolder : TeamStateExposer {
     fun getTeam(team: Team): TeamStateRecord
     
-    override fun tickTeams(level: ServerLevel) {
-        for (team in getActiveTeams()) {
-            getTeam(team).tick(level)
-        }
-    }
-
     override fun getBedDestroyed(team: Team): Boolean = !getTeam(team).getBedAlive()
     override fun getBedBreaker(team: Team): UUID? = getTeam(team).getBedBreaker()
     override fun getTeamSpawn(team: Team): Vec3 = getTeam(team).getSpawn()
