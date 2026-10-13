@@ -1,7 +1,7 @@
 package mcsoc.bedwars.gui
 
 import mcsoc.bedwars.datatrackers.clock
-import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.timeState
 import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.utils.Team
@@ -64,12 +64,12 @@ object ScoreboardGui {
     }
 
     private fun getGamePeriodLine(level: ServerLevel): String {
-        return level.gameState.getGamePeriod().title
+        return level.timeState.getGamePeriod().title
     }
 
     private fun getNextPeriodLine(level: ServerLevel): String {
 
-        val nextPeriod = level.gameState.getGamePeriod().next ?: return "err1"
+        val nextPeriod = level.timeState.getGamePeriod().next ?: return "err1"
         val time = (nextPeriod.startTime ?: return "err2") - level.clock.time
         return "${nextPeriod.title} in ${ChatFormatting.GREEN}${time.formatMMSS}"
     }

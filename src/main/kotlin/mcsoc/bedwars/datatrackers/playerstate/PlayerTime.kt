@@ -1,6 +1,6 @@
 package mcsoc.bedwars.datatrackers.playerstate
 
-import mcsoc.bedwars.datatrackers.TickExposer
+import mcsoc.bedwars.datatrackers.timetracker.TickExposer
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 

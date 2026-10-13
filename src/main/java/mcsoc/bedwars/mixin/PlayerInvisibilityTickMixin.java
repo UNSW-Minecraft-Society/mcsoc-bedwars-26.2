@@ -18,9 +18,9 @@ public class PlayerInvisibilityTickMixin {
     void tick(CallbackInfo ci) {
         ServerPlayer this_player = (ServerPlayer)(Object)this;
         ServerLevel level = this_player.level();
-        var gameState = LevelData.getPlayerState(level);
+        var playerState = LevelData.getPlayerState(level);
         
-        if (gameState.getPlayerInvisibility(this_player.getUUID())) {
+        if (playerState.getPlayerInvisibility(this_player.getUUID())) {
             GameEffects.broadcastInvisibility(this_player);
         }
     }

@@ -3,16 +3,18 @@ package mcsoc.bedwars.gamestate
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.GameEffects
 import mcsoc.bedwars.TeamEffects
-import mcsoc.bedwars.datatrackers.GamePeriod
-import mcsoc.bedwars.datatrackers.GamePhase
+import mcsoc.bedwars.datatrackers.timetracker.GamePeriod
+import mcsoc.bedwars.datatrackers.timetracker.GamePhase
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.clock
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.eventQueue
-import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.timeState
 import mcsoc.bedwars.datatrackers.generatorState
+import mcsoc.bedwars.datatrackers.activePlayers
 import mcsoc.bedwars.datatrackers.getActivePlayers
+import mcsoc.bedwars.datatrackers.mapData
 import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.datatrackers.playerstate.teamValue
 import mcsoc.bedwars.datatrackers.teamState
@@ -107,14 +109,14 @@ object GameManager {
     * Sets up the game, placing the map centered at `startPos`. Queues counter to the start of the game.
     */
     fun setupGame(mapName: String, level: ServerLevel, startPos: BlockPos) {
-        val gameState = level.gameState
         val teamState = level.teamState
-        if (gameState.getGamePhase() != GamePhase.INACTIVE) {
+        val timeState = level.timeState
+        if (timeState.getGamePhase() != GamePhase.INACTIVE) {
             endGame(level)
         }
 
         BedwarsConfigData.placeMap(mapName, level, startPos)
-        gameState.map_centre = startPos
+        level.mapData.map_centre = startPos
 
         TeamEffects.createTeamsWithPlayers(level)
         // set difficulty to peaceful/easy maybe?
@@ -155,14 +157,14 @@ object GameManager {
         level.clockManager().setTotalTicks(clock, 0)
         level.resetWeatherCycle()
         level.clock.reset()
-        gameState.setGamePhase(GamePhase.STARTING)
-        gameState.setGamePeriod(GamePeriod.INACTIVE)
+        timeState.setGamePhase(GamePhase.STARTING)
+        timeState.setGamePeriod(GamePeriod.INACTIVE)
         level.eventQueue.queueGameStartCounter(10.seconds)
     }
 
     fun endGame(level: ServerLevel) {
         // Display stats
-        val gameState = level.gameState
+        val timeState = level.timeState
         broadcastGameStats(level)
 
         // Triggered by command or on win condition, clean up stuff
@@ -175,16 +177,16 @@ object GameManager {
             player.inventory.clearContent()
             player.setGameMode(GameType.SPECTATOR)
         }
-        gameState.clearActivePlayers()
-        gameState.setGamePhase(GamePhase.INACTIVE)
-        gameState.setGamePeriod(GamePeriod.INACTIVE)
+        timeState.setGamePhase(GamePhase.INACTIVE)
+        timeState.setGamePeriod(GamePeriod.INACTIVE)
 
         // Clears all teams data and player data
-        gameState.resetModData()
+        timeState.resetModData()
         level.teamState.resetTeamData()
         level.playerState.resetPlayerData()
         level.generatorState.clearGenerators()
         level.generatorState.resetGenUpgrades()
+        level.activePlayers.reset()
         
         // Clear entities
         for (id in customEntityData.getEntityIds()) {
@@ -205,7 +207,7 @@ object GameManager {
     fun start(level: ServerLevel) {
         level.blockProtection.protectionEnabled = true
 
-        val gameState = level.gameState
+        val timeState = level.timeState
         val playerState = level.playerState
         level.getActivePlayers().forEach{ player ->
             player.sendTitle(Component.literal("GO"))
@@ -223,7 +225,7 @@ object GameManager {
                 level, spawn.x, spawn.y, spawn.z,
                 setOf(), 0F, 0F, true
             )
-            player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atBottomCenterOf(gameState.map_centre))
+            player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atBottomCenterOf(level.mapData.map_centre))
             player.inventory.clearContent()
             player.enderChestInventory.clearContent()
             player.health = player.maxHealth
@@ -237,13 +239,13 @@ object GameManager {
         level.gameRules.set(GameRules.PVP, true, level.server)
 
         level.clock.reset()
-        gameState.setGamePhase(GamePhase.ACTIVE)
-        gameState.setGamePeriod(GamePeriod.INITIAL)
+        timeState.setGamePhase(GamePhase.ACTIVE)
+        timeState.setGamePeriod(GamePeriod.INITIAL)
     }
 
     fun handlePlayerJoin(scoreboard: ServerScoreboard, player: ServerPlayer) {
-        if (player.gameState.getGamePhase() != GamePhase.ACTIVE) return
-        if (player.uuid !in player.gameState.getActivePlayers()) {
+        if (player.timeState.getGamePhase() != GamePhase.ACTIVE) return
+        if (player.uuid !in player.level().activePlayers.get()) {
             player.inventory.clearContent()
             player.removeAllEffects()
             player.setGameMode(GameType.SPECTATOR)
@@ -256,7 +258,7 @@ object GameManager {
         val level = player.level()
         val playerState = player.playerState
         val teamState = level.teamState
-        if (player.gameState.getGamePhase() != GamePhase.ACTIVE) return
+        if (player.timeState.getGamePhase() != GamePhase.ACTIVE) return
 
         val bedDestroyed = teamState.getBedDestroyed(player.teamValue())
 
@@ -308,15 +310,14 @@ object GameManager {
     }
 
     fun handlePlayerRespawn(player: ServerPlayer) {
-        val gameState = player.gameState
-        if (gameState.getGamePhase() != GamePhase.ACTIVE) return
+        if (player.timeState.getGamePhase() != GamePhase.ACTIVE) return
 
         player.setGameMode(GameType.SPECTATOR)
 
         if (!player.teamState.getBedDestroyed(player.teamValue())) {
             player.level().eventQueue.queuePlayerRespawn(RESPAWN_TIME, player.uuid)
             // tp above map
-            val respawnPosition: Vec3 = Vec3.atBottomCenterOf(gameState.map_centre.offset(0, 30, 0))
+            val respawnPosition: Vec3 = Vec3.atBottomCenterOf(player.level().mapData.map_centre.offset(0, 30, 0))
             player.teleportTo(player.level(), respawnPosition.x, respawnPosition.y, respawnPosition.z,
                     setOf(), 0F, 0F, true
             )
@@ -349,8 +350,7 @@ object GameManager {
     }
 
     private fun checkPlayersLeftOnTeam(level: ServerLevel, playerDownTeam: Team): Team? {
-        val gameState = level.gameState
-        if (gameState.getGamePhase() != GamePhase.ACTIVE) return null
+        if (level.timeState.getGamePhase() != GamePhase.ACTIVE) return null
         var gameIsWon = true
         var winningTeam = Team.NONE
         level.getActivePlayers().forEach{ player ->
@@ -403,7 +403,7 @@ object GameManager {
     }
 
     private fun winGame(level: ServerLevel, winningTeam: Team) {
-        val gameState = level.gameState
+        val timeState = level.timeState
 
         level.getActivePlayers().forEach{ player ->
             player.sendTitle(Component.literal(
@@ -416,8 +416,8 @@ object GameManager {
         
         broadcastGameStats(level)
         ScoreboardGui.displayScoreboard(level)
-        gameState.setGamePhase(GamePhase.ENDED)
-        gameState.setGamePeriod(GamePeriod.INACTIVE)
+        timeState.setGamePhase(GamePhase.ENDED)
+        timeState.setGamePeriod(GamePeriod.INACTIVE)
     }
 
     fun afterBedBreak(level: ServerLevel, breaker: ServerPlayer, team: Team) {
@@ -446,11 +446,11 @@ object GameManager {
     }
 
     fun tick(level: ServerLevel) {
-        val gameState = level.gameState
+        val timeState = level.timeState
         level.eventQueue.tick()
-        if (gameState.getGamePhase() == GamePhase.INACTIVE) return
+        if (timeState.getGamePhase() == GamePhase.INACTIVE) return
 
-        if (gameState.getGamePhase() == GamePhase.ACTIVE) {
+        if (timeState.getGamePhase() == GamePhase.ACTIVE) {
             for (i in 0 until level.clock.timerTick) {
                 level.generatorState.tick()
                 level.playerState.tick()
@@ -461,13 +461,13 @@ object GameManager {
 
         val time = level.clock.time
         if (level.clock.timerSecond > 0) {
-            if (gameState.getGamePhase() == GamePhase.ACTIVE) {
+            if (timeState.getGamePhase() == GamePhase.ACTIVE) {
                 // periodic things to hit when game active
-                val nextPeriod = gameState.getGamePeriod().next
+                val nextPeriod = timeState.getGamePeriod().next
                 val nextStartTime = nextPeriod?.startTime
                 if (nextStartTime != null && time >= nextStartTime) {
                     GameEffects.triggerNewPeriod(level, nextPeriod)
-                    gameState.setGamePeriod(nextPeriod)
+                    timeState.setGamePeriod(nextPeriod)
                     level.getActivePlayers().forEach { p ->
                         p.sendSystemMessage(Component.literal(nextPeriod.notif))
                     }

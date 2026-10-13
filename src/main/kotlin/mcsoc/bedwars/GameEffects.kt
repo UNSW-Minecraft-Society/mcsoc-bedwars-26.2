@@ -1,14 +1,16 @@
 package mcsoc.bedwars
 
-import mcsoc.bedwars.datatrackers.GamePeriod
-import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.timetracker.GamePeriod
+import mcsoc.bedwars.datatrackers.timeState
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.entities.spawnWakingWither
 import mcsoc.bedwars.gamestate.BORDER_SIZE
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.generators.GeneratorType
 import com.mojang.datafixers.util.Pair
+import mcsoc.bedwars.datatrackers.activePlayers
 import mcsoc.bedwars.datatrackers.getActivePlayers
+import mcsoc.bedwars.datatrackers.mapData
 import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.utils.Team
@@ -36,7 +38,7 @@ object TeamEffects {
     fun createTeamsWithPlayers(level: ServerLevel) {
         val playerState = level.playerState
         val teamState = level.teamState
-        val players = level.gameState.getActivePlayers()
+        val players = level.activePlayers.get()
         val teams = teamState.getActiveTeams().toList()
         val num_teams = teams.size
         players.filter{playerState.getPlayersTeam(it) == Team.NONE}.shuffled().forEachIndexed { index, player ->
@@ -48,7 +50,7 @@ object TeamEffects {
     
     fun assignPlayersToTeam(level: ServerLevel, team: Team, players: Iterable<UUID>) {
         for (player in players) {
-            level.gameState.addActivePlayer(player)
+            level.activePlayers.add(player)
             level.teamState.addPlayer(player, team, level.scoreboard, level.getPlayerByUUID(player)?.scoreboardName)
             level.playerState.setTeam(player, team)
         }
@@ -101,7 +103,7 @@ object GameEffects {
                 }
             }
         }
-        spawnWakingWither(level, Vec3.atCenterOf(level.gameState.map_centre.offset(0, 128, 0)))
+        spawnWakingWither(level, Vec3.atCenterOf(level.mapData.map_centre.offset(0, 128, 0)))
         // shrink border
         val worldBorder = level.worldBorder
         worldBorder.lerpSizeBetween(BORDER_SIZE, MIN_DEATHMATCH_BORDER_SIZE, DEATHMATCH_BORDER_TIME, level.gameTime)

@@ -10,7 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import mcsoc.bedwars.datatrackers.GamePhase;
+import mcsoc.bedwars.datatrackers.timetracker.GamePhase;
 import mcsoc.bedwars.datatrackers.LevelData;
 
 
@@ -31,8 +31,8 @@ public abstract class LevelSetBlockMixin {
          * * block is replaced and not replaceable - fail
         */
 
-        var isAboveBuildHeigh = pos.getY() > LevelData.getGameState(level).getMap_centre().getY() + MAX_HEIGHT;
-        var isGameActive = LevelData.getGameState(level).getGamePhase().equals(GamePhase.ACTIVE);
+        var isAboveBuildHeigh = pos.getY() > LevelData.getMapData(level).getMap_centre().getY() + MAX_HEIGHT;
+        var isGameActive = LevelData.getTimeState(level).getGamePhase().equals(GamePhase.ACTIVE);
 
         if (!(block_protection.isBlockPlacementAllowed(pos)) ||
             !(self.getBlockState(pos).canBeReplaced() || newState.is(BlockTags.AIR)) ||

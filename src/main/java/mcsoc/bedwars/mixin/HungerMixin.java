@@ -1,6 +1,6 @@
 package mcsoc.bedwars.mixin;
 
-import mcsoc.bedwars.datatrackers.GamePeriod;
+import mcsoc.bedwars.datatrackers.timetracker.GamePeriod;
 import mcsoc.bedwars.datatrackers.LevelData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,7 +19,7 @@ public class HungerMixin {
 
     @Inject(method = "tick", at = @At("HEAD"))
     public void tick(ServerPlayer player, CallbackInfo ci) {
-        if (player.level() instanceof ServerLevel slevel && LevelData.getGameState(slevel).getGamePeriod() != GamePeriod.INACTIVE) {
+        if (player.level() instanceof ServerLevel slevel && LevelData.getTimeState(slevel).getGamePeriod() != GamePeriod.INACTIVE) {
             this.foodLevel = 20;
             this.saturationLevel = 5.0F;
             this.exhaustionLevel = 0.0F;

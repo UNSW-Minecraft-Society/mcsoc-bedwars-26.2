@@ -1,7 +1,6 @@
 package mcsoc.bedwars.eventhandlers
 
 import mcsoc.bedwars.datatrackers.blockProtection
-import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.playerstate.team
 import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.gamestate.GameManager

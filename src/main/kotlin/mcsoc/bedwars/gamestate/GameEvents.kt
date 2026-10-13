@@ -7,8 +7,9 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.customEntityData
 import mcsoc.bedwars.datatrackers.eventQueue
-import mcsoc.bedwars.datatrackers.gameState
+import mcsoc.bedwars.datatrackers.timeState
 import mcsoc.bedwars.datatrackers.getActivePlayers
+import mcsoc.bedwars.datatrackers.mapData
 import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.datatrackers.playerstate.teamValue
 import mcsoc.bedwars.datatrackers.teamState
@@ -26,16 +27,13 @@ import net.minecraft.core.Holder
 import net.minecraft.core.UUIDUtil
 import net.minecraft.core.Vec3i
 import net.minecraft.network.chat.Component
-import net.minecraft.network.protocol.game.ClientboundClearTitlesPacket
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket
 import net.minecraft.network.protocol.game.ClientboundSoundPacket
 import net.minecraft.server.level.ServerLevel
-import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.EquipmentSlot
-import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.level.GameType
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.Rotation
@@ -178,7 +176,7 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
                 level, spawn.x, spawn.y, spawn.z,
                 setOf(), 0F, 0F, true
             )
-            player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atBottomCenterOf(level.gameState.map_centre))
+            player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atBottomCenterOf(level.mapData.map_centre))
 
             player.setGameMode(GameType.SURVIVAL)
             level.playerState.setPlayerAlive(player)
@@ -205,7 +203,7 @@ sealed class GameEvent(protected val triggerTime: Duration, private val id: Stri
         }
         
         override fun recurseTrigger(level: ServerLevel) {
-            level.getActivePlayers().forEach{player ->
+            level.getActivePlayers().forEach{ player ->
                 player.sendTitle(Component.literal(count.toString()))
                 player.connection.send(
                     ClientboundSoundPacket(

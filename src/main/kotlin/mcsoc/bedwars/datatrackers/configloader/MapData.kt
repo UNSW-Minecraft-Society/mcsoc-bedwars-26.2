@@ -13,7 +13,6 @@ import kotlinx.serialization.encoding.encodeStructure
 import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.datatrackers.blockProtection
 import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader.Companion.place
-import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.entities.spawnShopkeeper

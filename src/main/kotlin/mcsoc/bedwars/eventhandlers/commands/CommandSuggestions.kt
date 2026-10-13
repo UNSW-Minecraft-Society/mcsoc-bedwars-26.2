@@ -8,10 +8,8 @@ import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.gui.ShopType
 import mcsoc.bedwars.items.CustomItemTypes
 import mcsoc.bedwars.upgrades.UpgradeItemType
-import mcsoc.bedwars.datatrackers.ModDataTracker
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.configloader.maploader.structures_directory
-import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.gui.ShopConfig

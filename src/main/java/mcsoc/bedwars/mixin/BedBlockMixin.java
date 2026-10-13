@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 
-import mcsoc.bedwars.datatrackers.GamePeriod;
+import mcsoc.bedwars.datatrackers.timetracker.GamePeriod;
 import mcsoc.bedwars.datatrackers.LevelData;
 
 
@@ -26,11 +26,11 @@ import mcsoc.bedwars.datatrackers.LevelData;
 public class BedBlockMixin extends BlockBehaviourMixin {
     @Inject(at = @At("HEAD"), method = "useWithoutItem", cancellable = true) 
     public void removeUse(BlockState state, final Level level, BlockPos pos, final Player player, final BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
-        if (level instanceof ServerLevel slevel && LevelData.getGameState(slevel).getGamePeriod() != GamePeriod.INACTIVE) cir.setReturnValue(InteractionResult.PASS);
+        if (level instanceof ServerLevel slevel && LevelData.getTimeState(slevel).getGamePeriod() != GamePeriod.INACTIVE) cir.setReturnValue(InteractionResult.PASS);
     }
 
     @Override
     protected void getDrops(final BlockState state, final LootParams.Builder params, CallbackInfoReturnable<List<ItemStack>> cir) {
-        if (LevelData.getGameState(params.getLevel()).getGamePeriod() != GamePeriod.INACTIVE) cir.setReturnValue(List.of());
+        if (LevelData.getTimeState(params.getLevel()).getGamePeriod() != GamePeriod.INACTIVE) cir.setReturnValue(List.of());
     }
 }

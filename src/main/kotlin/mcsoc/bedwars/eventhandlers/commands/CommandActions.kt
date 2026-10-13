@@ -11,8 +11,8 @@ import mcsoc.bedwars.datatrackers.blockprotection.ProtectionZone
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
 import mcsoc.bedwars.datatrackers.configloader.MapData
 import mcsoc.bedwars.datatrackers.configloader.maploader.StructureLoader.Companion.place
-import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.CustomEntityType
+import mcsoc.bedwars.datatrackers.activePlayers
 import mcsoc.bedwars.entities.spawnShopkeeper
 import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.datatrackers.playerState
@@ -128,7 +128,7 @@ internal object CommandActions {
             ctx.source.sendFailure(Component.literal("Command must be run by a player"))
             return 0
         }
-        ctx.source.level.gameState.addActivePlayer(player.uuid)
+        ctx.source.level.activePlayers.add(player.uuid)
         player.sendSystemMessage(Component.literal("You have joined the bedwars lobby").withColor(TextColor.GREEN))
 
         return 1
@@ -140,7 +140,7 @@ internal object CommandActions {
             return 0
         }
 
-        ctx.source.level.gameState.removeActivePlayer(player.uuid)
+        ctx.source.level.activePlayers.remove(player.uuid)
         player.sendSystemMessage(Component.literal("You have left the bedwars lobby").withColor(TextColor.RED))
 
         return 1

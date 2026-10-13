@@ -7,10 +7,13 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.blockprotection.BlockProtectionTracker
 import mcsoc.bedwars.datatrackers.generatorstate.GeneratorDataTracker
+import mcsoc.bedwars.datatrackers.mapdata.MapDataTracker
 import mcsoc.bedwars.datatrackers.playerstate.PlayerDataTracker
 import mcsoc.bedwars.datatrackers.teamstate.TeamDataTracker
+import mcsoc.bedwars.datatrackers.timetracker.GameTimeTracker
+import mcsoc.bedwars.datatrackers.timetracker.GameTimer
+import mcsoc.bedwars.datatrackers.timetracker.TickExposer
 import mcsoc.bedwars.gui.ShopConfig
-import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.util.datafix.DataFixTypes
@@ -87,7 +90,7 @@ sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>
     val codec: MapCodec<T> = codec ?: MapCodec.unit(default)
     
     // put another enum value for each tracked data type
-    object GameState : LevelDataType<ModDataTracker>("game_state", ModDataTracker.CODEC, ModDataTracker())
+    object TimeState : LevelDataType<GameTimeTracker>("time_state", GameTimeTracker.CODEC, GameTimeTracker())
     object PlayerState : LevelDataType<PlayerDataTracker>("player_state", PlayerDataTracker.CODEC, PlayerDataTracker())
     object TeamState : LevelDataType<TeamDataTracker>("player_state", TeamDataTracker.CODEC, TeamDataTracker())
     object BlockProtection: LevelDataType<BlockProtectionTracker>("block_protection", BlockProtectionTracker.CODEC, BlockProtectionTracker())
@@ -95,12 +98,14 @@ sealed class LevelDataType<T : LevelTiedData>(val id: String, codec: MapCodec<T>
     object CustomEntityData : LevelDataType<CustomEntityDataTracker>("custom_entity_data", CustomEntityDataTracker.CODEC, CustomEntityDataTracker())
     object EventQueue : LevelDataType<GameEventTracker>("event_queue", GameEventTracker.CODEC, GameEventTracker())
     object GameClock : LevelDataType<GameTimer>("timer", GameTimer.CODEC, GameTimer())
+    object ActivePlayers : LevelDataType<ActivePlayersTracker>("active_players", ActivePlayersTracker.CODEC, ActivePlayersTracker())
+    object MapDataState : LevelDataType<MapDataTracker>("map_data_state", MapDataTracker.CODEC, MapDataTracker())
 }
 
 
-val ServerLevel.gameState: ModDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GameState)
-val ServerPlayer.gameState: ModDataTracker
-    get() = level().gameState
+val ServerLevel.timeState: GameTimeTracker get() = levelTiedData.getDataOfType(LevelDataType.TimeState)
+val ServerPlayer.timeState: GameTimeTracker
+    get() = level().timeState
 val ServerLevel.playerState: PlayerDataTracker get() = levelTiedData.getDataOfType(LevelDataType.PlayerState)
 val ServerPlayer.playerState: PlayerDataTracker
     get() = level().playerState
@@ -109,6 +114,8 @@ val ServerPlayer.teamState: TeamDataTracker
     get() = level().teamState
 val ServerLevel.blockProtection: BlockProtectionTracker get() = levelTiedData.getDataOfType(LevelDataType.BlockProtection)
 val ServerLevel.generatorState: GeneratorDataTracker get() = levelTiedData.getDataOfType(LevelDataType.GeneratorState)
+val ServerLevel.activePlayers: ActivePlayersTracker get() = levelTiedData.getDataOfType(LevelDataType.ActivePlayers)
+val ServerLevel.mapData: MapDataTracker get() = levelTiedData.getDataOfType(LevelDataType.MapDataState)
 val ServerLevel.customEntityData get() = levelTiedData.getDataOfType(LevelDataType.CustomEntityData)
 val ServerLevel.eventQueue get() = levelTiedData.getDataOfType(LevelDataType.EventQueue).also{it.level = this}
 val ServerLevel.clock: TickExposer get() = levelTiedData.getDataOfType(LevelDataType.GameClock).also{it.level = this}

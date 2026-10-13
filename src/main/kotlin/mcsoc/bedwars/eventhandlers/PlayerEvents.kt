@@ -1,9 +1,9 @@
 package mcsoc.bedwars.eventhandlers
 
-import mcsoc.bedwars.datatrackers.GamePhase
+import mcsoc.bedwars.datatrackers.timetracker.GamePhase
 import mcsoc.bedwars.datatrackers.eventQueue
-import mcsoc.bedwars.datatrackers.gameState
 import mcsoc.bedwars.datatrackers.playerState
+import mcsoc.bedwars.datatrackers.timeState
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.utils.ticks
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
@@ -17,7 +17,7 @@ import net.minecraft.world.effect.MobEffects
 fun registerAfterDeathEvent() {
     ServerLivingEntityEvents.AFTER_DEATH.register{maybe_player, death_source ->
         if (maybe_player !is ServerPlayer) return@register
-        if (maybe_player.gameState.getGamePhase() == GamePhase.ACTIVE) {
+        if (maybe_player.timeState.getGamePhase() == GamePhase.ACTIVE) {
             GameManager.handlePlayerDeath(maybe_player, death_source)
         }
     }

@@ -10,7 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
-import mcsoc.bedwars.datatrackers.GamePhase;
+import mcsoc.bedwars.datatrackers.timetracker.GamePhase;
 import mcsoc.bedwars.datatrackers.LevelData;
 
 @Mixin(Entity.class)
@@ -27,9 +27,9 @@ public abstract class VoidDamageMixin {
         Level level = entity.level();
         if (!(level instanceof ServerLevel serverlevel)) return;
 
-        var mapY = LevelData.getGameState(serverlevel).getMap_centre().getY() + voidThreshold;
-        var isGameActive = LevelData.getGameState(serverlevel).getGamePhase().equals(GamePhase.ACTIVE);
-        var isPlayerActive = LevelData.getGameState(serverlevel).getActivePlayers().contains(player.getUUID());
+        var mapY = LevelData.getMapData(serverlevel).getMap_centre().getY() + voidThreshold;
+        var isGameActive = LevelData.getTimeState(serverlevel).getGamePhase().equals(GamePhase.ACTIVE);
+        var isPlayerActive = LevelData.getActivePlayers(serverlevel).get().contains(player.getUUID());
 
         if (isGameActive && isPlayerActive && this.getY() < mapY) {
             this.onBelowWorld();
