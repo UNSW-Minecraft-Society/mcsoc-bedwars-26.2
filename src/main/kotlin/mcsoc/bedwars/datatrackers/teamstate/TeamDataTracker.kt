@@ -24,8 +24,7 @@ import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.phys.Vec3
 import net.minecraft.world.scores.Scoreboard
-import java.util.Optional
-import java.util.UUID
+import java.util.*
 
 
 private class TeamDataRecord(

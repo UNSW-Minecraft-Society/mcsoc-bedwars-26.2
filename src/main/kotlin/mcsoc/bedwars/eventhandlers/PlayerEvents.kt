@@ -1,9 +1,9 @@
 package mcsoc.bedwars.eventhandlers
 
-import mcsoc.bedwars.datatrackers.timetracker.GamePhase
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.datatrackers.timeState
+import mcsoc.bedwars.datatrackers.timetracker.GamePhase
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.utils.ticks
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents

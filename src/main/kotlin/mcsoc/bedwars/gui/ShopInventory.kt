@@ -1,14 +1,6 @@
 package mcsoc.bedwars.gui
 
 import mcsoc.bedwars.items.BedwarsItems
-import mcsoc.bedwars.items.BedwarsItems.ballOfBugsItemStack
-import mcsoc.bedwars.items.BedwarsItems.bedBruteItemStack
-import mcsoc.bedwars.items.BedwarsItems.bridgeEggItemStack
-import mcsoc.bedwars.items.BedwarsItems.dreamDefenderItemStack
-import mcsoc.bedwars.items.BedwarsItems.fireballItemStack
-import mcsoc.bedwars.items.BedwarsItems.instantTNTItemStack
-import mcsoc.bedwars.items.BedwarsItems.playerTrackerItemStack
-import mcsoc.bedwars.items.BedwarsItems.popupTowerItemStack
 import mcsoc.bedwars.upgrades.TeamUpgradeType
 import mcsoc.bedwars.upgrades.TrapUpgrade
 import mcsoc.bedwars.upgrades.UpgradeItemType

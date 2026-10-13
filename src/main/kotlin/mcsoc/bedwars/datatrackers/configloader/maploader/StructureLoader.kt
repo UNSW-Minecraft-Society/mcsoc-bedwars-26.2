@@ -1,15 +1,12 @@
 package mcsoc.bedwars.datatrackers.configloader.maploader
 
-import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.configloader.config_dir
-import java.nio.file.Path
-
-import net.minecraft.core.BlockPos
-import net.minecraft.world.level.Level
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
-import net.fabricmc.loader.api.FabricLoader
+import net.minecraft.core.BlockPos
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.MinecraftServer
+import net.minecraft.world.level.Level
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.createFile
 import kotlin.io.path.createParentDirectories

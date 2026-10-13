@@ -1,11 +1,5 @@
 package mcsoc.bedwars.upgrades
 
-import net.minecraft.core.registries.Registries
-import net.minecraft.resources.ResourceKey
-import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.enchantment.Enchantment
-import net.minecraft.world.item.enchantment.Enchantments
-import net.minecraft.world.level.Level
 
 sealed class TeamUpgradeType<T>(val default: () -> TeamUpgrade<T>) {
     object PROTECTION : TeamUpgradeType<Int>({ IntUpgrade(4) })

@@ -2,27 +2,14 @@ package mcsoc.bedwars.datatrackers.configloader
 
 import kotlinx.io.IOException
 import kotlinx.serialization.KSerializer
-import java.nio.file.Path
-
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.descriptors.element
-import kotlinx.serialization.encoding.CompositeDecoder
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.encoding.decodeStructure
-import kotlinx.serialization.encoding.encodeStructure
 import mcsoc.bedwars.BedwarsPlugin
-import mcsoc.bedwars.utils.CylindricalBlockPos
 import net.fabricmc.loader.api.FabricLoader
-import net.minecraft.core.BlockPos
+import java.nio.file.Path
 import kotlin.io.path.createFile
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.div
 import kotlin.io.path.notExists
-import kotlin.math.PI
 
 
 val config_dir 

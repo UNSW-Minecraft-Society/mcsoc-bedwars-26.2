@@ -3,21 +3,11 @@ package mcsoc.bedwars.gamestate
 import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.GameEffects
 import mcsoc.bedwars.TeamEffects
+import mcsoc.bedwars.datatrackers.*
+import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
+import mcsoc.bedwars.datatrackers.playerstate.teamValue
 import mcsoc.bedwars.datatrackers.timetracker.GamePeriod
 import mcsoc.bedwars.datatrackers.timetracker.GamePhase
-import mcsoc.bedwars.datatrackers.blockProtection
-import mcsoc.bedwars.datatrackers.clock
-import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
-import mcsoc.bedwars.datatrackers.customEntityData
-import mcsoc.bedwars.datatrackers.eventQueue
-import mcsoc.bedwars.datatrackers.timeState
-import mcsoc.bedwars.datatrackers.generatorState
-import mcsoc.bedwars.datatrackers.activePlayers
-import mcsoc.bedwars.datatrackers.getActivePlayers
-import mcsoc.bedwars.datatrackers.mapData
-import mcsoc.bedwars.datatrackers.playerState
-import mcsoc.bedwars.datatrackers.playerstate.teamValue
-import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.gui.ScoreboardGui
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.sendTitle
@@ -29,7 +19,7 @@ import net.minecraft.core.GlobalPos
 import net.minecraft.core.Holder
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.MutableComponent
-import net.minecraft.network.protocol.game.*
+import net.minecraft.network.protocol.game.ClientboundSoundPacket
 import net.minecraft.server.ServerScoreboard
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
@@ -43,9 +33,7 @@ import net.minecraft.world.level.GameType
 import net.minecraft.world.level.gamerules.GameRules
 import net.minecraft.world.level.storage.LevelData
 import net.minecraft.world.phys.Vec3
-import java.util.UUID
-import kotlin.collections.forEach
-
+import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
 const val BORDER_SIZE: Double = 300.0 // change if needed

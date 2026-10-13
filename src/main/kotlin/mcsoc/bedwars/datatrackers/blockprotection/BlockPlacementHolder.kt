@@ -5,7 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.utils.AABB_CODEC
 import net.minecraft.core.BlockPos
 import net.minecraft.world.phys.AABB
-import java.util.UUID
+import java.util.*
 
 
 data class ProtectionZone(val box: AABB) {

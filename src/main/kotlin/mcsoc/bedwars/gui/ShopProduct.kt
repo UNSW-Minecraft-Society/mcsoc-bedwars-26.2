@@ -2,7 +2,6 @@ package mcsoc.bedwars.gui
 
 import eu.pb4.sgui.api.ClickType
 import eu.pb4.sgui.api.elements.GuiElement
-import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.datatrackers.playerstate.teamValue
 import mcsoc.bedwars.datatrackers.teamState

@@ -3,7 +3,6 @@ package mcsoc.bedwars.eventhandlers
 import net.fabricmc.fabric.api.event.EventFactory
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.projectile.Projectile
-import net.minecraft.world.entity.projectile.ThrowableProjectile
 import net.minecraft.world.phys.HitResult
 
 fun interface ProjectileHitCallback {

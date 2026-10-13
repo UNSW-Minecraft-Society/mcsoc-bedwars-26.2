@@ -1,7 +1,7 @@
 package mcsoc.bedwars.datatrackers.generatorstate
 
-import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.generators.Generator
+import mcsoc.bedwars.generators.GeneratorType
 import mcsoc.bedwars.utils.Team
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.MinecraftServer

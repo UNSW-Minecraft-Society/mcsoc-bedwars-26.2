@@ -3,7 +3,6 @@ package mcsoc.bedwars.eventhandlers.commands
 
 import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.DoubleArgumentType
-import com.mojang.brigadier.arguments.FloatArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import mcsoc.bedwars.BedwarsPlugin
@@ -14,10 +13,8 @@ import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument
-import net.minecraft.resources.Identifier
-import net.minecraft.server.permissions.PermissionLevel
 import net.minecraft.commands.arguments.coordinates.Vec3Argument
-import net.minecraft.server.permissions.Permissions
+import net.minecraft.server.permissions.PermissionLevel
 
 const val ROOT_NODE = "bedwars"
 

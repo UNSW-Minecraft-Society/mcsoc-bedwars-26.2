@@ -5,8 +5,8 @@ import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.datatrackers.LevelDataType
 import mcsoc.bedwars.datatrackers.LevelTiedData
-import mcsoc.bedwars.datatrackers.teamstate.PlayerTeamState
 import mcsoc.bedwars.datatrackers.playerState
+import mcsoc.bedwars.datatrackers.teamstate.PlayerTeamState
 import mcsoc.bedwars.gamestate.RESPAWN_TIME
 import mcsoc.bedwars.upgrades.UpgradableItem
 import mcsoc.bedwars.upgrades.UpgradeItemType
@@ -17,7 +17,7 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
-import java.util.UUID
+import java.util.*
 import kotlin.time.Duration
 
 

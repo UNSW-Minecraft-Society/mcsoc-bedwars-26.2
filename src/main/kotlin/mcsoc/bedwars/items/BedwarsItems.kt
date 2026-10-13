@@ -1,14 +1,14 @@
 package mcsoc.bedwars.items
 
+import mcsoc.bedwars.utils.renamedTo
+import mcsoc.bedwars.utils.withEnchant
 import mcsoc.bedwars.utils.withItemLore
 import mcsoc.bedwars.utils.withTag
-import mcsoc.bedwars.utils.renamedTo
-import net.minecraft.server.level.ServerPlayer
-import mcsoc.bedwars.utils.withEnchant
 import net.minecraft.core.Holder
 import net.minecraft.core.component.DataComponents
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items

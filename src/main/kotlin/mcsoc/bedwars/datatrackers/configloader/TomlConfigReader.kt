@@ -5,8 +5,6 @@ import com.akuleshov7.ktoml.file.TomlFileReader
 import com.akuleshov7.ktoml.file.TomlFileWriter
 import com.akuleshov7.ktoml.source.decodeFromStream
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.inputStream
 

@@ -2,9 +2,7 @@ package mcsoc.bedwars.entities
 
 import mcsoc.bedwars.datatrackers.CustomEntityType
 import mcsoc.bedwars.datatrackers.customEntityData
-import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.playerState
-import mcsoc.bedwars.gamestate.GameEvent
 import mcsoc.bedwars.gui.ShopGui
 import mcsoc.bedwars.gui.ShopType
 import net.minecraft.server.level.ServerLevel

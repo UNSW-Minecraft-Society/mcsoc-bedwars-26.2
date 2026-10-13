@@ -3,12 +3,7 @@ package mcsoc.bedwars.upgrades
 import com.mojang.serialization.Codec
 import mcsoc.bedwars.datatrackers.playerstate.teamValue
 import mcsoc.bedwars.datatrackers.teamState
-import mcsoc.bedwars.utils.withTag
-import mcsoc.bedwars.utils.withEnchant
-import mcsoc.bedwars.utils.hasTag
-import mcsoc.bedwars.utils.withTrim
-import mcsoc.bedwars.utils.withUnbreakable
-import mcsoc.bedwars.utils.withUndroppable
+import mcsoc.bedwars.utils.*
 import net.minecraft.core.component.DataComponents
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.level.ServerPlayer

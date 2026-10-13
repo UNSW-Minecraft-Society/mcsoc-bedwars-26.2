@@ -6,11 +6,8 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 import mcsoc.bedwars.datatrackers.LevelDataType
 import mcsoc.bedwars.datatrackers.LevelTiedData
 import mcsoc.bedwars.datatrackers.configloader.BedwarsConfigData
-import mcsoc.bedwars.datatrackers.mapdata.LoadedMapExposer
-import mcsoc.bedwars.datatrackers.mapdata.LoadedMapHolder
-import kotlin.time.Duration
-import net.minecraft.core.BlockPos
 import net.minecraft.util.StringRepresentable
+import kotlin.time.Duration
 
 
 enum class GamePhase : StringRepresentable {

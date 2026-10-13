@@ -4,20 +4,11 @@ import eu.pb4.sgui.api.ClickType
 import eu.pb4.sgui.api.elements.GuiElement
 import eu.pb4.sgui.api.elements.GuiElementBuilder
 import eu.pb4.sgui.api.gui.SimpleGui
-import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.generatorstate.InvalidTeamException
 import mcsoc.bedwars.datatrackers.shopConfig
-import mcsoc.bedwars.items.BedwarsItems
-import mcsoc.bedwars.upgrades.TeamUpgradeType
-import mcsoc.bedwars.upgrades.TrapUpgrade
-import mcsoc.bedwars.upgrades.UpgradeItemType
-import mcsoc.bedwars.utils.Team
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.inventory.ContainerInput
-import net.minecraft.world.inventory.MenuType
-import net.minecraft.world.item.Items
-import net.minecraft.world.item.alchemy.Potions
 
 /**
  * Object containing logic pertaining to displaying (via an inventory GUI) items in the shop.

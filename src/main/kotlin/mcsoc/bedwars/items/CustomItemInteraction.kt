@@ -1,24 +1,16 @@
 package mcsoc.bedwars.items
 
-import mcsoc.bedwars.BedwarsPlugin
 import mcsoc.bedwars.datatrackers.eventQueue
 import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.datatrackers.playerstate.team
 import mcsoc.bedwars.entities.spawnBedBrute
 import mcsoc.bedwars.entities.spawnBedBug
 import mcsoc.bedwars.entities.spawnDreamDefender
-import mcsoc.bedwars.utils.Team
-import mcsoc.bedwars.utils.pitchDeg
-import mcsoc.bedwars.utils.placeBlockIfValid
-import mcsoc.bedwars.utils.toCardinalDirection
-import mcsoc.bedwars.utils.toBlockPos
-import mcsoc.bedwars.utils.yawDeg
+import mcsoc.bedwars.utils.*
 import net.minecraft.core.Direction
 import net.minecraft.core.GlobalPos
-import net.minecraft.core.Vec3i
 import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.Component
-import net.minecraft.server.commands.TeleportCommand
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.InteractionHand
@@ -37,7 +29,7 @@ import net.minecraft.world.item.component.LodestoneTracker
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.phys.HitResult
-import java.util.Optional
+import java.util.*
 import kotlin.jvm.optionals.getOrNull
 import kotlin.math.roundToInt
 

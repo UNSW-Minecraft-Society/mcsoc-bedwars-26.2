@@ -1,9 +1,9 @@
 package mcsoc.bedwars.gui
 
 import mcsoc.bedwars.datatrackers.clock
-import mcsoc.bedwars.datatrackers.timeState
 import mcsoc.bedwars.datatrackers.playerState
 import mcsoc.bedwars.datatrackers.teamState
+import mcsoc.bedwars.datatrackers.timeState
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.formatMMSS
 import net.minecraft.ChatFormatting

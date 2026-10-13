@@ -1,18 +1,12 @@
 package mcsoc.bedwars
 
+import com.mojang.datafixers.util.Pair
+import mcsoc.bedwars.datatrackers.*
 import mcsoc.bedwars.datatrackers.timetracker.GamePeriod
-import mcsoc.bedwars.datatrackers.timeState
-import mcsoc.bedwars.datatrackers.generatorState
 import mcsoc.bedwars.entities.spawnWakingWither
 import mcsoc.bedwars.gamestate.BORDER_SIZE
 import mcsoc.bedwars.gamestate.GameManager
 import mcsoc.bedwars.generators.GeneratorType
-import com.mojang.datafixers.util.Pair
-import mcsoc.bedwars.datatrackers.activePlayers
-import mcsoc.bedwars.datatrackers.getActivePlayers
-import mcsoc.bedwars.datatrackers.mapData
-import mcsoc.bedwars.datatrackers.playerState
-import mcsoc.bedwars.datatrackers.teamState
 import mcsoc.bedwars.utils.Team
 import mcsoc.bedwars.utils.inWholeTicks
 import mcsoc.bedwars.utils.sendTitle
@@ -24,7 +18,7 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.phys.Vec3
-import java.util.UUID
+import java.util.*
 
 
 // replace with config
